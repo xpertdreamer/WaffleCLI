@@ -1,9 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\WaffleCLI.Abstractions\WaffleCLI.Abstractions.csproj"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Spectre.Console" Version="0.48.0"/>
+    </ItemGroup>
 
 </Project>
