@@ -40,7 +40,7 @@ public class CommandRegistry : ICommandRegistry
     /// <param name="commandType"></param>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="InvalidOperationException"></exception>
-    public void RegisterCommand(Type commandType)
+    private void RegisterCommand(Type commandType)
     {
         if (!typeof(ICommand).IsAssignableFrom(commandType))
         {
