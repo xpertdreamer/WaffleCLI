@@ -8,7 +8,10 @@ using WaffleCLI.Runtime.Options;
 
 namespace WaffleCLI.Runtime.Services;
 
-internal class DefaultConsoleHost : IConsoleHost
+/// <summary>
+/// 
+/// </summary>
+public class DefaultConsoleHost : IConsoleHost
 {
     private readonly ICommandExecutor _commandExecutor;
     private readonly ILogger<DefaultConsoleHost> _logger;
@@ -16,6 +19,14 @@ internal class DefaultConsoleHost : IConsoleHost
     private readonly ICommandRegistry _commandRegistry;
     private readonly IOptions<ConsoleHostOptions> _options;
     
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="commandExecutor"></param>
+    /// <param name="logger"></param>
+    /// <param name="lifetime"></param>
+    /// <param name="commandRegistry"></param>
+    /// <param name="options"></param>
     public DefaultConsoleHost(
         ICommandExecutor commandExecutor,
         ILogger<DefaultConsoleHost> logger,
@@ -30,6 +41,11 @@ internal class DefaultConsoleHost : IConsoleHost
         _options = options;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="token"></param>
+    /// <returns></returns>
     public async Task<int> RunAsync(CancellationToken token = default)
     {
         try
@@ -85,6 +101,12 @@ internal class DefaultConsoleHost : IConsoleHost
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="commandLine"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
     public async Task<int> ExecuteCommandAsync(string commandLine, CancellationToken token = default)
     {
         var result = await _commandExecutor.ExecuteAsync(commandLine, token);

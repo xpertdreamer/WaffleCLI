@@ -7,12 +7,21 @@ using WaffleCLI.Runtime.Parsers;
 
 namespace WaffleCLI.Runtime.Services;
 
-internal class CommandExecutor : ICommandExecutor
+/// <summary>
+/// 
+/// </summary>
+public class CommandExecutor : ICommandExecutor
 {
     private readonly ICommandRegistry _commandRegistry;
     private readonly ILogger<CommandExecutor> _logger;
     private readonly IOptions<CommandExecutorOptions> _options;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="commandRegistry"></param>
+    /// <param name="logger"></param>
+    /// <param name="options"></param>
     public CommandExecutor(ICommandRegistry commandRegistry, ILogger<CommandExecutor> logger,
         IOptions<CommandExecutorOptions> options)
     {
@@ -21,6 +30,12 @@ internal class CommandExecutor : ICommandExecutor
         _options = options;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="commandLine"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
     public async Task<CommandResult> ExecuteAsync(string commandLine, CancellationToken token = default)
     {
         if (string.IsNullOrWhiteSpace(commandLine))
@@ -36,6 +51,13 @@ internal class CommandExecutor : ICommandExecutor
         return await ExecuteAsync(commandName, args, token);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="command"></param>
+    /// <param name="args"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
     public async Task<CommandResult> ExecuteAsync(string command, string[] args, CancellationToken token = default)
     {
         try
