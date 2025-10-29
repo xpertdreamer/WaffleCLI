@@ -3,6 +3,27 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
+
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI", "src\WaffleCLI\WaffleCLI.csproj", "{79B0AAA2-6C67-4E32-8E38-9A277B57C7C2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Abstractions", "src\WaffleCLI.Abstractions\WaffleCLI.Abstractions.csproj", "{83539C6A-1F8D-4942-8CED-D3D17977D951}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Core", "src\WaffleCLI.Core\WaffleCLI.Core.csproj", "{AF4AF228-3442-4744-95A7-5FA9CF5E45CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Configuration", "src\WaffleCLI.Configuration\WaffleCLI.Configuration.csproj", "{94C45D7D-537C-4677-8815-A8AE89BCA52A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Hosting", "src\WaffleCLI.Hosting\WaffleCLI.Hosting.csproj", "{1B09ED7F-B72A-4BC2-9B74-41E73C0E43A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Runtime", "src\WaffleCLI.Runtime\WaffleCLI.Runtime.csproj", "{1B09ED7F-B72A-4BC2-9B74-41E73C0E43A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Examples", "samples\WaffleCLI.Examples\WaffleCLI.Examples.csproj", "{1B09ED7F-B72A-4BC2-9B74-41E73C0E43A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.SampleApp", "samples\WaffleCLI.SampleApp\WaffleCLI.SampleApp.csproj", "{1B09ED7F-B72A-4BC2-9B74-41E73C0E43A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Hosting", "src\WaffleCLI.Hosting\WaffleCLI.Hosting.csproj", "{1B09ED7F-B72A-4BC2-9B74-41E73C0E43A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Cli", "tools\WaffleCLI.Cli\WaffleCLI.Cli.csproj", "{1B09ED7F-B72A-4BC2-9B74-41E73C0E43A0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,6 +33,26 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{79B0AAA2-6C67-4E32-8E38-9A277B57C7C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79B0AAA2-6C67-4E32-8E38-9A277B57C7C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79B0AAA2-6C67-4E32-8E38-9A277B57C7C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79B0AAA2-6C67-4E32-8E38-9A277B57C7C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83539C6A-1F8D-4942-8CED-D3D17977D951}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83539C6A-1F8D-4942-8CED-D3D17977D951}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83539C6A-1F8D-4942-8CED-D3D17977D951}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83539C6A-1F8D-4942-8CED-D3D17977D951}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF4AF228-3442-4744-95A7-5FA9CF5E45CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF4AF228-3442-4744-95A7-5FA9CF5E45CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF4AF228-3442-4744-95A7-5FA9CF5E45CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF4AF228-3442-4744-95A7-5FA9CF5E45CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94C45D7D-537C-4677-8815-A8AE89BCA52A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94C45D7D-537C-4677-8815-A8AE89BCA52A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94C45D7D-537C-4677-8815-A8AE89BCA52A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94C45D7D-537C-4677-8815-A8AE89BCA52A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B09ED7F-B72A-4BC2-9B74-41E73C0E43A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B09ED7F-B72A-4BC2-9B74-41E73C0E43A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B09ED7F-B72A-4BC2-9B74-41E73C0E43A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B09ED7F-B72A-4BC2-9B74-41E73C0E43A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
