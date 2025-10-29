@@ -4,6 +4,21 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+        <PackageId>WaffleCLI</PackageId>
+        <Version>1.0.0</Version>
+        <Title>Console Framework</Title>
+        <Description>Just for fun framework for building console applications in .NET</Description>
+        <PackageTags>console;framework;cli;commands</PackageTags>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\WaffleCLI.Abstractions\WaffleCLI.Abstractions.csproj" />
+        <ProjectReference Include="..\WaffleCLI.Core\WaffleCLI.Core.csproj" />
+        <ProjectReference Include="..\WaffleCLI.Hosting\WaffleCLI.Hosting.csproj" />
+        <ProjectReference Include="..\WaffleCLI.Runtime\WaffleCLI.Runtime.csproj" />
+        <ProjectReference Include="..\WaffleCLI.Configuration\WaffleCLI.Configuration.csproj" />
+    </ItemGroup>
 
 </Project>
