@@ -1,6 +1,5 @@
 using WaffleCLI.Abstractions.Commands;
 using WaffleCLI.Core.Attributes;
-using WaffleCLI.Core.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
