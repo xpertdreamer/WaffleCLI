@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Runtime", "WaffleCLI.Runtime\WaffleCLI.Runtime.csproj", "{EC31CC2B-D637-4723-A9DE-D3FA01F7F361}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Configuration", "WaffleCLI.Configuration\WaffleCLI.Configuration.csproj", "{FF01C958-BED2-497E-91D8-04BC99736592}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Hosting", "WaffleCLI.Hosting\WaffleCLI.Hosting.csproj", "{7F2E45F7-521F-411B-9C08-01FC31453572}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.Cli", "WaffleCLI.Cli\WaffleCLI.Cli.csproj", "{2631982B-A77E-4C6A-A2F4-13DCC256A4FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaffleCLI.SampleApp", "WaffleCLI.SampleApp\WaffleCLI.SampleApp.csproj", "{8C7262F1-3E35-4FCC-8292-5C027ABB86C6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EC31CC2B-D637-4723-A9DE-D3FA01F7F361}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC31CC2B-D637-4723-A9DE-D3FA01F7F361}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC31CC2B-D637-4723-A9DE-D3FA01F7F361}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC31CC2B-D637-4723-A9DE-D3FA01F7F361}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF01C958-BED2-497E-91D8-04BC99736592}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF01C958-BED2-497E-91D8-04BC99736592}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF01C958-BED2-497E-91D8-04BC99736592}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF01C958-BED2-497E-91D8-04BC99736592}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F2E45F7-521F-411B-9C08-01FC31453572}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F2E45F7-521F-411B-9C08-01FC31453572}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F2E45F7-521F-411B-9C08-01FC31453572}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F2E45F7-521F-411B-9C08-01FC31453572}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2631982B-A77E-4C6A-A2F4-13DCC256A4FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2631982B-A77E-4C6A-A2F4-13DCC256A4FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2631982B-A77E-4C6A-A2F4-13DCC256A4FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2631982B-A77E-4C6A-A2F4-13DCC256A4FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C7262F1-3E35-4FCC-8292-5C027ABB86C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C7262F1-3E35-4FCC-8292-5C027ABB86C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C7262F1-3E35-4FCC-8292-5C027ABB86C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C7262F1-3E35-4FCC-8292-5C027ABB86C6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
