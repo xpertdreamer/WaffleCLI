@@ -8,7 +8,7 @@ namespace WaffleCLI.Runtime.Services;
 /// <summary>
 /// 
 /// </summary>
-public class CommandRegistry : ICommandRegistry
+internal class CommandRegistry : Abstractions.Commands.ICommandRegistry
 {
     private readonly Dictionary<string, Type> _commandTypes = new(StringComparer.OrdinalIgnoreCase);
     private readonly IServiceProvider _serviceProvider;
