@@ -1,16 +1,17 @@
-using Spectre.Console;
+using System.Drawing;
 using WaffleCLI.Abstractions.Commands;
 using WaffleCLI.Core.Attributes;
+using WaffleCLI.Core.Output;
 
 namespace WaffleCLI.SampleApp.Commands;
 
 [Command("help", "Show available commands")]
-public class HelpCommand : ICommand
+public abstract class HelpCommand : ICommand
 {
     private readonly ICommandRegistry _commandRegistry;
-    private readonly IAnsiConsoleOutput _output;
+    private readonly IConsoleOutput _output;
 
-    public HelpCommand(ICommandRegistry commandRegistry, IAnsiConsoleOutput output)
+    protected HelpCommand(ICommandRegistry commandRegistry, IConsoleOutput output)
     {
         _commandRegistry = commandRegistry;
         _output = output;
@@ -22,23 +23,20 @@ public class HelpCommand : ICommand
     public Task ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
     {
         var commands = _commandRegistry.GetCommands();
-
-        var table = new Table();
-        table.Border = TableBorder.Rounded;
-        table.Title = new TableTitle("available commands");
-
-        table.AddColumn("Command");
-        table.AddColumn("Description");
-
-        foreach (var com in commands.OrderBy(c => c.Name))
-        {
-            table.AddRow(
-                $"[green]{com.Name}[/]",
-                com.Description
-            );
-        }
         
-        AnsiConsole.Write(table);
+        _output.WriteLine("Available Commands:", ConsoleColor.Cyan);
+        _output.WriteLine("===================", ConsoleColor.Cyan);
+        _output.WriteLine();
+        
+        foreach (var command in commands.OrderBy(c => c.Name))
+        {
+            _output.Write($"  {command.Name}", ConsoleColor.Green);
+            _output.WriteLine($" - {command.Description}");
+        }
+
+        _output.WriteLine();
+        _output.WriteLine("Type 'help <command>' for more information about a command.", ConsoleColor.Yellow);
+
         return Task.CompletedTask;
     }
 }

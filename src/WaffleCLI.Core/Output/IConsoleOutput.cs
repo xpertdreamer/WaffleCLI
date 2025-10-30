@@ -1,3 +1,5 @@
+using System.Drawing;
+
 namespace WaffleCLI.Core.Output;
 
 /// <summary>
@@ -10,6 +12,13 @@ public interface IConsoleOutput
     /// </summary>
     /// <param name="text">The text to write to the console.</param>
     void Write(string text);
+    
+    /// <summary>
+    /// Writes the specified text to the console without a line terminator.
+    /// </summary>
+    /// <param name="text">The text to write to the console.</param>
+    /// <param name="color">The foreground color to use for the text.</param>
+    void Write(string text, ConsoleColor color);
     
     /// <summary>
     /// Writes the specified text to the console followed by a line terminator.

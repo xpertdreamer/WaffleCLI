@@ -1,3 +1,4 @@
+using System.Drawing;
 using WaffleCLI.Core.Output;
 
 namespace WaffleCLI.Runtime.Output;
@@ -15,6 +16,14 @@ public class DefaultConsoleOutput : IConsoleOutput
     public void Write(string text)
     {
         Console.Write(text);
+    }
+
+    public void Write(string text, ConsoleColor color)
+    {
+        var originalColor =  Console.ForegroundColor;
+        Console.ForegroundColor = color;
+        Console.Write(text);
+        Console.ForegroundColor = originalColor;
     }
 
     /// <summary>
