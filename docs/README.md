@@ -1,5 +1,2 @@
 # WaffleCLI
-C# Framework for CLI-based applications
-
-## TODO
-    Migrate from Spectre
+Just For Fun C# Framework for CLI-based applications
