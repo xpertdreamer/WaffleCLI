@@ -4,19 +4,39 @@ using WaffleCLI.Core.Output;
 
 namespace WaffleCLI.SampleApp.Commands;
 
+/// <summary>
+/// Command for file system operations including directory listing and file information
+/// </summary>
 [Command("files", "File management operations")]
 public class FileManagerCommand : ICommand
 {
     private readonly IConsoleOutput _output;
 
+    /// <summary>
+    /// Initializes a new instance of the FileManagerCommand class
+    /// </summary>
+    /// <param name="output">Console output service</param>
     public FileManagerCommand(IConsoleOutput output)
     {
         _output = output;
     }
 
+    /// <summary>
+    /// Gets the command name
+    /// </summary>
     public string Name => "files";
+
+    /// <summary>
+    /// Gets the command description
+    /// </summary>
     public string Description => "File management operations";
 
+    /// <summary>
+    /// Executes file management operations based on subcommands
+    /// </summary>
+    /// <param name="args">Subcommands: list, info, or empty for current directory</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Task representing the asynchronous operation</returns>
     public Task ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
     {
         if (args.Length == 0)
@@ -44,12 +64,19 @@ public class FileManagerCommand : ICommand
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Displays the current working directory
+    /// </summary>
     private void ShowCurrentDirectory()
     {
         var currentDir = Directory.GetCurrentDirectory();
         _output.WriteInfo($"Current directory: {currentDir}");
     }
 
+    /// <summary>
+    /// Lists files and directories in the specified path
+    /// </summary>
+    /// <param name="path">Directory path to list</param>
     private void ListFiles(string path)
     {
         try
@@ -95,6 +122,10 @@ public class FileManagerCommand : ICommand
         }
     }
 
+    /// <summary>
+    /// Displays detailed information about a specific file
+    /// </summary>
+    /// <param name="filePath">Path to the file</param>
     private void ShowFileInfo(string filePath)
     {
         try

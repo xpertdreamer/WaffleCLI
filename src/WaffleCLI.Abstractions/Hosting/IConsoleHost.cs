@@ -6,14 +6,14 @@ namespace WaffleCLI.Abstractions.Hosting;
 public interface IConsoleHost
 {
     /// <summary>
-    /// Runs the console application
+    /// Runs the console application with interactive command loop
     /// </summary>
     /// <param name="token">Cancellation token</param>
     /// <returns>Exit code</returns>
     Task<int> RunAsync(CancellationToken token = default);
     
     /// <summary>
-    /// Executes a single command
+    /// Executes a single command without starting interactive loop
     /// </summary>
     /// <param name="commandLine">Command line to execute</param>
     /// <param name="token">Cancellation token</param>

@@ -17,11 +17,11 @@ public class CommandExecutor : ICommandExecutor
     private readonly ILogger<CommandExecutor> _logger;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CommandExecutor"/> class.
+    /// Initializes a new instance of the CommandExecutor class
     /// </summary>
-    /// <param name="commandRegistry">The registry used to resolve command instances.</param>
-    /// <param name="logger">The logger for recording command execution events.</param>
-    /// <param name="options">Configuration options for command execution behavior.</param>
+    /// <param name="commandRegistry">The registry used to resolve command instances</param>
+    /// <param name="logger">The logger for recording command execution events</param>
+    /// <param name="options">Configuration options for command execution behavior</param>
     public CommandExecutor(ICommandRegistry commandRegistry, ILogger<CommandExecutor> logger,
         IOptions<CommandExecutorOptions> options)
     {
@@ -30,14 +30,11 @@ public class CommandExecutor : ICommandExecutor
     }
 
     /// <summary>
-    /// Executes a command by parsing the provided command line string into command name and arguments.
+    /// Executes a command by parsing the provided command line string into command name and arguments
     /// </summary>
-    /// <param name="commandLine">The full command line string to execute.</param>
-    /// <param name="token">Cancellation token to cancel the command execution.</param>
-    /// <returns>
-    /// A <see cref="CommandResult"/> indicating the outcome of the command execution.
-    /// Returns an error result if the command line is empty or invalid.
-    /// </returns>
+    /// <param name="commandLine">The full command line string to execute</param>
+    /// <param name="token">Cancellation token to cancel the command execution</param>
+    /// <returns>CommandResult indicating the outcome of the command execution</returns>
     public async Task<CommandResult> ExecuteAsync(string commandLine, CancellationToken token = default)
     {
         if (string.IsNullOrWhiteSpace(commandLine))
@@ -54,23 +51,12 @@ public class CommandExecutor : ICommandExecutor
     }
 
     /// <summary>
-    /// Executes a command with the specified name and arguments.
+    /// Executes a command with the specified name and arguments
     /// </summary>
-    /// <param name="command">The name of the command to execute.</param>
-    /// <param name="args">The arguments to pass to the command.</param>
-    /// <param name="token">Cancellation token to cancel the command execution.</param>
-    /// <returns>
-    /// A <see cref="CommandResult"/> indicating the outcome of the command execution.
-    /// Handles various exception types and returns appropriate error results with logging.
-    /// </returns>
-    /// <remarks>
-    /// <para>This method handles the following scenarios:</para>
-    /// <list type="bullet">
-    /// <item><description>Command not found in registry</description></item>
-    /// <item><description><see cref="CommandException"/> with specific error messages and exit codes</description></item>
-    /// <item><description>Unexpected exceptions during command execution</description></item>
-    /// </list>
-    /// </remarks>
+    /// <param name="command">The name of the command to execute</param>
+    /// <param name="args">The arguments to pass to the command</param>
+    /// <param name="token">Cancellation token to cancel the command execution</param>
+    /// <returns>CommandResult indicating the outcome of the command execution</returns>
     public async Task<CommandResult> ExecuteAsync(string command, string[] args, CancellationToken token = default)
     {
         try

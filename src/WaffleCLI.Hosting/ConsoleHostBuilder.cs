@@ -18,6 +18,13 @@ public class ConsoleHostBuilder
     /// <summary>
     /// Initializes a new instance of the ConsoleHostBuilder class
     /// </summary>
+    public ConsoleHostBuilder() : this([])
+    {
+    }
+    
+    /// <summary>
+    /// Initializes a new instance of the ConsoleHostBuilder class
+    /// </summary>
     /// <param name="args">The command line arguments</param>
     public ConsoleHostBuilder(string[] args)
     {
@@ -87,50 +94,4 @@ public class ConsoleHostBuilder
         var host = _hostBuilder.Build();
         return host.Services.GetRequiredService<IConsoleHost>();
     }
-}
-
-/// <summary>
-/// Defines a contract for application startup configuration in a console application.
-/// Implement this interface to configure services and application components during startup.
-/// </summary>
-/// <remarks>
-/// <para>
-/// The <see cref="IConsoleStartup"/> interface is typically implemented by classes that
-/// perform application initialization tasks such as:
-/// </para>
-/// <list type="bullet">
-/// <item><description>Registering commands with the command registry</description></item>
-/// <item><description>Configuring application-specific services</description></item>
-/// <item><description>Setting up default configuration values</description></item>
-/// <item><description>Performing runtime validation of services</description></item>
-/// <item><description>Initializing application state</description></item>
-/// </list>
-/// <para>
-/// Implementations are discovered and executed automatically by the console host during application startup.
-/// </para>
-/// </remarks>
-public interface IConsoleStartup
-{
-    /// <summary>
-    /// Configures the application services and components after the service provider has been built.
-    /// </summary>
-    /// <param name="services">The service provider that can be used to resolve required services.</param>
-    /// <remarks>
-    /// <para>
-    /// This method is called after the dependency injection container has been fully constructed
-    /// but before the interactive console loop begins. Use this method to perform initialization
-    /// that requires access to resolved services.
-    /// </para>
-    /// <para>
-    /// Common tasks performed in this method include:
-    /// </para>
-    /// <list type="bullet">
-    /// <item><description>Resolving <see cref="ICommandRegistry"/> and registering application commands</description></item>
-    /// <item><description>Configuring default settings or options</description></item>
-    /// <item><description>Validating that required services are properly configured</description></item>
-    /// <item><description>Setting up initial application state</description></item>
-    /// <item><description>Running database migrations or other setup tasks</description></item>
-    /// </list>
-    /// </remarks>
-    void Configure(IServiceProvider services);
 }

@@ -1,7 +1,7 @@
 namespace WaffleCLI.Core.Attributes;
 
 /// <summary>
-/// Specifies the metadata for a command
+/// Specifies the metadata for a command including name and description
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 public class CommandAttribute : Attribute

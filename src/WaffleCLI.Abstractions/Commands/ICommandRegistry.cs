@@ -1,32 +1,32 @@
 namespace WaffleCLI.Abstractions.Commands;
 
 /// <summary>
-/// Manages command registration and retrieval
+/// Provides command registration and resolution functionality
 /// </summary>
 public interface ICommandRegistry
 {
     /// <summary>
-    /// Registers a command type
+    /// Registers a command type with the registry
     /// </summary>
-    /// <typeparam name="TCommand">Command type</typeparam>
+    /// <typeparam name="TCommand">The type of command to register</typeparam>
     void RegisterCommand<TCommand>() where TCommand : ICommand;
-    
+
     /// <summary>
-    /// Registers a command type
+    /// Registers a command type with the registry
     /// </summary>
-    /// <param name="commandType">Command type</param>
+    /// <param name="commandType">The type of command to register</param>
     void RegisterCommand(Type commandType);
-    
+
     /// <summary>
-    /// Gets a command by name
+    /// Retrieves a command instance by name
     /// </summary>
-    /// <param name="name">Command name</param>
-    /// <returns>Command instance or null</returns>
+    /// <param name="name">The name of the command</param>
+    /// <returns>The command instance or null if not found</returns>
     ICommand? GetCommand(string name);
-    
+
     /// <summary>
-    /// Gets all registered commands
+    /// Retrieves all registered command instances
     /// </summary>
-    /// <returns>Collection of commands</returns>
+    /// <returns>Read-only collection of commands</returns>
     IReadOnlyCollection<ICommand> GetCommands();
 }

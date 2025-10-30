@@ -1,4 +1,4 @@
-using System.Drawing;
+using System;
 using WaffleCLI.Core.Output;
 
 namespace WaffleCLI.Runtime.Output;
@@ -18,9 +18,15 @@ public class DefaultConsoleOutput : IConsoleOutput
         Console.Write(text);
     }
 
+    /// <summary>
+    /// Writes the specified text to the standard output stream with the specified foreground color,
+    /// without a line terminator. Restores the original console color after writing.
+    /// </summary>
+    /// <param name="text">The text to write to the console.</param>
+    /// <param name="color">The foreground color to use for the text.</param>
     public void Write(string text, ConsoleColor color)
     {
-        var originalColor =  Console.ForegroundColor;
+        var originalColor = Console.ForegroundColor;
         Console.ForegroundColor = color;
         Console.Write(text);
         Console.ForegroundColor = originalColor;
