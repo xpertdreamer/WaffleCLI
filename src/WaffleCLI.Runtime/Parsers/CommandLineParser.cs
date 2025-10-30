@@ -18,18 +18,15 @@ public static class CommandLineParser
         var current = new StringBuilder();
         var inQuotes =  false;
 
-        for (int i = 0; i < commandLine.Length; i++)
+        foreach (var c in commandLine)
         {
-            var c = commandLine[i];
             if (c == '"')
                 inQuotes = !inQuotes;
             else if (char.IsWhiteSpace(c) && !inQuotes)
             {
-                if (current.Length > 0)
-                {
-                    result.Add(current.ToString());
-                    current.Clear();
-                }
+                if (current.Length <= 0) continue;
+                result.Add(current.ToString());
+                current.Clear();
             }
             else
             {
