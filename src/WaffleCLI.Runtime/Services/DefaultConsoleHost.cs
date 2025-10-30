@@ -3,7 +3,7 @@ using WaffleCLI.Abstractions.Commands;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Spectre.Console;
+using WaffleCLI.Core.Output;
 using WaffleCLI.Runtime.Options;
 
 namespace WaffleCLI.Runtime.Services;
@@ -16,28 +16,27 @@ public class DefaultConsoleHost : IConsoleHost
     private readonly ICommandExecutor _commandExecutor;
     private readonly ILogger<DefaultConsoleHost> _logger;
     private readonly IHostApplicationLifetime _lifetime;
-    private readonly ICommandRegistry _commandRegistry;
+    private readonly IConsoleOutput _output;
     private readonly IOptions<ConsoleHostOptions> _options;
-    
+
     /// <summary>
     /// 
     /// </summary>
     /// <param name="commandExecutor"></param>
     /// <param name="logger"></param>
     /// <param name="lifetime"></param>
-    /// <param name="commandRegistry"></param>
     /// <param name="options"></param>
     public DefaultConsoleHost(
         ICommandExecutor commandExecutor,
         ILogger<DefaultConsoleHost> logger,
         IHostApplicationLifetime lifetime,
-        ICommandRegistry commandRegistry,
+        IConsoleOutput output,
         IOptions<ConsoleHostOptions> options)
     {
         _commandExecutor = commandExecutor;
         _logger = logger;
         _lifetime = lifetime;
-        _commandRegistry = commandRegistry;
+        _output = output;
         _options = options;
     }
 
@@ -52,8 +51,7 @@ public class DefaultConsoleHost : IConsoleHost
         {
             if (_options.Value.ShowWelcomeMessage)
             {
-                AnsiConsole.Write(new FigletText("WaffleCLI").Color(Color.Blue));
-                AnsiConsole.MarkupLine("[green]WaffleCLI started. Type 'help' to see available commands.[/]");
+                ShowWelcomeMessage();
             }
 
             while (!token.IsCancellationRequested)
@@ -74,9 +72,12 @@ public class DefaultConsoleHost : IConsoleHost
                     if (!result.Success && !string.IsNullOrEmpty(result.Message) ||
                         !string.IsNullOrEmpty(result.Message))
                     {
-                        AnsiConsole.MarkupLine($"[red]Error: {result.Message}[/]");
+                        _output.WriteError($"Error: {result.Message}");
                     }
-
+                    else if (!string.IsNullOrEmpty(result.Message))
+                    {
+                        _output.WriteSuccess(result.Message);
+                    }
                     if (result.ExitCode != 0 && _options.Value.ExitOnNonZeroExitCode)
                     {
                         return result.ExitCode;
@@ -89,7 +90,7 @@ public class DefaultConsoleHost : IConsoleHost
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error while executing command.");
-                    AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
+                    _output.WriteError($"Unhandled exception: {ex.Message}");
                 }
             }
 
@@ -111,5 +112,14 @@ public class DefaultConsoleHost : IConsoleHost
     {
         var result = await _commandExecutor.ExecuteAsync(commandLine, token);
         return result.ExitCode;
+    }
+
+    private void ShowWelcomeMessage()
+    {
+        _output.WriteLine("=========================================", ConsoleColor.Blue);
+        _output.WriteLine("        WaffleCLI", ConsoleColor.Blue);
+        _output.WriteLine("=========================================", ConsoleColor.Blue);
+        _output.WriteLine("WaffleCLI started. Type 'help' for available commands.", ConsoleColor.Green);
+        _output.WriteLine();
     }
 }
