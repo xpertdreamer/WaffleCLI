@@ -9,7 +9,8 @@ using WaffleCLI.Runtime.Options;
 namespace WaffleCLI.Runtime.Services;
 
 /// <summary>
-/// 
+/// Default implementation of <see cref="IConsoleHost"/> that provides an interactive command-line interface
+/// with command execution, input processing, and user interaction capabilities.
 /// </summary>
 public class DefaultConsoleHost : IConsoleHost
 {
@@ -20,12 +21,13 @@ public class DefaultConsoleHost : IConsoleHost
     private readonly IOptions<ConsoleHostOptions> _options;
 
     /// <summary>
-    /// 
+    /// Initializes a new instance of the <see cref="DefaultConsoleHost"/> class.
     /// </summary>
-    /// <param name="commandExecutor"></param>
-    /// <param name="logger"></param>
-    /// <param name="lifetime"></param>
-    /// <param name="options"></param>
+    /// <param name="commandExecutor">The service responsible for executing commands.</param>
+    /// <param name="logger">The logger for recording host lifecycle events.</param>
+    /// <param name="lifetime">The application lifetime manager for controlling application shutdown.</param>
+    /// <param name="output">The console output service for displaying messages to the user.</param>
+    /// <param name="options">Configuration options for console host behavior.</param>
     public DefaultConsoleHost(
         ICommandExecutor commandExecutor,
         ILogger<DefaultConsoleHost> logger,
@@ -41,10 +43,25 @@ public class DefaultConsoleHost : IConsoleHost
     }
 
     /// <summary>
-    /// 
+    /// Runs the interactive console host, displaying a welcome message and processing user input in a loop
+    /// until the user types 'exit' or the cancellation token is triggered.
     /// </summary>
-    /// <param name="token"></param>
-    /// <returns></returns>
+    /// <param name="token">Cancellation token to gracefully stop the host.</param>
+    /// <returns>
+    /// An exit code indicating the application termination status.
+    /// Returns 0 for normal shutdown, or the command exit code if configured to exit on non-zero results.
+    /// </returns>
+    /// <remarks>
+    /// <para>The host provides the following features:</para>
+    /// <list type="bullet">
+    /// <item><description>Interactive command prompt</description></item>
+    /// <item><description>Welcome message display (configurable)</description></item>
+    /// <item><description>Command execution with result handling</description></item>
+    /// <item><description>Error message display for failed commands</description></item>
+    /// <item><description>Graceful shutdown on 'exit' command or cancellation</description></item>
+    /// <item><description>Automatic application termination on non-zero exit codes (configurable)</description></item>
+    /// </list>
+    /// </remarks>
     public async Task<int> RunAsync(CancellationToken token = default)
     {
         try
@@ -69,8 +86,7 @@ public class DefaultConsoleHost : IConsoleHost
 
                     var result = await _commandExecutor.ExecuteAsync(input, token);
 
-                    if (!result.Success && !string.IsNullOrEmpty(result.Message) ||
-                        !string.IsNullOrEmpty(result.Message))
+                    if (!result.Success && !string.IsNullOrEmpty(result.Message))
                     {
                         _output.WriteError($"Error: {result.Message}");
                     }
@@ -78,6 +94,7 @@ public class DefaultConsoleHost : IConsoleHost
                     {
                         _output.WriteSuccess(result.Message);
                     }
+                    
                     if (result.ExitCode != 0 && _options.Value.ExitOnNonZeroExitCode)
                     {
                         return result.ExitCode;
@@ -103,17 +120,23 @@ public class DefaultConsoleHost : IConsoleHost
     }
 
     /// <summary>
-    /// 
+    /// Executes a single command line and returns the exit code without starting the interactive loop.
     /// </summary>
-    /// <param name="commandLine"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
+    /// <param name="commandLine">The command line to execute.</param>
+    /// <param name="token">Cancellation token to cancel the command execution.</param>
+    /// <returns>The exit code from the command execution.</returns>
+    /// <remarks>
+    /// This method is useful for non-interactive scenarios where a single command needs to be executed.
+    /// </remarks>
     public async Task<int> ExecuteCommandAsync(string commandLine, CancellationToken token = default)
     {
         var result = await _commandExecutor.ExecuteAsync(commandLine, token);
         return result.ExitCode;
     }
 
+    /// <summary>
+    /// Displays the welcome message with application branding and usage instructions.
+    /// </summary>
     private void ShowWelcomeMessage()
     {
         _output.WriteLine("=========================================", ConsoleColor.Blue);
