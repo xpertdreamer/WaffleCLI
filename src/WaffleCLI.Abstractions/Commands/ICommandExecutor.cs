@@ -38,7 +38,7 @@ public record CommandResult(bool Success, string? Message = null, int ExitCode =
         => new(true, message, 0);
     
     /// <summary>
-    /// Creates an error resut
+    /// Creates an error result
     /// </summary>
     public static CommandResult ErrorResult(string? message = null, int exitCode = 1) =>
         new(false, message, exitCode);

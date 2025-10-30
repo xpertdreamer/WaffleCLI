@@ -12,6 +12,12 @@ public interface ICommandRegistry
     void RegisterCommand<TCommand>() where TCommand : ICommand;
     
     /// <summary>
+    /// Registers a command type
+    /// </summary>
+    /// <param name="commandType">Command type</param>
+    void RegisterCommand(Type commandType);
+    
+    /// <summary>
     /// Gets a command by name
     /// </summary>
     /// <param name="name">Command name</param>
