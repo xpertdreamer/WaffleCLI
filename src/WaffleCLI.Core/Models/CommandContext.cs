@@ -13,7 +13,7 @@ public class CommandContext
     /// <summary>
     /// Gets or sets the command arguments
     /// </summary>
-    public string[] Arguments {get;set;} = Array.Empty<string>();
+    public string[] Arguments {get;set;} = [];
     
         
     /// <summary>

@@ -27,6 +27,12 @@ public class JsonConfigurationProvider : IConfigurationProvider
     {
         var section = new T();
         _configuration.GetSection(sectionName).Bind(section);
+
+        if (section is ConfigurationSection configurationSection)
+        {
+            configurationSection.OnLoaded();
+        }
+        
         return section;
     }
 
@@ -36,6 +42,12 @@ public class JsonConfigurationProvider : IConfigurationProvider
         var section = Activator.CreateInstance(sectionType) ?? throw new InvalidOperationException($"Could not create instance of {sectionType}");
         
         _configuration.GetSection(sectionName).Bind(section);
+
+        if (section is ConfigurationSection configurationSection)
+        {
+            configurationSection.OnLoaded();
+        }
+        
         return section;
     }
 
