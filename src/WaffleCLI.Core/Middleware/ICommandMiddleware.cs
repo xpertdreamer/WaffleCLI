@@ -1,5 +1,3 @@
-using WaffleCLI.Core.Models;
-
 namespace WaffleCLI.Core.Middleware;
 
 /// <summary>
@@ -12,5 +10,5 @@ public interface ICommandMiddleware
     /// </summary>
     /// <param name="context">Command execution context</param>
     /// <param name="next">Next middleware in pipeline</param>
-    public Task InvokeAsync(CommandContext context, Func<Task> next);
+    Task InvokeAsync(CommandContext context, Func<Task> next); 
 }

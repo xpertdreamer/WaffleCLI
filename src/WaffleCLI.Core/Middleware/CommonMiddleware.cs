@@ -13,6 +13,11 @@ public class LoggingMiddleware : ICommandMiddleware
     private readonly IConsoleOutput _output;
     private readonly ILogger<LoggingMiddleware> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LoggingMiddleware"/> class
+    /// </summary>
+    /// <param name="output">The console output service</param>
+    /// <param name="logger">The logger instance</param>
     public LoggingMiddleware(IConsoleOutput output, ILogger<LoggingMiddleware> logger)
     {
         _output = output;
@@ -20,10 +25,11 @@ public class LoggingMiddleware : ICommandMiddleware
     }
     
     /// <summary>
-    /// Executes the middleware
+    /// Executes the logging middleware
     /// </summary>
-    /// <param name="context">Command execution context</param>
-    /// <param name="next">Next middleware in pipeline</param>
+    /// <param name="context">The command context</param>
+    /// <param name="next">The next middleware in the pipeline</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
     public async Task InvokeAsync(CommandContext context, Func<Task> next)
     {
         var startTime = DateTime.UtcNow;
@@ -55,19 +61,20 @@ public class ExceptionHandlingMiddleware : ICommandMiddleware
     private readonly IConsoleOutput _output;
 
     /// <summary>
-    /// 
+    /// Initializes a new instance of the <see cref="ExceptionHandlingMiddleware"/> class
     /// </summary>
-    /// <param name="output"></param>
+    /// <param name="output">The console output service</param>
     public ExceptionHandlingMiddleware(IConsoleOutput output)
     {
         _output = output;
     }
     
     /// <summary>
-    /// Executes the middleware
+    /// Executes the exception handling middleware
     /// </summary>
-    /// <param name="context">Command execution context</param>
-    /// <param name="next">Next middleware in pipeline</param>
+    /// <param name="context">The command context</param>
+    /// <param name="next">The next middleware in the pipeline</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
     public async Task InvokeAsync(CommandContext context, Func<Task> next)
     {
         try
@@ -94,16 +101,21 @@ public class TimingMiddleware : ICommandMiddleware
 {
     private readonly IConsoleOutput _output;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TimingMiddleware"/> class
+    /// </summary>
+    /// <param name="output">The console output service</param>
     public TimingMiddleware(IConsoleOutput output)
     {
         _output = output;
     }
     
     /// <summary>
-    /// Executes the middleware
+    /// Executes the timing middleware
     /// </summary>
-    /// <param name="context">Command execution context</param>
-    /// <param name="next">Next middleware in pipeline</param>
+    /// <param name="context">The command context</param>
+    /// <param name="next">The next middleware in the pipeline</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
     public async Task InvokeAsync(CommandContext context, Func<Task> next)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -123,16 +135,21 @@ public class ValidationMiddleware : ICommandMiddleware
 {
     private readonly IConsoleOutput _output;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValidationMiddleware"/> class
+    /// </summary>
+    /// <param name="output">The console output service</param>
     public ValidationMiddleware(IConsoleOutput output)
     {
         _output = output;
     }
     
     /// <summary>
-    /// Executes the middleware
+    /// Executes the validation middleware
     /// </summary>
-    /// <param name="context">Command execution context</param>
-    /// <param name="next">Next middleware in pipeline</param>
+    /// <param name="context">The command context</param>
+    /// <param name="next">The next middleware in the pipeline</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
     public async Task InvokeAsync(CommandContext context, Func<Task> next)
     {
         if (string.IsNullOrWhiteSpace(context.CommandName))

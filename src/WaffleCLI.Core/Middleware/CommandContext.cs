@@ -3,7 +3,7 @@ using WaffleCLI.Abstractions.Commands;
 namespace WaffleCLI.Core.Middleware;
 
 /// <summary>
-/// Context for command execution through middleware pipeline
+/// Unified command execution context for middleware pipeline
 /// </summary>
 public class CommandContext
 {
