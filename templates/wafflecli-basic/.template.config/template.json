@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "WaffleCLI",
+  "classifications": [ "Console", "CLI", "WaffleCLI" ],
+  "identity": "WaffleCLI.Basic",
+  "name": "WaffleCLI Basic Application",
+  "shortName": "wafflecli-basic",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "WaffleCLI.Basic",
+  "preferNameDirectory": true,
+  "symbols": {
+    "Title": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "My WaffleCLI App",
+      "replaces": "WaffleCLI Basic Application"
+    },
+    "Author": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "Your Name",
+      "replaces": "WaffleCLI"
+    }
+  }
+}
