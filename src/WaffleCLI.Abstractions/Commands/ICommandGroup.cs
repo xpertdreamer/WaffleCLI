@@ -13,7 +13,7 @@ public interface ICommandGroup : ICommand
     /// <summary>
     /// Registers a subcommand in this group
     /// </summary>
-    void RegisterSubCommand(string name, ICommand command);
+    void RegisterSubCommand<TSubCommand>(string name) where TSubCommand : ICommand;
     
     /// <summary>
     /// Gets the help text for this command group

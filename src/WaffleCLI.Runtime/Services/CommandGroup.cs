@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using WaffleCLI.Abstractions.Commands;
 using WaffleCLI.Core.Output;
 
@@ -21,15 +22,18 @@ namespace WaffleCLI.Runtime.Services;
 /// </remarks>
 public abstract class CommandGroup : ICommandGroup
 {
-    private readonly Dictionary<string, ICommand> _subCommands = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Type> _subCommands = new(StringComparer.OrdinalIgnoreCase);
+    private readonly IServiceProvider _serviceProvider;
     private readonly IConsoleOutput _output;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandGroup"/> class.
     /// </summary>
     /// <param name="output">The console output service for displaying messages and help text.</param>
-    protected CommandGroup(IConsoleOutput output)
+    /// <param name="provider">The console service provider</param>
+    protected CommandGroup(IConsoleOutput output, IServiceProvider provider)
     {
+        _serviceProvider =  provider;
         _output = output;
     }
 
@@ -46,26 +50,20 @@ public abstract class CommandGroup : ICommandGroup
     /// <summary>
     /// Gets a read-only dictionary of registered subcommands available in this command group.
     /// </summary>
-    public IReadOnlyDictionary<string, ICommand> SubCommands => _subCommands;
+    public IReadOnlyDictionary<string, ICommand> SubCommands => GetSubCommands();
 
     /// <summary>
     /// Registers a subcommand with the command group.
     /// </summary>
     /// <param name="name">The name of the subcommand used to invoke it.</param>
-    /// <param name="command">The command instance to register.</param>
     /// <exception cref="ArgumentException">Thrown when a subcommand with the same name is already registered.</exception>
     /// <remarks>
     /// Subcommand names are case-insensitive. Typically, subcommands are registered in the
     /// constructor of the command group implementation.
     /// </remarks>
-    public void RegisterSubCommand(string name, ICommand command)
+    public void RegisterSubCommand<TSubCommand>(string name) where TSubCommand : ICommand
     {
-        if (_subCommands.ContainsKey(name))
-        {
-            throw new ArgumentException($"Subcommand '{name}' is already registered");
-        }
-        
-        _subCommands[name] = command;
+        _subCommands[name] = typeof(TSubCommand);
     }
 
     /// <summary>
@@ -92,9 +90,18 @@ public abstract class CommandGroup : ICommandGroup
         }
         
         var subCommandName = args[0];
-        if (_subCommands.TryGetValue(subCommandName, out var command))
+        if (_subCommands.TryGetValue(subCommandName, out var commandType))
         {
-            return command.ExecuteAsync(args[1..], token);
+            try
+            {
+                var command = (ICommand)_serviceProvider.GetRequiredService(commandType);
+                return command.ExecuteAsync(args[1..], token);
+            }
+            catch (Exception ex)
+            {
+                _output.WriteError($"Failed to create subcommand '{subCommandName}': {ex.Message}");
+                return Task.CompletedTask;
+            }
         }
         
         _output.WriteError($"Unknown subcommand: {subCommandName}");
@@ -117,8 +124,18 @@ public abstract class CommandGroup : ICommandGroup
         
         foreach (var subCommand in _subCommands.OrderBy(sc => sc.Key))
         {
-            _output.Write($"  {subCommand.Key}", ConsoleColor.Green);
-            _output.WriteLine($" - {subCommand.Value.Description}");
+            try
+            {
+                var commandInstance = (ICommand)_serviceProvider.GetRequiredService(subCommand.Value);
+                
+                _output.Write($"  {subCommand.Key}", ConsoleColor.Green);
+                _output.WriteLine($" - {commandInstance.Description}");
+            }
+            catch (Exception ex)
+            {
+                _output.Write($"  {subCommand.Key}", ConsoleColor.Red);
+                _output.WriteLine($" - [ERROR: {ex.Message}]");
+            }
         }
         
         _output.WriteLine();
@@ -143,9 +160,36 @@ public abstract class CommandGroup : ICommandGroup
         
         foreach (var subCommand in _subCommands.OrderBy(sc => sc.Key))
         {
-            sb.AppendLine($"  {subCommand.Key} - {subCommand.Value.Description}");
+            try
+            {
+                var commandInstance = (ICommand)_serviceProvider.GetRequiredService(subCommand.Value);
+                sb.AppendLine($"  {subCommand.Key} - {commandInstance.Description}");
+            }
+            catch (Exception ex)
+            {
+                sb.AppendLine($"  {subCommand.Key} - [ERROR: {ex.Message}]");
+            }
         }
         
         return sb.ToString();
+    }
+
+    private IReadOnlyDictionary<string, ICommand> GetSubCommands()
+    {
+        var commands = new Dictionary<string, ICommand>();
+
+        foreach (var subCommand in _subCommands)
+        {
+            try
+            {
+                var commandInstance = (ICommand)_serviceProvider.GetRequiredService(subCommand.Value.GetType());
+                commands[subCommand.Key] = commandInstance;
+            }
+            catch
+            {
+                // Ignore 
+            }
+        }
+        return commands;
     }
 }

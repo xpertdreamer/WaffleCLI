@@ -15,16 +15,17 @@ try
         .ConfigureAppConfiguration((_, config) =>
         {
             config.AddJsonFile("appsettings.json", optional: true);
-            config.AddEnvironmentVariables("CONSOLE_");
+            config.AddEnvironmentVariables("WaffleCLI_");
         })
         .ConfigureServices((context, services) =>
         {
+            services.AddWaffleCli();
+            
             // Register commands in DI container
             services.AddCommand<HelpCommand>();
             services.AddCommand<ExitCommand>();
             services.AddCommand<GreetCommand>();
             services.AddCommand<CalcCommand>();
-            services.AddCommand<FileManagerCommand>();
             services.AddCommand<ConfigCommand>();
             services.AddCommand<SystemInfoCommand>();
             services.AddCommand<DatabaseCommand>();
@@ -32,6 +33,10 @@ try
 
             // Register command groups in DI container
             services.AddCommand<FileCommandGroup>();
+            services.AddTransient<FileListCommand>();
+            services.AddTransient<FileInfoCommand>();
+            services.AddTransient<FileCopyCommand>();
+            services.AddTransient<FileDeleteCommand>();
 
             // Register middleware in DI container
             services.AddTransient<ICommandMiddleware, LoggingMiddleware>();
@@ -45,11 +50,17 @@ try
             services.ConfigureSection<WeatherSettings>("Weather");
             
             services.AddSingleton<IScriptEngine, ScriptEngine>();
+
+            services.ConfigureSection<AppSettings>("AppSettings");
+            services.ConfigureSection<DatabaseSettings>("Database");
         })
         .ConfigureLogging(logging =>
         {
             logging.AddConsole();
             logging.SetMinimumLevel(LogLevel.Information);
+            logging.AddFilter("Microsoft", LogLevel.Warning);
+            logging.AddFilter("System", LogLevel.Warning);
+            logging.AddFilter("WaffleCLI.Core.Middleware.LoggingMiddleware", LogLevel.Warning);
         })
         .UseConsoleLifetime()
         .Build();

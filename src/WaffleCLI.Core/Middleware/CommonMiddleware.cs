@@ -124,7 +124,10 @@ public class TimingMiddleware : ICommandMiddleware
         
         stopwatch.Stop();
         context.Properties["ExecutionTime"] = stopwatch.Elapsed;
-        _output.WriteInfo($"Command completed in {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+        if (context.Result == null || context.Result.Success)
+        {
+            _output.WriteInfo($"Command completed in {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+        }
     }
 }
 

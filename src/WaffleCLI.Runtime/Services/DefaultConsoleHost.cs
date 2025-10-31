@@ -84,6 +84,8 @@ public class DefaultConsoleHost : IConsoleHost
                     if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
                         break;
 
+                    ClearPromptLine();
+                    
                     var result = await _commandExecutor.ExecuteAsync(input, token);
 
                     if (!result.Success && !string.IsNullOrEmpty(result.Message))
@@ -134,6 +136,24 @@ public class DefaultConsoleHost : IConsoleHost
         return result.ExitCode;
     }
 
+    private void ClearPromptLine()
+    {
+        try
+        {
+            int currentLine = Console.CursorTop;
+            
+            Console.SetCursorPosition(0, currentLine);
+            
+            Console.Write(new string(' ', Console.WindowWidth - 1));
+            
+            Console.SetCursorPosition(0, currentLine);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to clear prompt line");
+        }
+    }
+    
     /// <summary>
     /// Displays the welcome message with application branding and usage instructions.
     /// </summary>
