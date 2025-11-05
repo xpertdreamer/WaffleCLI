@@ -9,9 +9,13 @@ using WaffleCLI.Runtime.Options;
 namespace WaffleCLI.Runtime.Services;
 
 /// <summary>
-/// Default implementation of <see cref="IConsoleHost"/> that provides an interactive command-line interface
-/// with command execution, input processing, and user interaction capabilities.
+/// Default implementation of the console host that provides an interactive command-line interface.
 /// </summary>
+/// <remarks>
+/// This host supports both interactive mode with a prompt and direct command execution.
+/// It handles command execution, error reporting, and provides a user-friendly interface
+/// with welcome messages and proper console management.
+/// </remarks>
 public class DefaultConsoleHost : IConsoleHost
 {
     private readonly ICommandExecutor _commandExecutor;
@@ -24,10 +28,10 @@ public class DefaultConsoleHost : IConsoleHost
     /// Initializes a new instance of the <see cref="DefaultConsoleHost"/> class.
     /// </summary>
     /// <param name="commandExecutor">The service responsible for executing commands.</param>
-    /// <param name="logger">The logger for recording host lifecycle events.</param>
-    /// <param name="lifetime">The application lifetime manager for controlling application shutdown.</param>
-    /// <param name="output">The console output service for displaying messages to the user.</param>
-    /// <param name="options">Configuration options for console host behavior.</param>
+    /// <param name="logger">The logger for recording host operations and errors.</param>
+    /// <param name="lifetime">The application lifetime manager for controlling shutdown.</param>
+    /// <param name="output">The console output service for writing messages.</param>
+    /// <param name="options">The configuration options for the console host.</param>
     public DefaultConsoleHost(
         ICommandExecutor commandExecutor,
         ILogger<DefaultConsoleHost> logger,
@@ -43,24 +47,13 @@ public class DefaultConsoleHost : IConsoleHost
     }
 
     /// <summary>
-    /// Runs the interactive console host, displaying a welcome message and processing user input in a loop
-    /// until the user types 'exit' or the cancellation token is triggered.
+    /// Runs the console host in interactive mode, displaying a prompt and processing user input.
     /// </summary>
-    /// <param name="token">Cancellation token to gracefully stop the host.</param>
-    /// <returns>
-    /// An exit code indicating the application termination status.
-    /// Returns 0 for normal shutdown, or the command exit code if configured to exit on non-zero results.
-    /// </returns>
+    /// <param name="token">Cancellation token to stop the interactive session.</param>
+    /// <returns>An exit code indicating the final status of the application.</returns>
     /// <remarks>
-    /// <para>The host provides the following features:</para>
-    /// <list type="bullet">
-    /// <item><description>Interactive command prompt</description></item>
-    /// <item><description>Welcome message display (configurable)</description></item>
-    /// <item><description>Command execution with result handling</description></item>
-    /// <item><description>Error message display for failed commands</description></item>
-    /// <item><description>Graceful shutdown on 'exit' command or cancellation</description></item>
-    /// <item><description>Automatic application termination on non-zero exit codes (configurable)</description></item>
-    /// </list>
+    /// Displays a welcome message, processes commands in a loop until cancellation or exit command,
+    /// and handles both expected command errors and unexpected exceptions gracefully.
     /// </remarks>
     public async Task<int> RunAsync(CancellationToken token = default)
     {
@@ -122,13 +115,14 @@ public class DefaultConsoleHost : IConsoleHost
     }
 
     /// <summary>
-    /// Executes a single command line and returns the exit code without starting the interactive loop.
+    /// Executes a single command line and returns the exit code.
     /// </summary>
-    /// <param name="commandLine">The command line to execute.</param>
+    /// <param name="commandLine">The command line string to execute.</param>
     /// <param name="token">Cancellation token to cancel the command execution.</param>
     /// <returns>The exit code from the command execution.</returns>
     /// <remarks>
-    /// This method is useful for non-interactive scenarios where a single command needs to be executed.
+    /// This method is intended for non-interactive command execution, such as when running
+    /// commands from scripts or other automation scenarios.
     /// </remarks>
     public async Task<int> ExecuteCommandAsync(string commandLine, CancellationToken token = default)
     {
@@ -136,16 +130,20 @@ public class DefaultConsoleHost : IConsoleHost
         return result.ExitCode;
     }
 
+    /// <summary>
+    /// Clears the current prompt line from the console to prepare for command output.
+    /// </summary>
+    /// <remarks>
+    /// This method handles console cursor positioning to overwrite the prompt line with spaces,
+    /// ensuring clean output display. Catches and logs any console-related exceptions.
+    /// </remarks>
     private void ClearPromptLine()
     {
         try
         {
             int currentLine = Console.CursorTop;
-            
             Console.SetCursorPosition(0, currentLine);
-            
             Console.Write(new string(' ', Console.WindowWidth - 1));
-            
             Console.SetCursorPosition(0, currentLine);
         }
         catch (Exception ex)
@@ -155,14 +153,18 @@ public class DefaultConsoleHost : IConsoleHost
     }
     
     /// <summary>
-    /// Displays the welcome message with application branding and usage instructions.
+    /// Displays the welcome message and basic usage instructions.
     /// </summary>
+    /// <remarks>
+    /// The welcome message is only displayed if configured in <see cref="ConsoleHostOptions.ShowWelcomeMessage"/>.
+    /// Uses colored output to enhance readability and provide a welcoming user experience.
+    /// </remarks>
     private void ShowWelcomeMessage()
     {
         _output.WriteLine("=========================================", ConsoleColor.Blue);
         _output.WriteLine("        WaffleCLI", ConsoleColor.Blue);
         _output.WriteLine("=========================================", ConsoleColor.Blue);
-        _output.WriteLine("WaffleCLI started. Type 'help' for available commands.", ConsoleColor.Green);
+        _output.WriteLine("Type 'help' for available commands or 'exit' to quit.", ConsoleColor.Green);
         _output.WriteLine();
     }
 }

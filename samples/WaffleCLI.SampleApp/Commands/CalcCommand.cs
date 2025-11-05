@@ -1,55 +1,26 @@
 using WaffleCLI.Abstractions.Commands;
 using WaffleCLI.Core.Attributes;
-using WaffleCLI.Core.Output;
 
 namespace WaffleCLI.SampleApp.Commands;
 
-/// <summary>
-/// Command for performing basic arithmetic calculations
-/// Supports addition, subtraction, multiplication, and division
-/// </summary>
-[Command("calc", "Perform calculations")]
+[Command("calc", "Perform basic calculations")]
 public class CalcCommand : ICommand
 {
-    private readonly IConsoleOutput _output;
-
-    /// <summary>
-    /// Initializes a new instance of the CalcCommand class
-    /// </summary>
-    /// <param name="output">Console output service</param>
-    public CalcCommand(IConsoleOutput output)
-    {
-        _output = output;
-    }
-
-    /// <summary>
-    /// Gets the command name
-    /// </summary>
     public string Name => "calc";
+    public string Description => "Perform basic calculations";
 
-    /// <summary>
-    /// Gets the command description
-    /// </summary>
-    public string Description => "Perform calculations";
-
-    /// <summary>
-    /// Executes the calculation command with provided arguments
-    /// </summary>
-    /// <param name="args">Arguments in format: number1 operator number2</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task representing the asynchronous operation</returns>
-    public Task ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
+    public Task ExecuteAsync(string[] args, CancellationToken token = default)
     {
         if (args.Length != 3)
         {
-            _output.WriteError("Usage: calc <number1> <operator> <number2>");
-            _output.WriteInfo("Supported operators: +, -, *, /");
+            Console.WriteLine("Usage: calc <number1> <operator> <number2>");
+            Console.WriteLine("Supported operators: +, -, *, /");
             return Task.CompletedTask;
         }
 
         if (!double.TryParse(args[0], out var a) || !double.TryParse(args[2], out var b))
         {
-            _output.WriteError("Error: invalid number format");
+            Console.WriteLine("Error: invalid number format");
             return Task.CompletedTask;
         }
 
@@ -65,11 +36,11 @@ public class CalcCommand : ICommand
 
         if (double.IsNaN(result))
         {
-            _output.WriteError("Error: invalid operation or division by zero");
+            Console.WriteLine("Error: invalid operation or division by zero");
             return Task.CompletedTask;
         }
 
-        _output.WriteSuccess($"Result: {a} {args[1]} {b} = {result}");
+        Console.WriteLine($"Result: {a} {args[1]} {b} = {result}");
         return Task.CompletedTask;
     }
 }

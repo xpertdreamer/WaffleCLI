@@ -9,7 +9,6 @@
     
     <ItemGroup>
         <ProjectReference Include="..\WaffleCLI.Core\WaffleCLI.Core.csproj" />
-        <ProjectReference Include="..\WaffleCLI.Configuration\WaffleCLI.Configuration.csproj" />
     </ItemGroup>
 
     <ItemGroup>

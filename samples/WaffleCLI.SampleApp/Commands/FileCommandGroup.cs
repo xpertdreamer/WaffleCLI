@@ -1,22 +1,16 @@
+using WaffleCLI.Abstractions.Commands;
+using WaffleCLI.Core.Attributes;
+using WaffleCLI.Core.Commands;
 using WaffleCLI.Core.Output;
-using WaffleCLI.Runtime.Services;
 
 namespace WaffleCLI.SampleApp.Commands;
 
-/// <summary>
-/// Command group for file operations
-/// </summary>
+[CommandGroup("file", "File operations")]
 public class FileCommandGroup : CommandGroup
 {
     public FileCommandGroup(IServiceProvider serviceProvider, IConsoleOutput output) 
-        : base(output, serviceProvider)
-    {
-        RegisterSubCommand<FileListCommand>("list");
-        RegisterSubCommand<FileInfoCommand>("info");
-        RegisterSubCommand<FileCopyCommand>("copy");
-        RegisterSubCommand<FileDeleteCommand>("delete");
-    }
-    
+        : base(serviceProvider, output) { }
+
     public override string Name => "file";
     public override string Description => "File management operations";
 }

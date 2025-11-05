@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace WaffleCLI.Runtime.Parsers;
+namespace WaffleCLI.Core.Parsers;
 
 /// <summary>
 /// Provides functionality for parsing command line arguments with support for quoted parameters

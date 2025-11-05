@@ -1,7 +1,6 @@
 using WaffleCLI.Abstractions.Commands;
 using WaffleCLI.Core.Attributes;
 using WaffleCLI.Core.Output;
-using WaffleCLI.SampleApp.Models;
 
 namespace WaffleCLI.SampleApp.Commands;
 
@@ -40,7 +39,7 @@ public class GreetCommand : ICommand
     /// <returns>Task representing the asynchronous operation</returns>
     public Task ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        var name = args.Length > 0 ? args[0] : new AppSettings().DefaultUser;
+        var name = args.Length > 0 ? args[0] : "Anonymous";
         
         _output.WriteLine("╔══════════════════════════════╗", ConsoleColor.Green);
         _output.WriteLine("║           GREETING           ║", ConsoleColor.Green);

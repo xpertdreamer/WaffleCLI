@@ -1,66 +1,39 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
-using WaffleCLI.Hosting.Extensions;
-using WaffleCLI.Hosting;
 using Microsoft.Extensions.Logging;
-using WaffleCLI.Abstractions.Scripting;
 using WaffleCLI.Core.Middleware;
-using WaffleCLI.Runtime.Scripting;
+using WaffleCLI.Runtime.Hosting;
 using WaffleCLI.SampleApp.Commands;
-using WaffleCLI.SampleApp.Models;
 
 try
 {
     var host = new ConsoleHostBuilder()
-        .ConfigureAppConfiguration((_, config) =>
-        {
-            config.AddJsonFile("appsettings.json", optional: true);
-            config.AddEnvironmentVariables("WaffleCLI_");
-        })
         .ConfigureServices((context, services) =>
         {
             services.AddWaffleCli();
             
-            // Register commands in DI container
-            services.AddCommand<HelpCommand>();
-            services.AddCommand<ExitCommand>();
-            services.AddCommand<GreetCommand>();
-            services.AddCommand<CalcCommand>();
-            services.AddCommand<ConfigCommand>();
-            services.AddCommand<SystemInfoCommand>();
-            services.AddCommand<DatabaseCommand>();
-            services.AddCommand<WeatherCommand>();
-
-            // Register command groups in DI container
-            services.AddCommand<FileCommandGroup>();
+            // Automatically register all commands from current assembly
+            services.AutoRegisterCommands(Assembly.GetExecutingAssembly());
+            
+            services.AddTransient<HelpCommand>();
+            services.AddTransient<CalcCommand>();
+            services.AddTransient<FileCommandGroup>();
             services.AddTransient<FileListCommand>();
             services.AddTransient<FileInfoCommand>();
             services.AddTransient<FileCopyCommand>();
             services.AddTransient<FileDeleteCommand>();
-
-            // Register middleware in DI container
-            services.AddTransient<ICommandMiddleware, LoggingMiddleware>();
-            services.AddTransient<ICommandMiddleware, TimingMiddleware>();
-            services.AddTransient<ICommandMiddleware, ValidationMiddleware>();
-            services.AddTransient<ICommandMiddleware, ExceptionHandlingMiddleware>();
+            services.AddTransient<WaffleCommand>();
+            services.AddTransient<ExitCommand>();
+            services.AddTransient<GreetCommand>();
             
-            // Register configuration sections
-            services.ConfigureSection<AppSettings>("AppSettings");
-            services.ConfigureSection<DatabaseSettings>("Database");
-            services.ConfigureSection<WeatherSettings>("Weather");
-            
-            services.AddSingleton<IScriptEngine, ScriptEngine>();
-
-            services.ConfigureSection<AppSettings>("AppSettings");
-            services.ConfigureSection<DatabaseSettings>("Database");
+            // Add middleware
+            services.AddCommandMiddleware<ExceptionHandlingMiddleware>();
+            services.AddCommandMiddleware<TimingMiddleware>();
         })
         .ConfigureLogging(logging =>
         {
             logging.AddConsole();
             logging.SetMinimumLevel(LogLevel.Information);
-            logging.AddFilter("Microsoft", LogLevel.Warning);
-            logging.AddFilter("System", LogLevel.Warning);
-            logging.AddFilter("WaffleCLI.Core.Middleware.LoggingMiddleware", LogLevel.Warning);
         })
         .UseConsoleLifetime()
         .Build();
@@ -69,6 +42,7 @@ try
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Application failed to start: {ex}");
+    Console.WriteLine($"Application failed to start: {ex.Message}");
+    Console.WriteLine($"Stack trace: {ex.StackTrace}");
     return 1;
 }

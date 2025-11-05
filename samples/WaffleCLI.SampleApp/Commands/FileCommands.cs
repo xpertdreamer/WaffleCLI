@@ -1,20 +1,11 @@
 using WaffleCLI.Abstractions.Commands;
-using WaffleCLI.Core.Output;
+using WaffleCLI.Core.Attributes;
 
 namespace WaffleCLI.SampleApp.Commands;
 
-/// <summary>
-/// Command for listing files
-/// </summary>
+[SubCommand("file", "list")]
 public class FileListCommand : ICommand
 {
-    private readonly IConsoleOutput _output;
-
-    public FileListCommand(IConsoleOutput output)
-    {
-        _output = output;
-    }
-    
     public string Name => "list";
     public string Description => "List files in directory";
 
@@ -23,8 +14,8 @@ public class FileListCommand : ICommand
         var path = args.Length > 0 ? args[0] : ".";
         var fullPath = Path.GetFullPath(path);
         
-        _output.WriteLine($"📁 Files in: {fullPath}", ConsoleColor.Cyan);
-        _output.WriteLine(new string('═', fullPath.Length + 12), ConsoleColor.Cyan);
+        Console.WriteLine($"📁 Files in: {fullPath}");
+        Console.WriteLine(new string('═', fullPath.Length + 12));
         
         try
         {
@@ -34,42 +25,33 @@ public class FileListCommand : ICommand
             foreach (var dir in directories.Take(10))
             {
                 var dirName = Path.GetFileName(dir);
-                _output.WriteLine($"  📂 {dirName}", ConsoleColor.Blue);
+                Console.WriteLine($"  📂 {dirName}");
             }
 
             foreach (var file in files.Take(10))
             {
                 var fileName = Path.GetFileName(file);
                 var fileInfo = new FileInfo(file);
-                _output.WriteLine($"  📄 {fileName} ({fileInfo.Length:N0} bytes)");
+                Console.WriteLine($"  📄 {fileName} ({fileInfo.Length:N0} bytes)");
             }
 
             if (directories.Length > 10 || files.Length > 10)
             {
-                _output.WriteWarning("Output truncated to 10 items each");
+                Console.WriteLine("Output truncated to 10 items each");
             }
         }
         catch (Exception ex)
         {
-            _output.WriteError($"Error: {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
         }
 
         return Task.CompletedTask;
     }
 }
 
-/// <summary>
-/// Command for showing file information
-/// </summary>
+[SubCommand("file", "info")]
 public class FileInfoCommand : ICommand
 {
-    private readonly IConsoleOutput _output;
-
-    public FileInfoCommand(IConsoleOutput output)
-    {
-        _output = output;
-    }
-
     public string Name => "info";
     public string Description => "Show file information";
 
@@ -77,7 +59,7 @@ public class FileInfoCommand : ICommand
     {
         if (args.Length == 0)
         {
-            _output.WriteError("Please specify a file path");
+            Console.WriteLine("Please specify a file path");
             return Task.CompletedTask;
         }
 
@@ -87,69 +69,51 @@ public class FileInfoCommand : ICommand
             
             if (!fileInfo.Exists)
             {
-                _output.WriteError($"File not found: {args[0]}");
+                Console.WriteLine($"File not found: {args[0]}");
                 return Task.CompletedTask;
             }
 
-            _output.WriteLine("📄 File Information", ConsoleColor.Cyan);
-            _output.WriteLine("═══════════════════", ConsoleColor.Cyan);
-            _output.WriteLine($"Name: {fileInfo.Name}");
-            _output.WriteLine($"Full Path: {fileInfo.FullName}");
-            _output.WriteLine($"Size: {fileInfo.Length:N0} bytes");
-            _output.WriteLine($"Created: {fileInfo.CreationTime:g}");
-            _output.WriteLine($"Modified: {fileInfo.LastWriteTime:g}");
+            Console.WriteLine("📄 File Information");
+            Console.WriteLine("═══════════════════");
+            Console.WriteLine($"Name: {fileInfo.Name}");
+            Console.WriteLine($"Full Path: {fileInfo.FullName}");
+            Console.WriteLine($"Size: {fileInfo.Length:N0} bytes");
+            Console.WriteLine($"Created: {fileInfo.CreationTime:g}");
+            Console.WriteLine($"Modified: {fileInfo.LastWriteTime:g}");
         }
         catch (Exception ex)
         {
-            _output.WriteError($"Error: {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
         }
 
         return Task.CompletedTask;
     }
 }
 
-/// <summary>
-/// Command for copying files (заглушка)
-/// </summary>
+[SubCommand("file", "copy")]
 public class FileCopyCommand : ICommand
 {
-    private readonly IConsoleOutput _output;
-
-    public FileCopyCommand(IConsoleOutput output)
-    {
-        _output = output;
-    }
-
     public string Name => "copy";
     public string Description => "Copy files (not implemented)";
 
     public Task ExecuteAsync(string[] args, CancellationToken token = default)
     {
-        _output.WriteWarning("File copy functionality is not implemented yet");
-        _output.WriteInfo("Usage: file copy <source> <destination>");
+        Console.WriteLine("File copy functionality is not implemented yet");
+        Console.WriteLine("Usage: file copy <source> <destination>");
         return Task.CompletedTask;
     }
 }
 
-/// <summary>
-/// Command for deleting files (заглушка)
-/// </summary>
+[SubCommand("file", "delete")]
 public class FileDeleteCommand : ICommand
 {
-    private readonly IConsoleOutput _output;
-
-    public FileDeleteCommand(IConsoleOutput output)
-    {
-        _output = output;
-    }
-
     public string Name => "delete";
     public string Description => "Delete files (not implemented)";
 
     public Task ExecuteAsync(string[] args, CancellationToken token = default)
     {
-        _output.WriteWarning("File delete functionality is not implemented yet");
-        _output.WriteInfo("Usage: file delete <filepath>");
+        Console.WriteLine("File delete functionality is not implemented yet");
+        Console.WriteLine("Usage: file delete <filepath>");
         return Task.CompletedTask;
     }
 }

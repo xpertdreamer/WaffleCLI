@@ -2,8 +2,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using WaffleCLI.Abstractions.Commands;
 using WaffleCLI.Core.Middleware;
+using WaffleCLI.Core.Parsers;
 using WaffleCLI.Runtime.Options;
-using WaffleCLI.Runtime.Parsers;
 
 namespace WaffleCLI.Runtime.Services;
 
