@@ -117,7 +117,7 @@ public class CommandRegistry : ICommandRegistry
             _logger.LogWarning(ex, "Failed to load types from assembly: {Assembly}", assembly.FullName);
         }
     }
-
+    
     /// <summary>
     /// Registers a command type with the registry using the command name derived from its CommandAttribute
     /// or by convention from the type name
