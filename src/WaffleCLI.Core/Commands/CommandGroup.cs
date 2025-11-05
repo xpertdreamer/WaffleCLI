@@ -115,7 +115,7 @@ public abstract class CommandGroup : ICommandGroup
         }
         
         _output.WriteLine();
-        _output.WriteLine($"Use '{Name} <subcommand> --help' for more information.", ConsoleColor.DarkGray);
+        // _output.WriteLine($"Use '{Name} <subcommand> --help' for more information.", ConsoleColor.DarkGray);
     }
 
     /// <summary>

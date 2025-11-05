@@ -8,33 +8,27 @@ using WaffleCLI.SampleApp.Commands;
 try
 {
     var host = new ConsoleHostBuilder()
+        .UseConfiguration("appsettings.json")
+        .ConfigureFromOptions()
         .ConfigureServices((_, services) =>
         {
             services.AddWaffleCli();
+
+            services.AddCommand<HelpCommand>();
+            services.AddCommand<CalcCommand>();
+            services.AddCommand<WaffleCommand>();
+            services.AddCommand<ExitCommand>();
+            services.AddCommand<GreetCommand>();
+            services.AddCommand<FileCommandGroup>();
             
-            // Automatically register all commands from current assembly
-            services.AutoRegisterCommands(Assembly.GetExecutingAssembly());
-            
-            services.AddTransient<HelpCommand>();
-            services.AddTransient<CalcCommand>();
-            services.AddTransient<FileCommandGroup>();
             services.AddTransient<FileListCommand>();
             services.AddTransient<FileInfoCommand>();
             services.AddTransient<FileCopyCommand>();
             services.AddTransient<FileDeleteCommand>();
-            services.AddTransient<WaffleCommand>();
-            services.AddTransient<ExitCommand>();
-            services.AddTransient<GreetCommand>();
-            
-            // Add middleware
-            services.AddCommandMiddleware<ExceptionHandlingMiddleware>();
-            services.AddCommandMiddleware<TimingMiddleware>();
+
+            services.AddDefaultMiddleware();
         })
-        .ConfigureLogging(logging =>
-        {
-            logging.AddConsole();
-            logging.SetMinimumLevel(LogLevel.Information);
-        })
+        .UseDefaultLogging()
         .UseConsoleLifetime()
         .Build();
 

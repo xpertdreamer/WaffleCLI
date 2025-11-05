@@ -19,48 +19,40 @@ public class CommandRegistry : ICommandRegistry
     private readonly Dictionary<string, Type> _commands = new(StringComparer.OrdinalIgnoreCase);
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<CommandRegistry> _logger;
-    private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandRegistry"/> class.
     /// </summary>
     /// <param name="serviceProvider">The service provider used for resolving command instances.</param>
     /// <param name="logger">The logger for recording registration and resolution events.</param>
-    /// <param name="loggerFactory">The logger factory for creating specialized loggers.</param>
     public CommandRegistry(
         IServiceProvider serviceProvider,
-        ILogger<CommandRegistry> logger,
-        ILoggerFactory loggerFactory)
+        ILogger<CommandRegistry> logger)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
-        _loggerFactory = loggerFactory;
     }
 
     /// <summary>
-    /// Initializes the command registry by discovering and registering commands from the specified assemblies.
+    /// Initializes the command registry using a pre-discovered command discovery result.
     /// </summary>
-    /// <param name="assemblies">The assemblies to scan for command types.</param>
+    /// <param name="discoveryResult">The discovery result containing categorized command types.</param>
     /// <remarks>
-    /// Uses <see cref="CommandDiscoveryService"/> to find commands and categorizes them into standalone commands,
-    /// command groups, and subcommands. Logs the total number of commands registered upon completion.
+    /// Registers standalone commands, command groups, and logs subcommands for hierarchical command structure.
+    /// Provides detailed logging of the initialization process and registered commands.
     /// </remarks>
-    public void Initialize(IEnumerable<Assembly> assemblies)
+    public void Initialize(CommandDiscoveryResult discoveryResult)
     {
         try
         {
-            // Create CommandDiscoveryService with correct logger type
-            var discoveryLogger = _loggerFactory.CreateLogger<CommandDiscoveryService>();
-            var discovery = new CommandDiscoveryService(discoveryLogger);
-            var result = discovery.DiscoverCommands(assemblies);
+            _logger.LogInformation("Initializing command registry...");
 
-            RegisterStandaloneCommands(result.StandaloneCommands);
-            RegisterCommandGroups(result.CommandGroups);
-            RegisterSubCommands(result.SubCommands);
+            RegisterStandaloneCommands(discoveryResult.StandaloneCommands);
+            RegisterCommandGroups(discoveryResult.CommandGroups);
+            RegisterSubCommands(discoveryResult.SubCommands);
 
             _logger.LogInformation("Command registry initialized with {Count} commands", _commands.Count);
             
-            // Log registered commands for debugging
             foreach (var command in _commands.Keys.OrderBy(k => k))
             {
                 _logger.LogDebug("Registered command: {Command}", command);
@@ -161,7 +153,6 @@ public class CommandRegistry : ICommandRegistry
     /// </remarks>
     private void RegisterSubCommands(IEnumerable<(Type CommandType, string ParentGroup)> subCommands)
     {
-        // SubCommands are automatically handled by CommandGroup
         foreach (var (commandType, parentGroup) in subCommands)
         {
             _logger.LogDebug("Discovered subcommand: {Parent}.{Command}", 
@@ -235,6 +226,7 @@ public class CommandRegistry : ICommandRegistry
             }
         }
 
+        _logger.LogDebug("Command not found: {CommandName}", name);
         return null;
     }
 
