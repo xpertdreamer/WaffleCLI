@@ -8,7 +8,7 @@ using WaffleCLI.SampleApp.Commands;
 try
 {
     var host = new ConsoleHostBuilder()
-        .ConfigureServices((context, services) =>
+        .ConfigureServices((_, services) =>
         {
             services.AddWaffleCli();
             
