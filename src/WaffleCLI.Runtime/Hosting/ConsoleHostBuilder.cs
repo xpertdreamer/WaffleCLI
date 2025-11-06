@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using WaffleCLI.Abstractions.Hosting;
 using WaffleCLI.Core.Configuration;
+using WaffleCLI.Runtime.Options;
 
 namespace WaffleCLI.Runtime.Hosting;
 
@@ -19,6 +20,7 @@ public class ConsoleHostBuilder
 {
     private readonly IHostBuilder _hostBuilder;
     private readonly List<Action<IServiceCollection>> _serviceConfigurations = new();
+    private readonly List<Action<HostBuilderContext, IServiceCollection>> _contextServiceConfigurations = new();
     
     /// <summary>
     /// Initializes a new instance of the <see cref="ConsoleHostBuilder"/> class with default configuration.
@@ -117,10 +119,16 @@ public class ConsoleHostBuilder
     /// </remarks>
     public ConsoleHostBuilder UseDefaultLogging()
     {
-        _hostBuilder.ConfigureLogging(logging =>
+        _hostBuilder.ConfigureLogging((context,logging) =>
         {
             logging.AddConsole();
-            logging.SetMinimumLevel(LogLevel.Information);
+
+            var cliOptions = new CliOptions();
+            context.Configuration.Bind(cliOptions);
+
+            logging.SetMinimumLevel(Enum.TryParse<LogLevel>(cliOptions.Logging?.MinimumLevel, out var minimumLevel)
+                ? minimumLevel
+                : LogLevel.Information);
         });
         return this;
     }
@@ -231,10 +239,26 @@ public class ConsoleHostBuilder
         {
             services.AddWaffleCli();
             
+            services.Configure<CliOptions>(context.Configuration);
+            
+            var cliOptions = new CliOptions();
+            context.Configuration.Bind(cliOptions);
+            
+            ConfigureFromCliOptions(services, cliOptions);
+            
             foreach (var config in _serviceConfigurations)
             {
                 config(services);
             }
+            
+            foreach (var config in _contextServiceConfigurations)
+            {
+                config(context, services);
+            }
+
+            if (cliOptions.CommandRegistration?.AutoDiscoverCommands != true) return;
+            var assemblies = GetAssembliesToScan(cliOptions.CommandRegistration.AssembliesToScan);
+            services.AddCommandsFromAssemblies(assemblies, cliOptions.CommandRegistration);
         });
 
         try
@@ -247,5 +271,20 @@ public class ConsoleHostBuilder
             Console.WriteLine($"Build failed: {ex.Message}");
             throw;
         }
+    }
+
+    private void ConfigureFromCliOptions(IServiceCollection services, CliOptions cliOptions)
+    {
+        services.Configure<ConsoleHostOptions>(options =>
+            {
+                options.ShowWelcomeMessage = cliOptions.Host?.ShowWelcomeMessage ?? true;
+                options.ExitOnNonZeroExitCode = cliOptions.Host?.ExitOnNonZeroExitCode ?? false;
+            });
+
+        services.Configure<CommandExecutorOptions>(options =>
+        {
+            options.DefaultTimeout = TimeSpan.FromSeconds(cliOptions.Scripting?.MaxExecutionTimeSeconds ?? 300);
+            options.AllowParallelExecution = false;
+        });
     }
 }
