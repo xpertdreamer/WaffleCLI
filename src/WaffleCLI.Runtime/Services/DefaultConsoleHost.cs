@@ -3,6 +3,7 @@ using WaffleCLI.Abstractions.Commands;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using WaffleCLI.Core.Configuration;
 using WaffleCLI.Core.Output;
 using WaffleCLI.Runtime.Options;
 
@@ -23,6 +24,7 @@ public class DefaultConsoleHost : IConsoleHost
     private readonly IHostApplicationLifetime _lifetime;
     private readonly IConsoleOutput _output;
     private readonly IOptions<ConsoleHostOptions> _options;
+    private readonly IOptions<CliOptions> _cliOptions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultConsoleHost"/> class.
@@ -32,18 +34,21 @@ public class DefaultConsoleHost : IConsoleHost
     /// <param name="lifetime">The application lifetime manager for controlling shutdown.</param>
     /// <param name="output">The console output service for writing messages.</param>
     /// <param name="options">The configuration options for the console host.</param>
+    /// <param name="cliOptions">The configuration options from configuration file></param>
     public DefaultConsoleHost(
         ICommandExecutor commandExecutor,
         ILogger<DefaultConsoleHost> logger,
         IHostApplicationLifetime lifetime,
         IConsoleOutput output,
-        IOptions<ConsoleHostOptions> options)
+        IOptions<ConsoleHostOptions> options,
+        IOptions<CliOptions> cliOptions)
     {
         _commandExecutor = commandExecutor;
         _logger = logger;
         _lifetime = lifetime;
         _output = output;
         _options = options;
+        _cliOptions = cliOptions;
     }
 
     /// <summary>
@@ -59,16 +64,19 @@ public class DefaultConsoleHost : IConsoleHost
     {
         try
         {
+            var cliOptions = _cliOptions.Value;
+            var hostOptions =  _options.Value;
+            
             if (_options.Value.ShowWelcomeMessage)
             {
-                ShowWelcomeMessage();
+                ShowWelcomeMessage(cliOptions);
             }
 
             while (!token.IsCancellationRequested)
             {
                 try
                 {
-                    Console.Write("> ");
+                    Console.Write(cliOptions.Host?.Prompt ?? "> ");
                     var input = Console.ReadLine();
 
                     if (string.IsNullOrWhiteSpace(input))
@@ -90,7 +98,7 @@ public class DefaultConsoleHost : IConsoleHost
                         _output.WriteSuccess(result.Message);
                     }
                     
-                    if (result.ExitCode != 0 && _options.Value.ExitOnNonZeroExitCode)
+                    if (result.ExitCode != 0 && hostOptions.ExitOnNonZeroExitCode)
                     {
                         return result.ExitCode;
                     }
@@ -159,10 +167,12 @@ public class DefaultConsoleHost : IConsoleHost
     /// The welcome message is only displayed if configured in <see cref="ConsoleHostOptions.ShowWelcomeMessage"/>.
     /// Uses colored output to enhance readability and provide a welcoming user experience.
     /// </remarks>
-    private void ShowWelcomeMessage()
+    private void ShowWelcomeMessage(CliOptions cliOptions)
     {
+        var welcomeMessage = cliOptions.Host?.WelcomeMessage ?? "WaffleCLI";
+        
         _output.WriteLine("=========================================", ConsoleColor.Blue);
-        _output.WriteLine("        WaffleCLI", ConsoleColor.Blue);
+        _output.WriteLine($"        {welcomeMessage}", ConsoleColor.Blue);
         _output.WriteLine("=========================================", ConsoleColor.Blue);
         _output.WriteLine("Type 'help' for available commands or 'exit' to quit.", ConsoleColor.Green);
         _output.WriteLine();

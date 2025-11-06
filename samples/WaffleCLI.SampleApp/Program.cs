@@ -1,19 +1,18 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using WaffleCLI.Abstractions.Commands;
 using WaffleCLI.Core.Middleware;
 using WaffleCLI.Runtime.Hosting;
+using WaffleCLI.Runtime.Services;
 using WaffleCLI.SampleApp.Commands;
 
 try
 {
     var host = new ConsoleHostBuilder()
         .UseConfiguration("appsettings.json")
-        .ConfigureFromOptions()
         .ConfigureServices((_, services) =>
         {
-            services.AddWaffleCli();
-
             services.AddCommand<HelpCommand>();
             services.AddCommand<CalcCommand>();
             services.AddCommand<WaffleCommand>();
