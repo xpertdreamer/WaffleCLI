@@ -3,7 +3,7 @@ using WaffleCLI.Core.Attributes;
 
 namespace WaffleCLI.SampleApp.Commands;
 
-[Command("calc", "Perform basic calculations")]
+[Command("calc", "Perform basic calculations", Aliases = ["math"])]
 public class CalcCommand : ICommand
 {
     public string Name => "calc";

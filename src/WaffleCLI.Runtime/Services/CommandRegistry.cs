@@ -17,6 +17,7 @@ namespace WaffleCLI.Runtime.Services;
 public class CommandRegistry : ICommandRegistry
 {
     private readonly Dictionary<string, Type> _commands = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _mainCommandNames = new(StringComparer.OrdinalIgnoreCase);
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<CommandRegistry> _logger;
 
@@ -89,6 +90,7 @@ public class CommandRegistry : ICommandRegistry
                 }
 
                 _commands[commandName] = commandType;
+                _mainCommandNames.Add(commandName);
                 _logger.LogDebug("Registered command: {Name} -> {Type}", commandName, commandType.Name);
 
                 // Register aliases
@@ -134,7 +136,20 @@ public class CommandRegistry : ICommandRegistry
                 }
 
                 _commands[groupName] = groupType;
+                _mainCommandNames.Add(groupName);
                 _logger.LogDebug("Registered command group: {Name} -> {Type}", groupName, groupType.Name);
+
+                if (attribute?.Aliases != null)
+                {
+                    foreach (var alias in attribute.Aliases)
+                    {
+                        if (!_commands.ContainsKey(alias))
+                        {
+                            _commands[alias] = groupType;
+                            _logger.LogDebug("Registered group alias: {Alias} -> {Type}", alias, groupType.Name);
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -197,7 +212,20 @@ public class CommandRegistry : ICommandRegistry
         }
         
         _commands[commandName] = commandType;
+        _mainCommandNames.Add(commandName);
         _logger.LogDebug("Manually registered command: {Name} -> {Type}", commandName, commandType.Name);
+        
+        if (attribute?.Aliases != null)
+        {
+            foreach (var alias in attribute.Aliases)
+            {
+                if (!_commands.ContainsKey(alias))
+                {
+                    _commands[alias] = commandType;
+                    _logger.LogDebug("Registered manual alias: {Alias} -> {Type}", alias, commandType.Name);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -241,7 +269,7 @@ public class CommandRegistry : ICommandRegistry
     public IReadOnlyCollection<ICommand> GetCommands()
     {
         var commands = new List<ICommand>();
-        foreach (var commandName in _commands.Keys.Distinct())
+        foreach (var commandName in _mainCommandNames.OrderBy(name => name))
         {
             var command = GetCommand(commandName);
             if (command != null)
