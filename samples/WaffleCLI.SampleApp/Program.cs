@@ -25,6 +25,21 @@ try
             services.AddTransient<FileCopyCommand>();
             services.AddTransient<FileDeleteCommand>();
 
+            services.AddSingleton<ICommandRegistry>(provider =>
+            {
+                var logger = provider.GetRequiredService<ILogger<CommandRegistry>>();
+                var registry = new CommandRegistry(provider, logger);
+                
+                registry.RegisterCommand<HelpCommand>();
+                registry.RegisterCommand<CalcCommand>();
+                registry.RegisterCommand<WaffleCommand>();
+                registry.RegisterCommand<ExitCommand>();
+                registry.RegisterCommand<GreetCommand>();
+                registry.RegisterCommand<FileCommandGroup>();
+                
+                return registry;
+            });
+            
             services.AddDefaultMiddleware();
         })
         .UseDefaultLogging()

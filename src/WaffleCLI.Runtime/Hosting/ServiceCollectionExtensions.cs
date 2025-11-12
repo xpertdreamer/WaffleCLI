@@ -114,7 +114,7 @@ public static class ServiceCollectionExtensions
         }
 
         // Register CommandRegistry
-        services.AddSingleton<ICommandRegistry>(provider =>
+        services.TryAddSingleton<ICommandRegistry>(provider =>
         {
             var registry = new CommandRegistry(
                 provider,
