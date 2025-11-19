@@ -7,6 +7,13 @@ using WaffleCLI.Runtime.TUI.Elements;
 
 namespace WaffleCLI.Runtime.TUI.Screens;
 
+/// <summary>
+/// Represents the main screen of the WaffleCLI Text User Interface application.
+/// </summary>
+/// <remarks>
+/// Provides a comprehensive TUI interface with command list view, output text view, and command input field.
+/// Supports keyboard navigation, command execution, and real-time output display.
+/// </remarks>
 public class MainScreen : ITuiScreen
 {
     private readonly ICommandRegistry _commandRegistry;
@@ -21,8 +28,17 @@ public class MainScreen : ITuiScreen
 
     private List<ICommand> _commands = [];
     
+    /// <summary>
+    /// Gets the title of the main screen.
+    /// </summary>
     public string Title => "WaffleCLI TUI";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainScreen"/> class.
+    /// </summary>
+    /// <param name="commandRegistry">The command registry for retrieving available commands.</param>
+    /// <param name="commandExecutor">The command executor for running commands.</param>
+    /// <param name="logger">The logger for recording screen events and errors.</param>
     public MainScreen(ICommandRegistry commandRegistry, ICommandExecutor commandExecutor, ILogger<MainScreen> logger)
     {
         _commandRegistry = commandRegistry;
@@ -30,6 +46,14 @@ public class MainScreen : ITuiScreen
         _logger = logger;
     }
 
+    /// <summary>
+    /// Initializes the main screen and its UI elements asynchronously.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous initialization operation.</returns>
+    /// <remarks>
+    /// Sets up the command list view, output text view, and command input field with proper positioning and event handlers.
+    /// Loads available commands from the registry and displays initialization information.
+    /// </remarks>
     public Task InitializeAsync()
     {
         _commands = _commandRegistry.GetCommands().ToList();
@@ -75,12 +99,20 @@ public class MainScreen : ITuiScreen
             $"{c.Name} - {c.Description}").ToList());
         
         _outputTextView.AppendLine("=== WaffleCLI TUI ===");
-        _outputTextView.AppendLine($"Loaded {_commands.Count} _commands");
-        _outputTextView.AppendLine("Use Tab == navigate, Up/Down Arrows == select, Enter == execute");
+        _outputTextView.AppendLine($"Loaded {_commands.Count} commands");
+        _outputTextView.AppendLine("Use Tab to navigate, Up/Down Arrows to select, Enter to execute");
         
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Renders the main screen and all its UI elements asynchronously.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous rendering operation.</returns>
+    /// <remarks>
+    /// Clears the console, draws the header and footer with usage instructions, and renders all UI elements.
+    /// Maintains proper color management and cursor positioning.
+    /// </remarks>
     public Task RenderAsync()
     {
         Console.Clear();
@@ -100,6 +132,15 @@ public class MainScreen : ITuiScreen
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Handles keyboard input for the main screen asynchronously.
+    /// </summary>
+    /// <param name="keyInfo">The keyboard input information.</param>
+    /// <returns>A task that represents the asynchronous key handling operation.</returns>
+    /// <remarks>
+    /// Supports application exit with Ctrl+Q, element navigation with Tab, and delegates key handling
+    /// to the currently focused UI element. Triggers re-rendering when key handling results in visual changes.
+    /// </remarks>
     public Task HandleKeyAsync(ConsoleKeyInfo keyInfo)
     {
         if (keyInfo.Key == ConsoleKey.Q && keyInfo.Modifiers == ConsoleModifiers.Control)
@@ -112,7 +153,7 @@ public class MainScreen : ITuiScreen
         {
             _focusedElementIndex = (_focusedElementIndex + 1) % _elements.Count;
             UpdateFocus();
-            return Task.CompletedTask;
+            return RenderAsync();
         }
 
         var focusedElement = _elements[_focusedElementIndex];
@@ -124,6 +165,12 @@ public class MainScreen : ITuiScreen
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Updates the focus state of all UI elements based on the current focused element index.
+    /// </summary>
+    /// <remarks>
+    /// Ensures only one text field has focus at a time and updates visual focus indicators accordingly.
+    /// </remarks>
     private void UpdateFocus()
     {
         for (int i = 0; i < _elements.Count; i++)
@@ -135,6 +182,13 @@ public class MainScreen : ITuiScreen
         }
     }
 
+    /// <summary>
+    /// Handles command selection from the commands list view.
+    /// </summary>
+    /// <param name="index">The index of the selected command in the commands list.</param>
+    /// <remarks>
+    /// Populates the command text field with the selected command name and transfers focus to the text field.
+    /// </remarks>
     private void OnCommandSelected(int index)
     {
         if (index < 0 || index >= _commands.Count) return;
@@ -144,6 +198,14 @@ public class MainScreen : ITuiScreen
         UpdateFocus();
     }
 
+    /// <summary>
+    /// Handles command submission from the command text field.
+    /// </summary>
+    /// <param name="commandText">The command text to execute.</param>
+    /// <remarks>
+    /// Executes the submitted command, captures its output, and displays the results in the output text view.
+    /// Handles both successful command execution and errors with appropriate logging and user feedback.
+    /// </remarks>
     private async void OnCommandSubmitted(string commandText)
     {
         if (string.IsNullOrWhiteSpace(commandText)) return;
