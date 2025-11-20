@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using WaffleCLI.Abstractions.Hosting;
 using WaffleCLI.Core.Configuration;
 using WaffleCLI.Runtime.Options;
+using WaffleCLI.Runtime.Tui;
+using WaffleCLI.Runtime.TUI;
 
 namespace WaffleCLI.Runtime.Hosting;
 
@@ -19,8 +21,8 @@ namespace WaffleCLI.Runtime.Hosting;
 public class ConsoleHostBuilder
 {
     private readonly IHostBuilder _hostBuilder;
-    private readonly List<Action<IServiceCollection>> _serviceConfigurations = new();
-    private readonly List<Action<HostBuilderContext, IServiceCollection>> _contextServiceConfigurations = new();
+    private readonly List<Action<IServiceCollection>> _serviceConfigurations = [];
+    private readonly List<Action<HostBuilderContext, IServiceCollection>> _contextServiceConfigurations = [];
     
     /// <summary>
     /// Initializes a new instance of the <see cref="ConsoleHostBuilder"/> class with default configuration.
@@ -232,13 +234,27 @@ public class ConsoleHostBuilder
     /// <remarks>
     /// Applies all accumulated service configurations and builds the host with WaffleCLI core services.
     /// </remarks>
-    public IConsoleHost Build()
+    public IApplicationHost Build(string mode)
     {
         // Apply all service configurations
         _hostBuilder.ConfigureServices((context, services) =>
         {
-            services.AddWaffleCli();
-            
+            // services.AddWaffleCli();
+            if (mode == "tui")
+            {
+                services.AddWaffleTui();
+                services.AddSingleton<IApplicationHost, TuiApplicationHost>();
+            }
+            else if (mode == "cli")
+            {
+                services.AddWaffleCli();
+            }
+            else
+            {
+                services.AddSingleton<IApplicationHost>(provider => 
+                    new CliApplicationHost(provider.GetRequiredService<IConsoleHost>()));
+            }
+
             services.Configure<CliOptions>(context.Configuration);
             
             var cliOptions = new CliOptions();
@@ -264,7 +280,7 @@ public class ConsoleHostBuilder
         try
         {
             var host = _hostBuilder.Build();
-            return host.Services.GetRequiredService<IConsoleHost>();
+            return host.Services.GetRequiredService<IApplicationHost>();
         }
         catch (Exception ex)
         {

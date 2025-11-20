@@ -1,7 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using WaffleCLI.Abstractions.Commands;
+using WaffleCLI.Abstractions.Hosting;
 using WaffleCLI.Abstractions.TUI;
+using WaffleCLI.Core.Output;
+using WaffleCLI.Runtime.Output;
+using WaffleCLI.Runtime.Services;
 using WaffleCLI.Runtime.TUI.Screens;
 
 namespace WaffleCLI.Runtime.TUI;
@@ -28,6 +32,8 @@ public static class TuiServiceCollectionExtensions
 
         services.RemoveAll<ICommandExecutor>();
         services.TryAddSingleton<ICommandExecutor, TuiCommandExecutor>();
+        
+        services.TryAddSingleton<IConsoleOutput, DefaultConsoleOutput>();
 
         return services;
     }

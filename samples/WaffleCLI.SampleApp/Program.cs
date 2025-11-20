@@ -1,14 +1,14 @@
-﻿using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WaffleCLI.Abstractions.Commands;
-using WaffleCLI.Core.Middleware;
 using WaffleCLI.Runtime.Hosting;
 using WaffleCLI.Runtime.Services;
 using WaffleCLI.SampleApp.Commands;
 
 try
 {
+    var useTui = args.Contains("--tui") || args.Contains("--t") || args.Length == 0;
+    
     var host = new ConsoleHostBuilder()
         .UseConfiguration("appsettings.json")
         .ConfigureServices((_, services) =>
@@ -44,7 +44,7 @@ try
         })
         .UseDefaultLogging()
         .UseConsoleLifetime()
-        .Build();
+        .Build(useTui ? "tui" : "cli");
 
     return await host.RunAsync();
 }

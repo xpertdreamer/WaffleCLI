@@ -20,10 +20,10 @@ public class MainScreen : ITuiScreen
     private readonly ICommandExecutor _commandExecutor;
     private readonly ILogger<MainScreen> _logger;
 
-    private TuiListView _commandsListView;
-    private TuiTextView _outputTextView;
-    private TuiTextField _commandTextField;
-    private List<TuiElement> _elements;
+    private TuiListView? _commandsListView;
+    private TuiTextView? _outputTextView;
+    private TuiTextField? _commandTextField;
+    private List<TuiElement>? _elements;
     private int _focusedElementIndex = 0;
 
     private List<ICommand> _commands = [];
