@@ -235,7 +235,7 @@ public class ConsoleHostBuilder
     /// <remarks>
     /// Applies all accumulated service configurations and builds the host with WaffleCLI core services.
     /// </remarks>
-    public IApplicationHost Build(string mode)
+    public IConsoleHost Build(string mode)
     {
         // Apply all service configurations
         _hostBuilder.ConfigureServices((context, services) =>
@@ -281,7 +281,7 @@ public class ConsoleHostBuilder
         try
         {
             var host = _hostBuilder.Build();
-            return host.Services.GetRequiredService<IApplicationHost>();
+            return host.Services.GetRequiredService<IConsoleHost>();
         }
         catch (Exception ex)
         {

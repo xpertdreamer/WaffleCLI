@@ -77,7 +77,7 @@ public class TuiApplication : ITuiApplication
                 await _currentScreen.HandleInputAsync(key);
             }
 
-            await Task.Delay(16, cancellationToken);
+            await Task.Delay(5, cancellationToken);
         }
     }
 }

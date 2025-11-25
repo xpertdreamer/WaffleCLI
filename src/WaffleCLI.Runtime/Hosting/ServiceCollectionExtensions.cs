@@ -10,7 +10,10 @@ using WaffleCLI.Runtime.Output;
 using WaffleCLI.Runtime.Services;
 using WaffleCLI.Runtime.Scripting;
 using Microsoft.Extensions.Logging;
+using WaffleCLI.Abstractions.TUI;
 using WaffleCLI.Core.Middleware;
+using WaffleCLI.Core.TUI;
+using WaffleCLI.Core.TUI.Screens;
 using WaffleCLI.Runtime.Options;
 
 namespace WaffleCLI.Runtime.Hosting;
@@ -20,6 +23,30 @@ namespace WaffleCLI.Runtime.Hosting;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
+    public static IServiceCollection AddWaffleTui(this IServiceCollection services)
+    {
+        return services.AddWaffleTui(builder => builder.UseStartScreen<WelcomeScreen>());
+    }
+
+    private static IServiceCollection AddWaffleTui(this IServiceCollection services,
+        Action<TuiApplicationBuilder> configure)
+    {
+        services.TryAddSingleton<ITuiApplication, TuiApplication>();
+        
+        services.TryAddTransient<WelcomeScreen>();
+        
+        var builder = new TuiApplicationBuilder(services);
+        configure(builder);
+
+        services.AddTransient<ITuiScreen>(provide =>
+        {
+            var screen = provide.GetRequiredService(builder.GetStartScreenType()) as ITuiScreen;
+            return screen ?? throw new InvalidOperationException($"Type {builder.GetStartScreenType()} is not a TuiScreen");
+        });
+        
+        return services;
+    }
+    
     /// <summary>
     /// Adds the core WaffleCLI services to the service collection.
     /// </summary>
