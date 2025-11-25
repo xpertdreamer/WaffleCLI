@@ -6,8 +6,9 @@ using Microsoft.Extensions.Logging;
 using WaffleCLI.Abstractions.Hosting;
 using WaffleCLI.Core.Configuration;
 using WaffleCLI.Runtime.Options;
-using WaffleCLI.Runtime.Tui;
-using WaffleCLI.Runtime.TUI;
+// using WaffleCLI.Runtime.Tui;
+// using WaffleCLI.Runtime.TUI;
+// using WaffleCLI.Runtime.TUI.Extensions;
 
 namespace WaffleCLI.Runtime.Hosting;
 
@@ -242,8 +243,8 @@ public class ConsoleHostBuilder
             // services.AddWaffleCli();
             if (mode == "tui")
             {
-                services.AddWaffleTui();
-                services.AddSingleton<IApplicationHost, TuiApplicationHost>();
+                // services.AddWaffleTui();
+                // services.AddSingleton<IApplicationHost, TuiApplicationHost>();
             }
             else if (mode == "cli")
             {
