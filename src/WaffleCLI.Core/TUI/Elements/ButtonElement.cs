@@ -9,6 +9,7 @@ public class ButtonElement : ITuiElement
     public int Width { get; set; } = 20;
     public int Height { get; set; } = 3;
     public bool isVisible { get; set; } = true;
+    public bool isFocusable { get; set; } = true;
 
     public string Text { get; set; } = "Button";
     public ConsoleColor Color { get; set; } = ConsoleColor.White;

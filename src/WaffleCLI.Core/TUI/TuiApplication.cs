@@ -57,13 +57,16 @@ public class TuiApplication : ITuiApplication
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         Console.CursorVisible = false;
         Console.Clear();
+        Console.Title = "WaffleTUI Application";
 
         try
         {
-            Console.WindowWidth = 80;
-            Console.WindowHeight = 25;
-            Console.BufferWidth = 80;
-            Console.BufferHeight = 25;
+            Console.WindowWidth = Math.Max(80, Console.WindowHeight);
+            Console.WindowHeight = Math.Max(25, Console.WindowHeight);
+            #if WIN32
+                Console.BufferWidth = Console.WindowWidth;
+                Console.BufferHeight = Console.WindowHeight;
+            #endif
         }
         catch
         {

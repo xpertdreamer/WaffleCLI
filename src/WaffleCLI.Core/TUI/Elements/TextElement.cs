@@ -9,7 +9,8 @@ public class TextElement : ITuiElement
     public int Width { get; set; }
     public int Height { get; set; } = 1;
     public bool isVisible { get; set; } = true;
-    
+    public bool isFocusable { get; set; } = false;
+
     public string Text {get; set;} = string.Empty;
     public ConsoleColor Color {get; set;} = ConsoleColor.White;
     public ConsoleColor BackgroundColor {get; set;} = ConsoleColor.Black;

@@ -4,7 +4,7 @@ namespace WaffleCLI.Core.TUI;
 
 public abstract class BasicTuiScreen : ITuiScreen
 {
-    private readonly List<ITuiElement> _elements = [];
+    protected readonly List<ITuiElement> _elements = [];
     private int _focusedElementIndex = -1;
     private string _lastRenderedTitle = string.Empty;
     public abstract string Title { get; }
@@ -16,12 +16,13 @@ public abstract class BasicTuiScreen : ITuiScreen
 
     public virtual Task RenderAsync()
     {
-        if (_lastRenderedTitle != Title)
-        {
-            Console.Clear();
-            _lastRenderedTitle = Title;
-        }
-
+        // if (_lastRenderedTitle != Title)
+        // {
+        //     Console.Clear();
+        //     _lastRenderedTitle = Title;
+        // }
+        
+        Console.Clear();
         RenderHeader();
 
         foreach (var element in _elements.Where(e => e.isVisible))
@@ -131,14 +132,21 @@ public abstract class BasicTuiScreen : ITuiScreen
     private void MoveFocusNext()
     {
         if (_elements.Count == 0) return;
+
+        var focusableElements = _elements
+            .Where(e => e.isVisible && e.isFocusable)
+            .ToList();
         
-        var visibleElements = _elements.Where(e => e.isVisible).ToList();
-        if (visibleElements.Count == 0) return;
+        if (focusableElements.Count == 0) return;
 
-        var currentVisibleIndex = GetVisibleElementIndex(_focusedElementIndex);
-        var nextVisibleIndex = (currentVisibleIndex + 1) % visibleElements.Count;
-        _focusedElementIndex = _elements.IndexOf(visibleElements[nextVisibleIndex]);
+        var currentIndex = _focusedElementIndex >= 0
+            ? _elements.IndexOf(focusableElements.FirstOrDefault(e => _elements.IndexOf(e) == _focusedElementIndex) ??
+                                focusableElements[0])
+            : -1;
 
+        var nextIndex = (currentIndex + 1) % focusableElements.Count;
+        _focusedElementIndex = _elements.IndexOf(focusableElements[nextIndex]);
+        
         UpdateFocus();
     }
 

@@ -10,77 +10,76 @@ public class WelcomeScreen : BasicTuiScreen
     {
         var title = new TextElement
         {
-            X = 5,
+            X = 20,
             Y = 2,
             Width = 40,
             Text = "Welcome to WaffleTUI!",
             Color = ConsoleColor.Green,
-            HasBorder = true
+            HasBorder = true,
+            isFocusable = false
         };
 
         var instructionText = new TextElement
         {
-            X = 10,
-            Y = 7,
+            X = 15,
+            Y = 5,
             Width = 50,
             Text = "This is your first WaffleTUI app!",
-            Color = ConsoleColor.Yellow
+            Color = ConsoleColor.Yellow,
+            isFocusable = false
         };
 
         var instruction2 = new TextElement
         {
-            X = 5,
+            X = 15,
             Y = 6,
             Width = 50,
             Text = "This is a simple TUI Framework",
-            Color = ConsoleColor.Yellow
+            Color = ConsoleColor.Yellow,
+            isFocusable = false
         };
         
         var instruction3 = new TextElement
         {
-            X = 5,
-            Y = 8,
+            X = 15,
+            Y = 7,
             Width = 50,
             Text = "Window size: " + Console.WindowWidth + "x" + Console.WindowHeight,
-            Color = ConsoleColor.Gray
+            Color = ConsoleColor.Gray,
+            isFocusable = false
         };
 
         var button = new ButtonElement
         {
-            X = 5,
+            X = 30,
             Y = 10,
             Width = 20,
             Text = "Test Button",
             Color = ConsoleColor.White,
-            BackgroundColor = ConsoleColor.DarkBlue
+            BackgroundColor = ConsoleColor.DarkBlue,
+            isFocusable = true
         };
         
         button.Clicked += () =>
         {
+            var existingMessage = _elements.OfType<TextElement>()
+                .FirstOrDefault(e => e.Text == "Button was clicked!");
+            if (existingMessage != null)
+                RemoveElement(existingMessage);
+            
             var message = new TextElement
             {
-                X = 5,
+                X = 25,
                 Y = 14,
                 Width = 30,
                 Text = "Button was clicked!",
                 Color = ConsoleColor.Yellow,
-                HasBorder = true
+                HasBorder = true,
+                isFocusable = false
             };
             AddElement(message);
         };
         
-        var frame = new TextElement
-        {
-            X = 3,
-            Y = 1,
-            Width = 60,
-            Height = 15,
-            Text = "",
-            HasBorder = true,
-            BorderColor = ConsoleColor.Blue
-        };
-        
-        AddElement(frame);
         AddElement(title);
         AddElement(instructionText);
         AddElement(instruction2);
