@@ -10,6 +10,7 @@ public class TuiApplication : ITuiApplication
     private readonly ILogger<TuiApplication> _logger;
     private ITuiScreen _currentScreen =  null!;
     private bool _isRunning;
+    private bool _needsRedraw = true;
 
     public TuiApplication(IServiceProvider serviceProvider, ILogger<TuiApplication> logger)
     {
@@ -56,6 +57,18 @@ public class TuiApplication : ITuiApplication
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         Console.CursorVisible = false;
         Console.Clear();
+
+        try
+        {
+            Console.WindowWidth = 80;
+            Console.WindowHeight = 25;
+            Console.BufferWidth = 80;
+            Console.BufferHeight = 25;
+        }
+        catch
+        {
+            // ignored
+        }
     }
 
     private static void CleanupConsole()
@@ -67,17 +80,35 @@ public class TuiApplication : ITuiApplication
 
     private async Task MainLoop(CancellationToken cancellationToken)
     {
+        var lastRenderTime = DateTime.Now;
+        const int targetFps = 30;
+        const double minFrameTime = 1000.0 / targetFps;
+        
         while (!cancellationToken.IsCancellationRequested && _isRunning)
         {
-            await _currentScreen.RenderAsync();
+            var currentTime = DateTime.Now;
+            var elapsedTime = (currentTime - lastRenderTime).TotalMilliseconds;
 
             if (Console.KeyAvailable)
             {
                 var key = Console.ReadKey(true);
                 await _currentScreen.HandleInputAsync(key);
+                _needsRedraw = true;
             }
 
-            await Task.Delay(5, cancellationToken);
+            if (_needsRedraw && elapsedTime >= minFrameTime)
+            {
+                await _currentScreen.RenderAsync();
+                _needsRedraw = false;
+                lastRenderTime = currentTime;
+            }
+
+            await Task.Delay(1, cancellationToken);
         }
+    }
+
+    public void RequestRedraw()
+    {
+        _needsRedraw = true;
     }
 }
