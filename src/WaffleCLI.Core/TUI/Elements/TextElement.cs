@@ -23,6 +23,8 @@ public class TextElement : ITuiElement
         
         var oldFg =  Console.ForegroundColor;
         var oldBg =  Console.BackgroundColor;
+        var originalLeft = Console.CursorLeft;
+        var originalTop = Console.CursorTop;
 
         if (HasBorder) RenderBorder();
         
@@ -39,6 +41,7 @@ public class TextElement : ITuiElement
         
         Console.ForegroundColor = oldFg;
         Console.BackgroundColor = oldBg;
+        Console.SetCursorPosition(originalLeft, originalTop);
     }
     
     public bool HandleInput(ConsoleKeyInfo keyInfo)

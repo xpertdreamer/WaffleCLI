@@ -4,7 +4,7 @@ namespace WaffleCLI.Core.TUI.Screens;
 
 public class WelcomeScreen : BasicTuiScreen
 {
-    public override string Title => "Welcome to WaffleTUI";
+    public override string Title => "WaffleTUI";
 
     public override Task InitializeAsync()
     {

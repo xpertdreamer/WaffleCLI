@@ -6,6 +6,7 @@ public abstract class BasicTuiScreen : ITuiScreen
 {
     protected readonly List<ITuiElement> _elements = [];
     private int _focusedElementIndex = -1;
+    private bool _firstRender = true;
     private string _lastRenderedTitle = string.Empty;
     public abstract string Title { get; }
 
@@ -16,14 +17,20 @@ public abstract class BasicTuiScreen : ITuiScreen
 
     public virtual Task RenderAsync()
     {
-        // if (_lastRenderedTitle != Title)
-        // {
-        //     Console.Clear();
-        //     _lastRenderedTitle = Title;
-        // }
-        
-        Console.Clear();
-        RenderHeader();
+        if (_firstRender)
+        {
+            Console.Clear();
+            _firstRender = false;
+            _lastRenderedTitle = string.Empty;
+        }
+
+        if (_lastRenderedTitle != Title)
+        {
+            RenderHeader();
+            _lastRenderedTitle = Title;
+        }
+
+        ClearContentArea();
 
         foreach (var element in _elements.Where(e => e.isVisible))
         {
@@ -60,6 +67,24 @@ public abstract class BasicTuiScreen : ITuiScreen
         
         return Task.CompletedTask;
     }
+    
+    protected virtual void ClearContentArea()
+    {
+        var originalLeft = Console.CursorLeft;
+        var originalTop = Console.CursorTop;
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.BackgroundColor = ConsoleColor.Black;
+
+        // Очищаем область между заголовком (строка 1) и футером (последняя строка)
+        for (int row = 1; row < Console.WindowHeight - 1; row++)
+        {
+            Console.SetCursorPosition(0, row);
+            Console.Write(new string(' ', Console.WindowWidth));
+        }
+
+        Console.SetCursorPosition(originalLeft, originalTop);
+    }
 
     protected virtual void RenderHeader()
     {
@@ -82,15 +107,22 @@ public abstract class BasicTuiScreen : ITuiScreen
 
     protected virtual void RenderFooter()
     {
+        
+        var originalLeft = Console.CursorLeft;
+        var originalTop = Console.CursorTop;
+        
         Console.ForegroundColor = ConsoleColor.DarkGray;
         Console.BackgroundColor = ConsoleColor.Black;
         
-        Console.SetCursorPosition(0, 0);
+        Console.SetCursorPosition(0, Console.WindowHeight - 1);
         Console.Write(new string(' ', Console.WindowWidth));
         
         Console.SetCursorPosition(0, Console.WindowHeight - 1);
         const string footerText = " Tab:Navigate | Enter:Select | Ctrl+Q:Exit";
         Console.Write(footerText);
+        
+        Console.ResetColor();
+        Console.SetCursorPosition(originalLeft, originalTop);
     }
 
     protected void AddElement(ITuiElement element)

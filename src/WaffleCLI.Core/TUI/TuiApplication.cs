@@ -84,13 +84,13 @@ public class TuiApplication : ITuiApplication
     private async Task MainLoop(CancellationToken cancellationToken)
     {
         var lastRenderTime = DateTime.Now;
-        const int targetFps = 30;
+        const int targetFps = 60;
         const double minFrameTime = 1000.0 / targetFps;
         
         while (!cancellationToken.IsCancellationRequested && _isRunning)
         {
             var currentTime = DateTime.Now;
-            var elapsedTime = (currentTime - lastRenderTime).TotalMilliseconds;
+            var elapsed = (currentTime - lastRenderTime).TotalMilliseconds;
 
             if (Console.KeyAvailable)
             {
@@ -99,14 +99,16 @@ public class TuiApplication : ITuiApplication
                 _needsRedraw = true;
             }
 
-            if (_needsRedraw && elapsedTime >= minFrameTime)
+            if (_needsRedraw && elapsed >= minFrameTime)
             {
                 await _currentScreen.RenderAsync();
                 _needsRedraw = false;
                 lastRenderTime = currentTime;
             }
-
-            await Task.Delay(1, cancellationToken);
+            if (!_needsRedraw)
+            {
+                await Task.Delay(16, cancellationToken);
+            }
         }
     }
 
