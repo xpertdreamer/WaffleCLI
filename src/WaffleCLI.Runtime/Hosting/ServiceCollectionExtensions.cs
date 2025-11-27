@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using WaffleCLI.Abstractions.TUI;
 using WaffleCLI.Core.Middleware;
 using WaffleCLI.Core.TUI;
+using WaffleCLI.Core.TUI.Elements;
 using WaffleCLI.Core.TUI.Screens;
 using WaffleCLI.Runtime.Options;
 
@@ -28,12 +29,14 @@ public static class ServiceCollectionExtensions
         return services.AddWaffleTui(builder => builder.UseStartScreen<WelcomeScreen>());
     }
 
-    private static IServiceCollection AddWaffleTui(this IServiceCollection services,
+    public static IServiceCollection AddWaffleTui(this IServiceCollection services,
         Action<TuiApplicationBuilder> configure)
     {
         services.TryAddSingleton<ITuiApplication, TuiApplication>();
         
-        services.TryAddTransient<WelcomeScreen>();
+        // services.TryAddTransient<WelcomeScreen>();
+        // services.TryAddTransient<TextElement>();
+        // services.TryAddTransient<ButtonElement>();
         
         var builder = new TuiApplicationBuilder(services);
         configure(builder);

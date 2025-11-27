@@ -33,5 +33,11 @@ public class TuiApplicationBuilder
         return this;
     }
 
+    public TuiApplicationBuilder ConfigureServices(Action<IServiceCollection> configure)
+    {
+        configure(_services);
+        return this; 
+    }
+
     public Type GetStartScreenType() =>  _startScreenType;
 }

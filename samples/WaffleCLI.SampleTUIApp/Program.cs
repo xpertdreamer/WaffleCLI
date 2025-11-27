@@ -2,19 +2,24 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using WaffleCLI.Abstractions.TUI;
+using WaffleCLI.Core.TUI.Screens;
 using WaffleCLI.Runtime.Hosting;
 
 var builder = Host.CreateDefaultBuilder(args);
 
 builder.ConfigureServices(services =>
 {
-    services.AddWaffleTui();
+    services.AddWaffleTui(tuiApplicationBuilder =>
+    {
+        tuiApplicationBuilder.UseStartScreen<WelcomeScreen>();
+    });
 });
 
 builder.ConfigureLogging(logging =>
 {
     logging.ClearProviders();
     logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Warning);
 });
 
 var host = builder.Build();

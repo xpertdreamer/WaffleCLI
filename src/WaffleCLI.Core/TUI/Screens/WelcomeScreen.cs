@@ -89,23 +89,4 @@ public class WelcomeScreen : BasicTuiScreen
         
         return Task.CompletedTask;
     }
-
-    public override Task HandleInputAsync(ConsoleKeyInfo keyInfo)
-    {
-        if (keyInfo is { Key: ConsoleKey.Q, Modifiers: ConsoleModifiers.Control })
-        {
-            Environment.Exit(0);
-        }
-        else
-        {
-            // Will add navigation here later
-            // For now just leave it like this
-            
-            Console.Clear();
-            Console.WriteLine("Goodbye");
-            Environment.Exit(0);
-        }
-        
-        return Task.CompletedTask;
-    }
 }
