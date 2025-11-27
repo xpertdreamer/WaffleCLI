@@ -8,13 +8,14 @@ public class WelcomeScreen : BasicTuiScreen
 
     public override Task InitializeAsync()
     {
-        var welcomeText = new TextElement
+        var title = new TextElement
         {
-            X = 10,
-            Y = 5,
+            X = 5,
+            Y = 2,
             Width = 40,
-            Text = "Hello, User!",
-            Color = ConsoleColor.Green
+            Text = "Welcome to WaffleTUI!",
+            Color = ConsoleColor.Green,
+            HasBorder = true
         };
 
         var instructionText = new TextElement
@@ -26,18 +27,65 @@ public class WelcomeScreen : BasicTuiScreen
             Color = ConsoleColor.Yellow
         };
 
-        var hintText = new TextElement
+        var instruction2 = new TextElement
         {
-            X = 10,
-            Y = 9, 
-            Width = 60,
-            Text = "Press any key to continue...",
-            Color = ConsoleColor.Gray
+            X = 5,
+            Y = 6,
+            Width = 50,
+            Text = "This is a simple TUI Framework",
+            Color = ConsoleColor.Yellow
         };
         
-        AddElement(welcomeText);
+        var instruction3 = new TextElement
+        {
+            X = 5,
+            Y = 8,
+            Width = 50,
+            Text = "Window size: " + Console.WindowWidth + "x" + Console.WindowHeight,
+            Color = ConsoleColor.Gray
+        };
+
+        var button = new ButtonElement
+        {
+            X = 5,
+            Y = 10,
+            Width = 20,
+            Text = "Test Button",
+            Color = ConsoleColor.White,
+            BackgroundColor = ConsoleColor.DarkBlue
+        };
+        
+        button.Clicked += () =>
+        {
+            var message = new TextElement
+            {
+                X = 5,
+                Y = 14,
+                Width = 30,
+                Text = "Button was clicked!",
+                Color = ConsoleColor.Yellow,
+                HasBorder = true
+            };
+            AddElement(message);
+        };
+        
+        var frame = new TextElement
+        {
+            X = 3,
+            Y = 1,
+            Width = 60,
+            Height = 15,
+            Text = "",
+            HasBorder = true,
+            BorderColor = ConsoleColor.Blue
+        };
+        
+        AddElement(frame);
+        AddElement(title);
         AddElement(instructionText);
-        AddElement(hintText);
+        AddElement(instruction2);
+        AddElement(instruction3);
+        AddElement(button);
         
         return Task.CompletedTask;
     }
