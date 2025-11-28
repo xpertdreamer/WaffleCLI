@@ -14,6 +14,8 @@ using WaffleCLI.Abstractions.TUI;
 using WaffleCLI.Core.Middleware;
 using WaffleCLI.Core.TUI;
 using WaffleCLI.Core.TUI.Elements;
+using WaffleCLI.Core.TUI.Events;
+using WaffleCLI.Core.TUI.Process;
 using WaffleCLI.Core.TUI.Screens;
 using WaffleCLI.Runtime.Options;
 
@@ -33,6 +35,8 @@ public static class ServiceCollectionExtensions
         Action<TuiApplicationBuilder> configure)
     {
         services.TryAddSingleton<ITuiApplication, TuiApplication>();
+        services.TryAddSingleton<TuiEventBus>();
+        services.TryAddSingleton<ProcessManager>();
         
         // services.TryAddTransient<WelcomeScreen>();
         // services.TryAddTransient<TextElement>();

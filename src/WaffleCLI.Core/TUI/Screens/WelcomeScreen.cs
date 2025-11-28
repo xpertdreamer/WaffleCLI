@@ -49,6 +49,16 @@ public class WelcomeScreen : BasicTuiScreen
             isFocusable = false
         };
 
+        var input = new InputElement
+        {
+            X = 30, 
+            Y = 30,
+            Width = 40,
+            Height = 10,
+            isFocusable = true,
+            isVisible = true
+        };
+
         var button = new ButtonElement
         {
             X = 30,
@@ -81,11 +91,23 @@ public class WelcomeScreen : BasicTuiScreen
         };
         
         AddElement(title);
+        AddElement(input);
         AddElement(instructionText);
         AddElement(instruction2);
         AddElement(instruction3);
         AddElement(button);
         
+        return Task.CompletedTask;
+    }
+
+    public override Task HandleResizeAsync()
+    {
+        var sizeElement = _elements.OfType<TextElement>()
+            .FirstOrDefault(e => e.Text.Contains("Window size:"));
+        if (sizeElement != null)
+        {
+            sizeElement.Text = $"Window size: {Console.WindowWidth}x{Console.WindowHeight}";
+        }
         return Task.CompletedTask;
     }
 }

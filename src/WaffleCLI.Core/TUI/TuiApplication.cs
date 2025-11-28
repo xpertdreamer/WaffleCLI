@@ -11,6 +11,7 @@ public class TuiApplication : ITuiApplication
     private ITuiScreen _currentScreen =  null!;
     private bool _isRunning;
     private bool _needsRedraw = true;
+    private (int width, int height) _lastConsoleSize;
 
     public TuiApplication(IServiceProvider serviceProvider, ILogger<TuiApplication> logger)
     {
@@ -31,6 +32,8 @@ public class TuiApplication : ITuiApplication
 
             _currentScreen = _serviceProvider.GetRequiredService<ITuiScreen>();
             await _currentScreen.InitializeAsync();
+            
+            _lastConsoleSize = (Console.WindowWidth, Console.WindowHeight);
 
             await MainLoop(cancellationToken);
         }
@@ -89,6 +92,14 @@ public class TuiApplication : ITuiApplication
         
         while (!cancellationToken.IsCancellationRequested && _isRunning)
         {
+            var currentSize = (Console.WindowWidth, Console.WindowHeight);
+            if (currentSize != _lastConsoleSize)
+            {
+                _lastConsoleSize = currentSize;
+                await _currentScreen.HandleResizeAsync();
+                _needsRedraw = true;
+            }
+            
             var currentTime = DateTime.Now;
             var elapsed = (currentTime - lastRenderTime).TotalMilliseconds;
 
@@ -107,7 +118,7 @@ public class TuiApplication : ITuiApplication
             }
             if (!_needsRedraw)
             {
-                await Task.Delay(16, cancellationToken);
+                await Task.Delay(1, cancellationToken);
             }
         }
     }
