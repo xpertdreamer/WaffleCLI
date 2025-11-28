@@ -30,8 +30,8 @@ public class InputElement : ITuiElement
     public int Y { get; set; }
     public int Width { get; set; } = 20;
     public int Height { get; set; } = 1;
-    public bool IsVisible { get; set; } = true;
-    public bool IsFocusable { get; set; } = true;
+    public bool isVisible { get; set; } = true;
+    public bool isFocusable { get; set; } = true;
     public bool HasFocus { get; set; }
     
     public async Task OnCreateAsync()
@@ -49,7 +49,7 @@ public class InputElement : ITuiElement
 
     public void Render()
     {
-        if (!IsVisible) return;
+        if (!isVisible) return;
 
         var displayText = GetDisplayText();
 

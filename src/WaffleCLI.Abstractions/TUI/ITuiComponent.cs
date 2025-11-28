@@ -6,7 +6,7 @@ public interface ITuiComponent : ITuiElement
     ComponentState State {get;}
 
     Task OnCreateAsync();
-    Task OnRendeAsync();
+    Task OnRenderAsync();
     Task OnDestroyAsync();
     Task OnResizeAsync(int width, int height);
 }
