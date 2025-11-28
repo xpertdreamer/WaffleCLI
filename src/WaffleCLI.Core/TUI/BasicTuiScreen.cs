@@ -7,7 +7,8 @@ public abstract class BasicTuiScreen : ITuiScreen
     protected readonly List<ITuiElement> _elements = [];
     private int _focusedElementIndex = -1;
     private bool _firstRender = true;
-    private string _lastRenderedTitle = string.Empty;
+    private (int width, int height) _lastSize;
+    
     public abstract string Title { get; }
 
     public virtual Task InitializeAsync()
@@ -15,22 +16,25 @@ public abstract class BasicTuiScreen : ITuiScreen
         return Task.CompletedTask;
     }
 
+    public virtual Task HandleResizeAsync()
+    {
+        _firstRender = true;
+        return Task.CompletedTask;
+    }
+
     public virtual Task RenderAsync()
     {
-        if (_firstRender)
+        if (_firstRender || Console.WindowWidth != _lastSize.width || Console.WindowHeight != _lastSize.height)
         {
             Console.Clear();
-            _firstRender = false;
-            _lastRenderedTitle = string.Empty;
-        }
-
-        if (_lastRenderedTitle != Title)
-        {
             RenderHeader();
-            _lastRenderedTitle = Title;
+            _firstRender = false;
+            _lastSize = (Console.WindowWidth, Console.WindowHeight);
         }
-
-        ClearContentArea();
+        else
+        {
+            ClearContentArea();
+        }
 
         foreach (var element in _elements.Where(e => e.isVisible))
         {
@@ -70,20 +74,11 @@ public abstract class BasicTuiScreen : ITuiScreen
     
     protected virtual void ClearContentArea()
     {
-        var originalLeft = Console.CursorLeft;
-        var originalTop = Console.CursorTop;
-
-        Console.ForegroundColor = ConsoleColor.White;
-        Console.BackgroundColor = ConsoleColor.Black;
-
-        // Очищаем область между заголовком (строка 1) и футером (последняя строка)
-        for (int row = 1; row < Console.WindowHeight - 1; row++)
+        for (var row = 1; row < Console.WindowHeight - 1; row++)
         {
             Console.SetCursorPosition(0, row);
             Console.Write(new string(' ', Console.WindowWidth));
         }
-
-        Console.SetCursorPosition(originalLeft, originalTop);
     }
 
     protected virtual void RenderHeader()
@@ -107,10 +102,6 @@ public abstract class BasicTuiScreen : ITuiScreen
 
     protected virtual void RenderFooter()
     {
-        
-        var originalLeft = Console.CursorLeft;
-        var originalTop = Console.CursorTop;
-        
         Console.ForegroundColor = ConsoleColor.DarkGray;
         Console.BackgroundColor = ConsoleColor.Black;
         
@@ -120,20 +111,15 @@ public abstract class BasicTuiScreen : ITuiScreen
         Console.SetCursorPosition(0, Console.WindowHeight - 1);
         const string footerText = " Tab:Navigate | Enter:Select | Ctrl+Q:Exit";
         Console.Write(footerText);
-        
-        Console.ResetColor();
-        Console.SetCursorPosition(originalLeft, originalTop);
     }
 
     protected void AddElement(ITuiElement element)
     {
         _elements.Add(element);
 
-        if (_focusedElementIndex == -1 && element.isVisible)
-        {
-            _focusedElementIndex = _elements.Count - 1;
-            UpdateFocus();
-        }
+        if (_focusedElementIndex != -1 || !element.isVisible || !element.isFocusable) return;
+        _focusedElementIndex = _elements.Count - 1;
+        UpdateFocus();
     }
 
     protected void RemoveElement(ITuiElement element)
@@ -166,16 +152,12 @@ public abstract class BasicTuiScreen : ITuiScreen
         if (_elements.Count == 0) return;
 
         var focusableElements = _elements
-            .Where(e => e.isVisible && e.isFocusable)
+            .Where(e => e is { isVisible: true, isFocusable: true })
             .ToList();
         
         if (focusableElements.Count == 0) return;
 
-        var currentIndex = _focusedElementIndex >= 0
-            ? _elements.IndexOf(focusableElements.FirstOrDefault(e => _elements.IndexOf(e) == _focusedElementIndex) ??
-                                focusableElements[0])
-            : -1;
-
+        var currentIndex = GetVisibleElementIndex(_focusedElementIndex);
         var nextIndex = (currentIndex + 1) % focusableElements.Count;
         _focusedElementIndex = _elements.IndexOf(focusableElements[nextIndex]);
         
