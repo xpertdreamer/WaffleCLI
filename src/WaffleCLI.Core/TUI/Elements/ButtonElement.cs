@@ -10,6 +10,7 @@ public class ButtonElement : ITuiElement
     public int Height { get; set; } = 3;
     public bool isVisible { get; set; } = true;
     public bool isFocusable { get; set; } = true;
+    public bool HasFocus {get; set;}
 
     public string Text { get; set; } = "Button";
     public ConsoleColor Color { get; set; } = ConsoleColor.White;
@@ -17,7 +18,6 @@ public class ButtonElement : ITuiElement
     public ConsoleColor FocusColor {get; set;} = ConsoleColor.Black;
     public ConsoleColor FocusBackgroundColor {get; set;} = ConsoleColor.Yellow;
     
-    public bool HasFocus {get; set;}
     public event Action? Clicked;
 
     public void Render()
@@ -41,9 +41,7 @@ public class ButtonElement : ITuiElement
         for (var row = 0; row < Height; row++)
         {
             Console.SetCursorPosition(X, Y + row);
-            if (row == 0)
-                Console.Write("+" + new string('-', Width - 2) + "+");
-            else if (row == Height - 1)
+            if (row == 0 || row == Height - 1)
                 Console.Write("+" + new string('-', Width - 2) + "+");
             else
             {
@@ -82,8 +80,8 @@ public static class StringExtensions
 {
     public static string PadBoth(this string str, int length)
     {
-        int spaces = length - str.Length;
-        int padLeft = spaces / 2 + str.Length;
+        var spaces = length - str.Length;
+        var padLeft = spaces / 2 + str.Length;
         return str.PadLeft(padLeft).PadRight(length);
     }
 }

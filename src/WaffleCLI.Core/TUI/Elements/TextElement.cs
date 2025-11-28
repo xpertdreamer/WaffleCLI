@@ -10,6 +10,7 @@ public class TextElement : ITuiElement
     public int Height { get; set; } = 1;
     public bool isVisible { get; set; } = true;
     public bool isFocusable { get; set; } = false;
+    public bool HasFocus { get; set; }
 
     public string Text {get; set;} = string.Empty;
     public ConsoleColor Color {get; set;} = ConsoleColor.White;
@@ -23,8 +24,6 @@ public class TextElement : ITuiElement
         
         var oldFg =  Console.ForegroundColor;
         var oldBg =  Console.BackgroundColor;
-        var originalLeft = Console.CursorLeft;
-        var originalTop = Console.CursorTop;
 
         if (HasBorder) RenderBorder();
         
@@ -41,13 +40,9 @@ public class TextElement : ITuiElement
         
         Console.ForegroundColor = oldFg;
         Console.BackgroundColor = oldBg;
-        Console.SetCursorPosition(originalLeft, originalTop);
     }
-    
-    public bool HandleInput(ConsoleKeyInfo keyInfo)
-    {
-        return false;
-    }
+
+    public bool HandleInput(ConsoleKeyInfo keyInfo) => false;
 
     private void RenderBorder()
     {
