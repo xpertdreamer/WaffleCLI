@@ -8,6 +8,7 @@ public interface ITuiElement
     int Height {get; set;}
     bool isVisible {get; set;}
     bool isFocusable { get; set; }
+    bool HasFocus {get; set;}
 
     void Render();
     bool HandleInput(ConsoleKeyInfo keyInfo);

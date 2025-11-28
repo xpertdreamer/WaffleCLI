@@ -6,4 +6,5 @@ public interface ITuiScreen
     Task InitializeAsync();
     Task RenderAsync();
     Task HandleInputAsync(ConsoleKeyInfo keyInfo);
+    Task HandleResizeAsync();
 }
