@@ -27,7 +27,7 @@ public enum ProcessState
 public record ProcessInfo(
     string? FileName,
     string Arguments = "",
-    string WorkingDirectory = "",
+    string? WorkingDirectory = "",
     Dictionary<string, string> EnviromentVariables = null,
     bool UseShellExecute = false
 );
