@@ -8,16 +8,19 @@ public abstract class BasicTuiScreen : ITuiScreen
     private int _focusedElementIndex = -1;
     private bool _firstRender = true;
     private (int width, int height) _lastSize;
+    private bool _needsLayoutRecalculation = true;
     
     public abstract string Title { get; }
 
     public virtual Task InitializeAsync()
     {
+        _needsLayoutRecalculation = true;
         return Task.CompletedTask;
     }
 
     public virtual Task HandleResizeAsync()
     {
+        _needsLayoutRecalculation = true;
         _firstRender = true;
         return Task.CompletedTask;
     }
@@ -27,14 +30,19 @@ public abstract class BasicTuiScreen : ITuiScreen
         if (_firstRender || Console.WindowWidth != _lastSize.width || Console.WindowHeight != _lastSize.height)
         {
             Console.Clear();
-            RenderHeader();
             _firstRender = false;
             _lastSize = (Console.WindowWidth, Console.WindowHeight);
+            _needsLayoutRecalculation =  true;
         }
-        else
+
+        if (_needsLayoutRecalculation)
         {
-            ClearContentArea();
+            RecalculateLayout();
+            _needsLayoutRecalculation = false;
         }
+        
+        RenderHeader();
+        ClearContentArea();
 
         foreach (var element in _elements.Where(e => e.isVisible))
         {
@@ -44,6 +52,20 @@ public abstract class BasicTuiScreen : ITuiScreen
         RenderFooter();
         
         return Task.CompletedTask;
+    }
+
+    protected virtual void RecalculateLayout()
+    {
+        var screenWidth = Console.WindowWidth;
+        var screenHeight = Console.WindowHeight;
+
+        foreach (var element in _elements)
+        {
+            if(element.X + element.Width > screenWidth)
+                element.X = Math.Max(0, (screenWidth - element.Width) / 2);
+            if (element.Y + element.Height > screenHeight - 1)
+                element.Y = Math.Max(1, (screenHeight - element.Height - 2) / 2);
+        }
     }
 
     public virtual Task HandleInputAsync(ConsoleKeyInfo keyInfo)
@@ -74,6 +96,8 @@ public abstract class BasicTuiScreen : ITuiScreen
     
     protected virtual void ClearContentArea()
     {
+        Console.ResetColor();
+        
         for (var row = 1; row < Console.WindowHeight - 1; row++)
         {
             Console.SetCursorPosition(0, row);
@@ -98,6 +122,8 @@ public abstract class BasicTuiScreen : ITuiScreen
         {
             Console.Write(new string('=', remainWidth));
         }
+        
+        Console.ResetColor();
     }
 
     protected virtual void RenderFooter()
@@ -111,6 +137,8 @@ public abstract class BasicTuiScreen : ITuiScreen
         Console.SetCursorPosition(0, Console.WindowHeight - 1);
         const string footerText = " Tab:Navigate | Enter:Select | Ctrl+Q:Exit";
         Console.Write(footerText);
+        
+        Console.ResetColor();
     }
 
     protected void AddElement(ITuiElement element)
