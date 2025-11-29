@@ -19,11 +19,28 @@ public static class ProcessComponentFactory
     public static IProcessComponent CreateInteractiveShell()
     {
         var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
+        
         var processInfo = new ProcessInfo(
             FileName: isWindows ? "cmd.exe" : "/bin/bash",
-            WorkingDirectory: Environment.CurrentDirectory
+            Arguments: isWindows ? "/K" : "-i",
+            WorkingDirectory: Environment.CurrentDirectory,
+            UseShellExecute: false
         );
         
+        return new ProcessRunnerComponent(processInfo);
+    }
+    
+    public static IProcessComponent CreateCommandProcess(string command)
+    {
+        var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
+        
+        var processInfo = new ProcessInfo(
+            FileName: isWindows ? "cmd.exe" : "/bin/bash",
+            Arguments: isWindows ? $"/C {command}" : $"-c \"{command}\"",
+            WorkingDirectory: Environment.CurrentDirectory,
+            UseShellExecute: false
+        );
+
         return new ProcessRunnerComponent(processInfo);
     }
 
@@ -47,5 +64,13 @@ public static class ProcessComponentFactory
         );
 
         return new ProcessRunnerComponent(processInfo);
+    }
+    
+    public static IProcessComponent CreateTestProcess()
+    {
+        var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
+        var testCommand = isWindows ? "dir" : "ls -la";
+        
+        return CreateCommandProcess(testCommand);
     }
 }

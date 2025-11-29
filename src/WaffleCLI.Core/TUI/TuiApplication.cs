@@ -92,33 +92,42 @@ public class TuiApplication : ITuiApplication
         
         while (!cancellationToken.IsCancellationRequested && _isRunning)
         {
-            var currentSize = (Console.WindowWidth, Console.WindowHeight);
-            if (currentSize != _lastConsoleSize)
+            try
             {
-                _lastConsoleSize = currentSize;
-                await _currentScreen.HandleResizeAsync();
-                _needsRedraw = true;
-            }
-            
-            var currentTime = DateTime.Now;
-            var elapsed = (currentTime - lastRenderTime).TotalMilliseconds;
+                var currentTime = DateTime.Now;
+                var elapsed = (currentTime - lastRenderTime).TotalMilliseconds;
 
-            if (Console.KeyAvailable)
-            {
-                var key = Console.ReadKey(true);
-                await _currentScreen.HandleInputAsync(key);
-                _needsRedraw = true;
-            }
+                var currentSize = (Console.WindowWidth, Console.WindowHeight);
+                if (currentSize != _lastConsoleSize)
+                {
+                    _lastConsoleSize = currentSize;
+                    await _currentScreen.HandleResizeAsync();
+                    _needsRedraw = true;
+                }
 
-            if (_needsRedraw && elapsed >= minFrameTime)
-            {
-                await _currentScreen.RenderAsync();
-                _needsRedraw = false;
-                lastRenderTime = currentTime;
+                if (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(true);
+                    await _currentScreen.HandleInputAsync(key);
+                    _needsRedraw = true;
+                }
+
+                if (_needsRedraw && elapsed >= minFrameTime)
+                {
+                    await _currentScreen.RenderAsync();
+                    _needsRedraw = false;
+                    lastRenderTime = currentTime;
+                }
+
+                if (!_needsRedraw)
+                {
+                    await Task.Delay(1, cancellationToken);
+                }
             }
-            if (!_needsRedraw)
+            catch (Exception ex)
             {
-                await Task.Delay(1, cancellationToken);
+                _logger.LogError(ex, "Error in Main loop");
+                await Task.Delay(100, cancellationToken);
             }
         }
     }

@@ -1,3 +1,4 @@
+using System.Data;
 using WaffleCLI.Abstractions.TUI;
 using WaffleCLI.Core.TUI.Elements;
 using WaffleCLI.Core.TUI.Process;
@@ -7,8 +8,9 @@ namespace WaffleCLI.Core.TUI.Screens;
 public class ProcessManagerScreen : BasicTuiScreen
 {
     private readonly ProcessManager _processManager;
-    private readonly List<ITuiElement> _processViews = [];
+    private readonly List<IProcessComponent> _processe = [];
     private IProcessComponent _activeProcess;
+    private TextElement _statusElement;
 
     public ProcessManagerScreen(ProcessManager processManager)
     {
@@ -21,10 +23,10 @@ public class ProcessManagerScreen : BasicTuiScreen
     {
         ClearElements();
 
-        var controls = new TextElement
-        {
+        _statusElement = new TextElement
+        {   
             X = 2, Y = 2, Width = 76,
-            Text = "F1: New CMD | F2: New Bash | F3: New Process | F4: Kill All | Tab: Switch Process",
+            Text = "Ready - Press F1 for CMD, F2 for Bash, F3 for Custom, F4 to Kill All",
             Color = ConsoleColor.Yellow,
             isFocusable = false
         };
@@ -32,21 +34,28 @@ public class ProcessManagerScreen : BasicTuiScreen
         var newCmdButton = new ButtonElement
         {
             X = 2, Y = 4, Width = 15,
-            Text = "New CMD",
+            Text = "New CMD (F1)",
             isFocusable = true
         };
 
         var newBashButton = new ButtonElement
         {
             X = 20, Y = 4, Width = 15,
-            Text = "New Bash",
+            Text = "New Bash (F2)",
+            isFocusable = true
+        };
+        
+        var customButton = new ButtonElement
+        {
+            X = 38, Y = 4, Width = 15,
+            Text = "Custom (F3)",
             isFocusable = true
         };
 
         var killAllButton = new ButtonElement
         {
-            X = 60, Y = 4, Width = 15,
-            Text = "Kill All",
+            X = 56, Y = 4, Width = 15,
+            Text = "Kill All (F4)",
             Color = ConsoleColor.White,
             BackgroundColor = ConsoleColor.Red,
             isFocusable = true
@@ -54,51 +63,172 @@ public class ProcessManagerScreen : BasicTuiScreen
 
         newCmdButton.Clicked += () => CreateNewProcess("cmd");
         newBashButton.Clicked += () => CreateNewProcess("bash");
-        killAllButton.Clicked += () => _ = _processManager.StopAllProcessesAsync();
+        customButton.Clicked += () => ShowCustomProcessDialog();
+        killAllButton.Clicked += () => _ = KillAllProcesses();
 
-        AddElement(controls);
+        AddElement(_statusElement);
         AddElement(newCmdButton);
         AddElement(newBashButton);
+        AddElement(customButton);
         AddElement(killAllButton);
 
         CreateNewProcess(Environment.OSVersion.Platform == PlatformID.Win32NT ? "cmd" : "bash");
 
+        UpdateStatus();
+
         return Task.CompletedTask;
     }
     
+     protected override void RecalculateLayout()
+    {
+        var screenWidth = Console.WindowWidth;
+        var screenHeight = Console.WindowHeight;
+
+        _statusElement.Width = Math.Max(10, screenWidth - 4);
+        _statusElement.X = 2;
+
+        var processY = 6;
+        foreach (var process in _processe)
+        {
+            process.X = 2;
+            process.Y = processY;
+            process.Width = Math.Max(10, screenWidth - 4);
+            process.Height = Math.Max(5, screenHeight - processY - 2);
+            
+            processY += process.Height + 1;
+            
+            if (processY >= screenHeight - 5) break;
+        }
+
+        UpdateStatus();
+    }
+
     private void CreateNewProcess(string type)
     {
-        var process = type.ToLower() switch
+        try
         {
-            _ => ProcessComponentFactory.CreateInteractiveShell()
-        };
+            var process = ProcessComponentFactory.CreateInteractiveShell();
+            switch (type)
+            {
+                case "cmd":
+                {
+                    if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+                    {
+                        UpdateStatus("CMD only available on Windows. Using Bash instead.");
+                        process = ProcessComponentFactory.CreateInteractiveShell();
+                    }
 
-        process.X = 2;
-        process.Y = 6;
-        process.Width = 76;
-        process.Height = 16;
-        process.isFocusable = true;
+                    break;
+                }
+                case "bash":
+                    break;
+            }
 
+            ConfigureProcessComponent(process);
+            _processe.Add(process);
+            AddElement(process);
+            
+            _activeProcess = process;
+            SetFocus(process);
+            
+            _ = process.StartAsync();
+            
+            UpdateStatus($"Started {type} process. Total processes: {_processe.Count}");
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus($"Error creating process: {ex.Message}");
+        }
+    }
+
+    private void ConfigureProcessComponent(IProcessComponent process)
+    {
         process.ProcessExited += exitCode =>
         {
-            _processViews.Remove(process);
+            _processe.Remove(process);
             RemoveElement(process);
             
             if (_activeProcess == process)
             {
-                _activeProcess = _processViews.OfType<IProcessComponent>().FirstOrDefault();
-                SetFocus(_activeProcess);
+                _activeProcess = _processe.FirstOrDefault();
+                if (_activeProcess != null)
+                    SetFocus(_activeProcess);
             }
+            
+            UpdateStatus($"Process exited with code {exitCode}. Remaining: {_processe.Count}");
         };
 
-        _processManager.CreateProcess(process.ProcessInfo);
-        _processViews.Add(process);
-        AddElement(process);
-        
-        _activeProcess = process;
-        SetFocus(process);
+        process.OutputReceived += output =>
+        {
+            
+        };
+
+        process.ErrorReceived += error =>
+        {
+            UpdateStatus($"Process error: {error}");
+        };
     }
-    
+
+    private void ShowCustomProcessDialog()
+    {
+        var dialog = new TextElement
+        {
+            X = 10, Y = 10, Width = 60, Height = 5,
+            Text = "Enter command (e.g., python, node, dotnet):",
+            Color = ConsoleColor.White,
+            BackgroundColor = ConsoleColor.DarkBlue,
+            HasBorder = true,
+            isFocusable = false
+        };
+
+        AddElement(dialog);
+
+        CreateNewProcess("custom");
+        
+        // Убираем диалог через 2 секунды
+        Task.Delay(2000).ContinueWith(_ => 
+        {
+            RemoveElement(dialog);
+            RequestRedraw();
+        });
+    }
+
+    private async Task KillAllProcesses()
+    {
+        if (_processe.Count == 0)
+        {
+            UpdateStatus("No processes to kill");
+            return;
+        }
+
+        var processesToKill = _processe.ToList();
+        foreach (var process in processesToKill)
+        {
+            await process.StopAsync();
+        }
+
+        _processe.Clear();
+        UpdateStatus($"Killed {processesToKill.Count} processes");
+    }
+
+    private void UpdateStatus(string message = null)
+    {
+        if (_statusElement != null)
+        {
+            if (!string.IsNullOrEmpty(message))
+            {
+                _statusElement.Text = message;
+            }
+            else
+            {
+                _statusElement.Text = $"Processes: {_processe.Count} | " +
+                                    $"Active: {(_activeProcess != null ? "Yes" : "No")} | " +
+                                    $"Screen: {Console.WindowWidth}x{Console.WindowHeight}";
+            }
+        }
+        RequestRedraw();
+    }
+
     public override Task HandleInputAsync(ConsoleKeyInfo keyInfo)
     {
         switch (keyInfo.Key)
@@ -112,15 +242,22 @@ public class ProcessManagerScreen : BasicTuiScreen
                 return Task.CompletedTask;
 
             case ConsoleKey.F3:
-                CreateNewProcess("custom");
+                ShowCustomProcessDialog();
                 return Task.CompletedTask;
 
             case ConsoleKey.F4:
-                _ = _processManager.StopAllProcessesAsync();
+                _ = KillAllProcesses();
                 return Task.CompletedTask;
 
             case ConsoleKey.Tab when keyInfo.Modifiers == ConsoleModifiers.Control:
                 SwitchToNextProcess();
+                return Task.CompletedTask;
+
+            case ConsoleKey.C when keyInfo.Modifiers == ConsoleModifiers.Control:
+                if (_activeProcess != null)
+                {
+                    _ = _activeProcess.StopAsync();
+                }
                 return Task.CompletedTask;
         }
 
@@ -129,14 +266,25 @@ public class ProcessManagerScreen : BasicTuiScreen
 
     private void SwitchToNextProcess()
     {
-        var processes = _processViews.OfType<IProcessComponent>().ToList();
-        if (processes.Count < 2) return;
+        if (_processe.Count < 2) return;
 
-        var currentIndex = processes.IndexOf(_activeProcess);
-        var nextIndex = (currentIndex + 1) % processes.Count;
+        var currentIndex = _processe.IndexOf(_activeProcess);
+        var nextIndex = (currentIndex + 1) % _processe.Count;
         
-        _activeProcess = processes[nextIndex];
+        _activeProcess = _processe[nextIndex];
         SetFocus(_activeProcess);
+        UpdateStatus($"Switched to process {nextIndex + 1} of {_processe.Count}");
+    }
+
+    public override Task HandleResizeAsync()
+    {
+        UpdateStatus($"Screen resized to {Console.WindowWidth}x{Console.WindowHeight}");
+        return base.HandleResizeAsync();
+    }
+
+    private static void RequestRedraw()
+    {
+        
     }
 }
 

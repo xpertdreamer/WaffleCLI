@@ -88,20 +88,32 @@ public class ProcessRunnerComponent : IProcessComponent
             _process.Exited += OnProcessExited;
 
             ProcessState = ProcessState.Running;
-            _process.Start();
-
+            
+            var started = _process.Start();
+            if (!started)
+            {
+                throw new InvalidOperationException("Process failed to start");   
+            }
+            
             if (!ProcessInfo.UseShellExecute)
             {
                 _process.BeginOutputReadLine();
                 _process.BeginErrorReadLine();
             }
 
+            AddOutputLine($"Process started: {ProcessInfo.FileName} {ProcessInfo.Arguments}");
+            AddOutputLine($"Working directory: {_process.StartInfo.WorkingDirectory}");
+            AddOutputLine("Type commands below (Ctrl+C to stop):");
+            
             await OnRenderAsync();
         }
         catch (Exception ex)
         {
             ProcessState = ProcessState.Error;
             AddOutputLine($"Error starting process: {ex.Message}");
+            AddOutputLine($"File: {ProcessInfo.FileName}");
+            AddOutputLine($"Arguments: {ProcessInfo.Arguments}");
+            AddOutputLine($"Working Directory: {ProcessInfo.WorkingDirectory}");
         }
     }
     

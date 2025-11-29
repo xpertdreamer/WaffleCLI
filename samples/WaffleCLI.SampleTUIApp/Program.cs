@@ -11,7 +11,7 @@ builder.ConfigureServices(services =>
 {
     services.AddWaffleTui(tuiApplicationBuilder =>
     {
-        tuiApplicationBuilder.UseStartScreen<WelcomeScreen>();
+        tuiApplicationBuilder.UseStartScreen<ProcessManagerScreen>();
     });
 });
 
