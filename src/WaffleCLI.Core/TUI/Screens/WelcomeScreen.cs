@@ -91,7 +91,7 @@ public class WelcomeScreen : BasicTuiScreen
         };
         
         AddElement(title);
-        AddElement(input);
+        // AddElement(input);
         AddElement(instructionText);
         AddElement(instruction2);
         AddElement(instruction3);

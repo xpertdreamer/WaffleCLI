@@ -24,6 +24,9 @@ public class ButtonElement : ITuiElement
     {
         if (!isVisible) return;
         
+        if (Y >= Console.WindowHeight || X >= Console.WindowWidth || Y < 0 || X < 0)
+            return;
+        
         var oldFg =  Console.ForegroundColor;
         var oldBg =  Console.BackgroundColor;
 
@@ -38,9 +41,16 @@ public class ButtonElement : ITuiElement
             Console.BackgroundColor = BackgroundColor;
         }
 
-        for (var row = 0; row < Height; row++)
+        var availableWidth = Math.Min(Width, Console.WindowWidth - X);
+        var availableHeight = Math.Min(Height, Console.WindowHeight - Y);
+        if (availableWidth <= 2 || availableHeight <= 2) return;
+        
+        for (var row = 0; row < availableHeight; row++)
         {
-            Console.SetCursorPosition(X, Y + row);
+            var currentY = Y + row;
+            if (currentY >= Console.WindowHeight) break;
+            
+            Console.SetCursorPosition(X, currentY);
             if (row == 0 || row == Height - 1)
                 Console.Write("+" + new string('-', Width - 2) + "+");
             else

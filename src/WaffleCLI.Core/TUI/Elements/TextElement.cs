@@ -22,6 +22,8 @@ public class TextElement : ITuiElement
     {
         if (!isVisible) return;
         
+        if (Y >= Console.WindowHeight || X >= Console.WindowWidth || Y < 0 || X < 0) return;
+        
         var oldFg =  Console.ForegroundColor;
         var oldBg =  Console.BackgroundColor;
 
@@ -46,6 +48,11 @@ public class TextElement : ITuiElement
 
     private void RenderBorder()
     {
+        if (X - 1 < 0 || Y - 1 < 0 || 
+            X + Width >= Console.WindowWidth || 
+            Y + Height >= Console.WindowHeight)
+            return;
+        
         var oldFg = Console.ForegroundColor;
         Console.ForegroundColor = BorderColor;
         
