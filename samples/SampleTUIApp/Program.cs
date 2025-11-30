@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using WaffleCLI.Abstractions.TUI.Configuration;
 using WaffleCLI.Abstractions.TUI.Input;
+using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 using WaffleCLI.Core.TUI.Application;
 using WaffleCLI.Core.TUI.Components.Primitive;
 using WaffleCLI.Core.TUI.Components.Layout;
@@ -123,7 +124,7 @@ public class DemoApp : Panel
         }
 
         BackgroundColors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Black, ConsoleColor.DarkBlue);
-        Border = WaffleCLI.Abstractions.TUI.Rendering.Enums.BorderStyle.Single;
+        Border = WaffleCLI.Abstractions.TUI.Rendering.Enums.BorderStyle.Double;
         BorderColors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue);
 
         TuiLogger.LogInfo("Creating UI components");
@@ -147,7 +148,8 @@ public class DemoApp : Panel
             Width = 20,
             Height = 3,
             Text = "Click me!",
-            OnClick = HandleButtonClick
+            OnClick = HandleButtonClick,
+            NormalColors = new ColorScheme(ConsoleColor.Black, ConsoleColor.DarkYellow)
         };
 
         // Create text box
