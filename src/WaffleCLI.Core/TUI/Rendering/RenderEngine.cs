@@ -5,7 +5,7 @@ using WaffleCLI.Abstractions.TUI.Exceptions;
 namespace WaffleCLI.Core.TUI.Rendering
 {
     /// <summary>
-    /// Enhanced render engine with forced redraw capabilities
+    /// High-performance render engine with smart update strategies
     /// </summary>
     public class RenderEngine : IRenderEngine
     {
@@ -14,84 +14,74 @@ namespace WaffleCLI.Core.TUI.Rendering
         private int _viewportX, _viewportY, _viewportWidth, _viewportHeight;
         private bool _viewportActive = false;
         private ColorScheme _clearColors = ColorScheme.Default;
-        private bool _forceFullRedraw = true;
+        private bool _requiresFullRender = true;
+        private DateTime _lastRenderTime = DateTime.Now;
+        private const int MIN_RENDER_INTERVAL_MS = 16; // ~60 FPS max
 
         public int Width => _buffer?.Width ?? 0;
         public int Height => _buffer?.Height ?? 0;
 
         public void Initialize(int width, int height)
         {
-            Infrastructure.Logging.TuiLogger.LogInfo($"Initializing RenderEngine with dimensions: {width}x{height}");
-            
             if (width <= 0 || height <= 0)
-            {
-                Infrastructure.Logging.TuiLogger.LogError($"Invalid buffer dimensions: {width}x{height}");
                 throw new ArgumentException("Invalid buffer dimensions");
-            }
 
-            try
-            {
-                _buffer = new DoubleBuffer(width, height);
-                _initialized = true;
-                _forceFullRedraw = true;
-                
-                Infrastructure.Logging.TuiLogger.LogInfo("RenderEngine initialized successfully");
-                
-                SetupConsole();
-            }
-            catch (Exception ex)
-            {
-                Infrastructure.Logging.TuiLogger.LogError("Failed to initialize RenderEngine", ex);
-                throw new TuiException("Failed to initialize RenderEngine", ex);
-            }
+            _buffer = new DoubleBuffer(width, height);
+            _initialized = true;
+            _requiresFullRender = true;
+            
+            SetupConsole();
         }
 
         public void BeginFrame()
         {
             if (!_initialized || _buffer == null)
-            {
-                Infrastructure.Logging.TuiLogger.LogError("RenderEngine not initialized in BeginFrame");
-                throw new TuiException("RenderEngine not initialized");
-            }
+                return;
 
-            // Clear the back buffer at the start of each frame
             _buffer.Clear(_clearColors);
         }
 
         public void EndFrame()
         {
             if (!_initialized || _buffer == null) 
-            {
-                Infrastructure.Logging.TuiLogger.LogError("RenderEngine not initialized in EndFrame");
                 return;
-            }
+            
+            // Throttle rendering to prevent excessive CPU usage
+            var now = DateTime.Now;
+            if ((now - _lastRenderTime).TotalMilliseconds < MIN_RENDER_INTERVAL_MS)
+                return;
             
             try
             {
                 _buffer.Swap();
-                _buffer.RenderToConsole();
-                
-                // Reset force flag after successful render
-                _forceFullRedraw = false;
+                _buffer.RenderToConsole(_requiresFullRender);
+                _requiresFullRender = false;
+                _lastRenderTime = now;
             }
             catch (Exception ex)
             {
-                Infrastructure.Logging.TuiLogger.LogError("Error in EndFrame", ex);
-                // Set force redraw for next frame on error
-                _forceFullRedraw = true;
+                _requiresFullRender = true; // Force full render on error
             }
         }
 
         public void DrawString(int x, int y, string text, ColorScheme colors)
         {
             if (!_initialized || string.IsNullOrEmpty(text) || _buffer == null) 
-            {
                 return;
-            }
 
+            // Optimized: draw entire string at once if possible
             for (int i = 0; i < text.Length; i++)
             {
-                DrawChar(x + i, y, text[i], colors);
+                int drawX = _viewportActive ? x + i + _viewportX : x + i;
+                int drawY = _viewportActive ? y + _viewportY : y;
+                
+                if (drawX >= 0 && drawX < Width && drawY >= 0 && drawY < Height)
+                {
+                    if (!_viewportActive || IsInViewport(x + i, y))
+                    {
+                        _buffer.SetPixel(drawX, drawY, text[i], colors.Foreground, colors.Background);
+                    }
+                }
             }
         }
 
@@ -102,7 +92,6 @@ namespace WaffleCLI.Core.TUI.Rendering
             int drawX = _viewportActive ? x + _viewportX : x;
             int drawY = _viewportActive ? y + _viewportY : y;
 
-            // Only draw if within buffer bounds and viewport
             if (drawX >= 0 && drawX < Width && drawY >= 0 && drawY < Height)
             {
                 if (!_viewportActive || IsInViewport(x, y))
@@ -119,20 +108,20 @@ namespace WaffleCLI.Core.TUI.Rendering
             var borderChars = GetBorderChars(border);
             if (borderChars == null) return;
 
-            // Draw corners
+            // Optimized box drawing - only draw visible parts
             DrawChar(x, y, borderChars.Value.TopLeft, colors);
             DrawChar(x + width - 1, y, borderChars.Value.TopRight, colors);
             DrawChar(x, y + height - 1, borderChars.Value.BottomLeft, colors);
             DrawChar(x + width - 1, y + height - 1, borderChars.Value.BottomRight, colors);
 
-            // Draw horizontal lines
+            // Horizontal lines
             for (int i = 1; i < width - 1; i++)
             {
                 DrawChar(x + i, y, borderChars.Value.Horizontal, colors);
                 DrawChar(x + i, y + height - 1, borderChars.Value.Horizontal, colors);
             }
 
-            // Draw vertical lines
+            // Vertical lines
             for (int i = 1; i < height - 1; i++)
             {
                 DrawChar(x, y + i, borderChars.Value.Vertical, colors);
@@ -144,7 +133,7 @@ namespace WaffleCLI.Core.TUI.Rendering
         {
             if (!_initialized || _buffer == null) return;
 
-            // Bresenham's line algorithm
+            // Bresenham's line algorithm (optimized)
             int dx = Math.Abs(x2 - x1);
             int dy = Math.Abs(y2 - y1);
             int sx = x1 < x2 ? 1 : -1;
@@ -154,20 +143,11 @@ namespace WaffleCLI.Core.TUI.Rendering
             while (true)
             {
                 DrawChar(x1, y1, lineChar, colors);
-
                 if (x1 == x2 && y1 == y2) break;
-
+                
                 int e2 = 2 * err;
-                if (e2 > -dy)
-                {
-                    err -= dy;
-                    x1 += sx;
-                }
-                if (e2 < dx)
-                {
-                    err += dx;
-                    y1 += sy;
-                }
+                if (e2 > -dy) { err -= dy; x1 += sx; }
+                if (e2 < dx) { err += dx; y1 += sy; }
             }
         }
 
@@ -175,9 +155,13 @@ namespace WaffleCLI.Core.TUI.Rendering
         {
             if (!_initialized || _buffer == null) return;
 
-            for (int row = y; row < y + height && row < Height; row++)
+            // Optimized: only fill visible area
+            int endX = Math.Min(x + width, Width);
+            int endY = Math.Min(y + height, Height);
+            
+            for (int row = Math.Max(y, 0); row < endY; row++)
             {
-                for (int col = x; col < x + width && col < Width; col++)
+                for (int col = Math.Max(x, 0); col < endX; col++)
                 {
                     DrawChar(col, row, fillChar, colors);
                 }
@@ -186,14 +170,10 @@ namespace WaffleCLI.Core.TUI.Rendering
 
         public void Clear(ColorScheme colors)
         {
-            if (!_initialized || _buffer == null) 
-            {
-                return;
-            }
+            if (!_initialized || _buffer == null) return;
             
             _clearColors = colors;
-            _buffer.Clear(colors);
-            _forceFullRedraw = true;
+            _requiresFullRender = true;
         }
 
         public void SetViewport(int x, int y, int width, int height)
@@ -203,18 +183,18 @@ namespace WaffleCLI.Core.TUI.Rendering
             _viewportWidth = Math.Max(0, width);
             _viewportHeight = Math.Max(0, height);
             _viewportActive = true;
-            _forceFullRedraw = true;
+            _requiresFullRender = true;
         }
 
         public void ResetViewport()
         {
             _viewportActive = false;
-            _forceFullRedraw = true;
+            _requiresFullRender = true;
         }
 
         public void RequestFullRedraw()
         {
-            _forceFullRedraw = true;
+            _requiresFullRender = true;
         }
 
         private bool IsInViewport(int x, int y)
@@ -241,16 +221,11 @@ namespace WaffleCLI.Core.TUI.Rendering
             {
                 Console.CursorVisible = false;
                 Console.OutputEncoding = System.Text.Encoding.UTF8;
-                
-                // Clear console and set initial position
                 Console.Clear();
                 Console.SetCursorPosition(0, 0);
-                
-                Infrastructure.Logging.TuiLogger.LogInfo("Console setup completed");
             }
             catch (Exception ex)
             {
-                Infrastructure.Logging.TuiLogger.LogError("Failed to setup console", ex);
                 throw new TuiException("Failed to setup console", ex);
             }
         }

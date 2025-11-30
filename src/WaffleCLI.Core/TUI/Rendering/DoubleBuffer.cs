@@ -4,7 +4,7 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 namespace WaffleCLI.Core.TUI.Rendering
 {
     /// <summary>
-    /// Fixed DoubleBuffer with proper console buffer management
+    /// High-performance double buffer with smart rendering
     /// </summary>
     public class DoubleBuffer : IBuffer
     {
@@ -17,6 +17,8 @@ namespace WaffleCLI.Core.TUI.Rendering
         private readonly int _width;
         private readonly int _height;
         private bool _disposed = false;
+        private int _changeCount = 0;
+        private const int DIFFERENTIAL_THRESHOLD = 500; // Use differential if fewer than 500 changes
 
         public int Width => _width;
         public int Height => _height;
@@ -34,7 +36,6 @@ namespace WaffleCLI.Core.TUI.Rendering
             _frontBackground = new ConsoleColor[bufferSize];
             _backBackground = new ConsoleColor[bufferSize];
             
-            Infrastructure.Logging.TuiLogger.LogInfo($"DoubleBuffer created: {width}x{height} (total cells: {bufferSize})");
             ClearBuffers();
         }
 
@@ -46,6 +47,7 @@ namespace WaffleCLI.Core.TUI.Rendering
                 _backBuffer[index] = character;
                 _backForeground[index] = foreground;
                 _backBackground[index] = background;
+                _changeCount++;
             }
         }
 
@@ -57,6 +59,7 @@ namespace WaffleCLI.Core.TUI.Rendering
                 _backForeground[i] = colors.Foreground;
                 _backBackground[i] = colors.Background;
             }
+            _changeCount = int.MaxValue; // Force full render on clear
         }
 
         public void Swap()
@@ -66,17 +69,27 @@ namespace WaffleCLI.Core.TUI.Rendering
             Array.Copy(_backBackground, _frontBackground, _backBackground.Length);
         }
 
-        public void RenderToConsole()
+        public void RenderToConsole(bool forceFullRender = false)
         {
             try
             {
-                // ALWAYS use full frame rendering to ensure clean updates
-                RenderFullFrame();
+                // Smart rendering: use differential for small changes, full for large changes
+                bool useDifferential = !forceFullRender && _changeCount > 0 && _changeCount < DIFFERENTIAL_THRESHOLD;
+                
+                if (useDifferential)
+                {
+                    RenderDifferential();
+                }
+                else
+                {
+                    RenderFullFrame();
+                }
+                
+                _changeCount = 0; // Reset change counter
             }
             catch (Exception ex)
             {
-                Infrastructure.Logging.TuiLogger.LogError("Error in RenderToConsole", ex);
-                // Fallback to simple clear and render
+                // Fallback to simple rendering on error
                 try
                 {
                     Console.Clear();
@@ -95,50 +108,69 @@ namespace WaffleCLI.Core.TUI.Rendering
 
         private void RenderFullFrame()
         {
-            try
+            Console.SetCursorPosition(0, 0);
+            
+            for (int y = 0; y < _height; y++)
             {
-                // Set cursor to top-left before rendering
-                Console.SetCursorPosition(0, 0);
+                Console.SetCursorPosition(0, y);
                 
-                for (int y = 0; y < _height; y++)
+                for (int x = 0; x < _width; x++)
                 {
-                    // For each line, set cursor to beginning of line
-                    // This prevents the console from auto-scrolling
-                    if (y > 0)
-                    {
-                        Console.SetCursorPosition(0, y);
-                    }
-                    
-                    for (int x = 0; x < _width; x++)
-                    {
-                        int index = y * _width + x;
-                        Console.ForegroundColor = _backForeground[index];
-                        Console.BackgroundColor = _backBackground[index];
-                        Console.Write(_backBuffer[index]);
-                    }
-                    
-                    // If we're not at the last line and the line is shorter than console width,
-                    // we need to clear the rest of the line to prevent artifacts
-                    if (Console.WindowWidth > _width)
-                    {
-                        Console.Write(new string(' ', Console.WindowWidth - _width));
-                    }
+                    int index = y * _width + x;
+                    Console.ForegroundColor = _backForeground[index];
+                    Console.BackgroundColor = _backBackground[index];
+                    Console.Write(_backBuffer[index]);
                 }
                 
-                // Clear any remaining lines below our content to prevent artifacts
-                for (int y = _height; y < Console.WindowHeight; y++)
+                // Clear the rest of the line if needed
+                if (_width < Console.WindowWidth)
                 {
-                    Console.SetCursorPosition(0, y);
-                    Console.Write(new string(' ', Console.WindowWidth));
+                    Console.Write(new string(' ', Console.WindowWidth - _width));
                 }
-                
-                // Reset cursor to top-left to prevent auto-scroll
-                Console.SetCursorPosition(0, 0);
             }
-            catch (Exception ex)
+            
+            // Clear any remaining lines
+            for (int y = _height; y < Console.WindowHeight; y++)
             {
-                Infrastructure.Logging.TuiLogger.LogError("Error in RenderFullFrame", ex);
-                throw;
+                Console.SetCursorPosition(0, y);
+                Console.Write(new string(' ', Console.WindowWidth));
+            }
+            
+            Console.SetCursorPosition(0, 0);
+        }
+
+        private void RenderDifferential()
+        {
+            int updated = 0;
+            ConsoleColor currentFg = ConsoleColor.White;
+            ConsoleColor currentBg = ConsoleColor.Black;
+            
+            for (int y = 0; y < _height; y++)
+            {
+                for (int x = 0; x < _width; x++)
+                {
+                    int index = y * _width + x;
+                    
+                    if (_frontBuffer[index] != _backBuffer[index] ||
+                        _frontForeground[index] != _backForeground[index] ||
+                        _frontBackground[index] != _backBackground[index])
+                    {
+                        // Only set cursor position when necessary
+                        Console.SetCursorPosition(x, y);
+                        
+                        // Only change colors when necessary (reduces console API calls)
+                        if (currentFg != _backForeground[index] || currentBg != _backBackground[index])
+                        {
+                            Console.ForegroundColor = _backForeground[index];
+                            Console.BackgroundColor = _backBackground[index];
+                            currentFg = _backForeground[index];
+                            currentBg = _backBackground[index];
+                        }
+                        
+                        Console.Write(_backBuffer[index]);
+                        updated++;
+                    }
+                }
             }
         }
 
@@ -160,7 +192,6 @@ namespace WaffleCLI.Core.TUI.Rendering
             if (!_disposed)
             {
                 _disposed = true;
-                Infrastructure.Logging.TuiLogger.LogInfo("DoubleBuffer disposed");
             }
         }
 

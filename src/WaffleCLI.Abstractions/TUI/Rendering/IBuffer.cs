@@ -13,6 +13,6 @@ namespace WaffleCLI.Abstractions.TUI.Rendering
         void SetPixel(int x, int y, char character, ConsoleColor foreground, ConsoleColor background);
         void Clear(ColorScheme colors);
         void Swap();
-        void RenderToConsole();
+        // void RenderToConsole();
     }
 }

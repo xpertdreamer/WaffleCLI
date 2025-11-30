@@ -11,7 +11,7 @@ using WaffleCLI.Core.TUI.Configuration;
 namespace WaffleCLI.Core.TUI.Application
 {
     /// <summary>
-    /// Enhanced TUI application with forced redraw on interaction
+    /// High-performance TUI application with optimized rendering
     /// </summary>
     public class TuiApplication : ITuiApplication
     {
@@ -23,11 +23,13 @@ namespace WaffleCLI.Core.TUI.Application
         private readonly ITuiConfiguration _configuration;
         private bool _isRunning = false;
         private readonly System.Diagnostics.Stopwatch _frameTimer;
-        private readonly int _targetFrameTimeMs;
-        private int _frameCount = 0;
+        private int _targetFrameTimeMs;
         private int _lastWidth, _lastHeight;
-        private bool _forceRedraw = true;
-        private int _pendingRedraws = 0;
+        private bool _needsRender = true;
+        private DateTime _lastInputTime = DateTime.Now;
+        private const int FAST_RENDER_FPS = 60;
+        private const int IDLE_RENDER_FPS = 10;
+        private int _currentFps = FAST_RENDER_FPS;
 
         public IComponent RootComponent { get; }
         public bool IsRunning => _isRunning;
@@ -43,15 +45,10 @@ namespace WaffleCLI.Core.TUI.Application
             RootComponent = rootComponent ?? throw new ArgumentNullException(nameof(rootComponent));
             
             _frameTimer = new System.Diagnostics.Stopwatch();
-            _targetFrameTimeMs = Math.Min(16, 1000 / Math.Max(1, targetFps));
+            _targetFrameTimeMs = 1000 / Math.Max(1, targetFps);
             
             RegisterFocusableComponents(rootComponent);
-            
-            // Subscribe to focus changes to force redraw
             _focusManager.FocusChanged += OnFocusChanged;
-            
-            // Register component interaction handler
-            RegisterInteractionHandlers();
         }
 
         public void Run()
@@ -63,27 +60,26 @@ namespace WaffleCLI.Core.TUI.Application
                 _isRunning = true;
                 Initialize();
                 
-                Infrastructure.Logging.TuiLogger.LogInfo("Starting main application loop");
-                
                 while (_isRunning)
                 {
                     _frameTimer.Restart();
-                    _frameCount++;
                     
                     ProcessInput();
                     Update();
-                    Render();
                     
-                    // Proper frame rate limiting
+                    // Smart rendering: only render when needed
+                    if (_needsRender || HasRecentInput())
+                    {
+                        Render();
+                        _needsRender = false;
+                    }
+                    
+                    // Adaptive frame rate based on activity
+                    AdjustFrameRate();
+                    
+                    // Efficient waiting
                     int elapsed = (int)_frameTimer.ElapsedMilliseconds;
                     int sleepTime = Math.Max(1, _targetFrameTimeMs - elapsed);
-                    
-                    // Log frame rate every 5 seconds
-                    if (_frameCount % (60 * 5) == 0)
-                    {
-                        double fps = 1000.0 / elapsed;
-                        Infrastructure.Logging.TuiLogger.LogInfo($"Application running - FPS: {fps:F1}, Frame time: {elapsed}ms, Pending redraws: {_pendingRedraws}");
-                    }
                     
                     if (sleepTime > 0)
                     {
@@ -93,7 +89,6 @@ namespace WaffleCLI.Core.TUI.Application
             }
             catch (Exception ex)
             {
-                Infrastructure.Logging.TuiLogger.LogError("Application runtime error", ex);
                 throw new TuiException("Application runtime error", ex);
             }
             finally
@@ -104,21 +99,12 @@ namespace WaffleCLI.Core.TUI.Application
 
         public void Stop()
         {
-            if (_isRunning)
-            {
-                Infrastructure.Logging.TuiLogger.LogInfo("Stopping application");
-                _isRunning = false;
-            }
+            _isRunning = false;
         }
 
         public void Refresh()
         {
-            _forceRedraw = true;
-            _pendingRedraws++;
-            if (_isRunning)
-            {
-                Render();
-            }
+            _needsRender = true;
         }
 
         private void Initialize()
@@ -128,38 +114,21 @@ namespace WaffleCLI.Core.TUI.Application
                 Console.CursorVisible = false;
                 Console.Clear();
                 
-                // Get console dimensions safely without causing scroll
-                _lastWidth = 80;
-                _lastHeight = 24;
-                try
-                {
-                    _lastWidth = Math.Max(40, Console.WindowWidth);
-                    _lastHeight = Math.Max(20, Console.WindowHeight - 1); // Reserve one line to prevent scrolling
-                    Infrastructure.Logging.TuiLogger.LogInfo($"Detected console dimensions: {_lastWidth}x{_lastHeight}");
-                }
-                catch (Exception ex)
-                {
-                    Infrastructure.Logging.TuiLogger.LogWarning($"Failed to read console dimensions, using defaults - {ex}");
-                }
+                // Get console dimensions
+                _lastWidth = Math.Max(40, Console.WindowWidth);
+                _lastHeight = Math.Max(20, Console.WindowHeight - 1);
                 
-                // Initialize render engine with safe dimensions
                 _renderEngine.Initialize(_lastWidth, _lastHeight);
                 
-                // Register global exit hotkey
+                // Register global hotkeys
                 _keyBindingManager.RegisterGlobalHotkey(ConsoleKey.Escape, KeyModifiers.None, Stop);
-                
-                // Register refresh hotkey for debugging
                 _keyBindingManager.RegisterGlobalHotkey(ConsoleKey.F5, KeyModifiers.None, () => {
-                    Infrastructure.Logging.TuiLogger.LogInfo("Manual refresh triggered by F5");
-                    _forceRedraw = true;
-                    _pendingRedraws++;
+                    _renderEngine.RequestFullRedraw();
+                    _needsRender = true;
                 });
-                
-                Infrastructure.Logging.TuiLogger.LogInfo("TUI application initialized successfully");
             }
             catch (Exception ex)
             {
-                Infrastructure.Logging.TuiLogger.LogError("Failed to initialize TUI application", ex);
                 throw new TuiException("Failed to initialize TUI application", ex);
             }
         }
@@ -168,17 +137,16 @@ namespace WaffleCLI.Core.TUI.Application
         {
             try
             {
-                _inputHandler.ProcessInput();
-                
-                // After processing input, check if we need to force a redraw
-                if (_pendingRedraws > 0)
+                if (Console.KeyAvailable)
                 {
-                    _forceRedraw = true;
+                    _inputHandler.ProcessInput();
+                    _lastInputTime = DateTime.Now;
+                    _needsRender = true; // Input always requires render
                 }
             }
             catch (Exception ex)
             {
-                Infrastructure.Logging.TuiLogger.LogError("Input processing error", ex);
+                // Log input errors but don't crash
             }
         }
 
@@ -189,15 +157,14 @@ namespace WaffleCLI.Core.TUI.Application
                 // Check for console resize
                 if (CheckConsoleResize())
                 {
-                    _forceRedraw = true;
-                    _pendingRedraws++;
+                    _needsRender = true;
                 }
                 
                 RootComponent.Update();
             }
             catch (Exception ex)
             {
-                Infrastructure.Logging.TuiLogger.LogError("Update error", ex);
+                // Log update errors but don't crash
             }
         }
 
@@ -208,17 +175,10 @@ namespace WaffleCLI.Core.TUI.Application
                 _renderEngine.BeginFrame();
                 RootComponent.Render(_renderEngine);
                 _renderEngine.EndFrame();
-                
-                // Reset flags after successful render
-                if (_forceRedraw)
-                {
-                    _pendingRedraws = Math.Max(0, _pendingRedraws - 1);
-                    _forceRedraw = _pendingRedraws > 0;
-                }
             }
             catch (Exception ex)
             {
-                Infrastructure.Logging.TuiLogger.LogError("Render error", ex);
+                // Log render errors but don't crash
             }
         }
 
@@ -227,24 +187,20 @@ namespace WaffleCLI.Core.TUI.Application
             try
             {
                 int currentWidth = Console.WindowWidth;
-                int currentHeight = Console.WindowHeight - 1; // Reserve one line
+                int currentHeight = Console.WindowHeight - 1;
                 
                 if (currentWidth != _lastWidth || currentHeight != _lastHeight)
                 {
-                    Infrastructure.Logging.TuiLogger.LogInfo($"Console resized: {_lastWidth}x{_lastHeight} -> {currentWidth}x{currentHeight}");
-                    
                     _lastWidth = currentWidth;
                     _lastHeight = currentHeight;
                     
-                    // Reinitialize render engine with new dimensions
                     _renderEngine.Initialize(currentWidth, currentHeight);
                     
-                    // Update root component dimensions
                     if (RootComponent is WaffleCLI.Core.TUI.Components.Primitive.Panel panel)
                     {
                         panel.Width = currentWidth;
                         panel.Height = currentHeight;
-                        panel.DoLayout(); // Force layout update
+                        panel.DoLayout();
                     }
                     
                     return true;
@@ -252,7 +208,7 @@ namespace WaffleCLI.Core.TUI.Application
             }
             catch (Exception ex)
             {
-                Infrastructure.Logging.TuiLogger.LogDebug($"Error checking console resize - {ex}");
+                // Ignore resize errors
             }
             
             return false;
@@ -260,16 +216,25 @@ namespace WaffleCLI.Core.TUI.Application
 
         private void OnFocusChanged(IFocusable? focusedComponent)
         {
-            // Force redraw when focus changes to ensure visual updates
-            _forceRedraw = true;
-            _pendingRedraws++;
-            Infrastructure.Logging.TuiLogger.LogDebug($"Focus changed, forcing redraw. New focus: {focusedComponent?.Id ?? "None"}");
+            _needsRender = true; // Focus changes require re-render
         }
 
-        private void RegisterInteractionHandlers()
+        private bool HasRecentInput()
         {
-            // This method would set up event handlers for component interactions
-            // For now, we'll rely on the focus change events and input processing
+            // Consider input "recent" if it happened in the last 100ms
+            return (DateTime.Now - _lastInputTime).TotalMilliseconds < 100;
+        }
+
+        private void AdjustFrameRate()
+        {
+            // Adaptive frame rate: fast when active, slow when idle
+            int newFps = HasRecentInput() || _needsRender ? FAST_RENDER_FPS : IDLE_RENDER_FPS;
+            
+            if (newFps != _currentFps)
+            {
+                _currentFps = newFps;
+                _targetFrameTimeMs = 1000 / _currentFps;
+            }
         }
 
         private void Cleanup()
@@ -281,11 +246,10 @@ namespace WaffleCLI.Core.TUI.Application
                 Console.CursorVisible = true;
                 Console.ResetColor();
                 Console.Clear();
-                Infrastructure.Logging.TuiLogger.LogInfo("Application cleanup completed");
             }
             catch (Exception ex)
             {
-                Infrastructure.Logging.TuiLogger.LogError("Cleanup error", ex);
+                // Ignore cleanup errors
             }
         }
 
@@ -294,7 +258,6 @@ namespace WaffleCLI.Core.TUI.Application
             if (component is IFocusable focusable)
             {
                 _focusManager.RegisterFocusable(focusable);
-                Infrastructure.Logging.TuiLogger.LogDebug($"Registered focusable component: {component.Id}");
             }
             
             foreach (var child in component.Children)
