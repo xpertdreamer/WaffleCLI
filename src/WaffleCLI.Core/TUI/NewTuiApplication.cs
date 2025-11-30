@@ -8,7 +8,7 @@ using WaffleCLI.Core.TUI.Rendering;
 
 namespace WaffleCLI.Core.TUI;
 
-public class NewTuiApplication : ITuiApplication
+public class NewTuiApplication : ITuiApplication, IDisposable
 {
     private readonly IServiceProvider _services;
     private readonly ILogger<NewTuiApplication> _logger;
@@ -23,6 +23,7 @@ public class NewTuiApplication : ITuiApplication
     private Stopwatch _frameStopwatch = new();
     private double _frameTime;
     private bool _showRenderStats;
+    private bool _disposed = false;
 
     public NewTuiApplication(IServiceProvider services, ILogger<NewTuiApplication> logger,
         ConfigurationManager configManager, IRenderEngine renderEngine, RenderLayerManager layerManager)
@@ -39,7 +40,7 @@ public class NewTuiApplication : ITuiApplication
 
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
-        if (_isRunning) return;
+        if (_isRunning || _disposed) return;
         
         _isRunning = true;
         _logger.LogInformation("Starting new TUI application");
@@ -50,6 +51,7 @@ public class NewTuiApplication : ITuiApplication
             SetupLayers();
 
             _currentScreen = _services.GetRequiredService<ITuiScreen>();
+            await InitializeScreenElements(_currentScreen);
             await _currentScreen.InitializeAsync();
 
             await MainLoop(cancellationToken);
@@ -68,16 +70,20 @@ public class NewTuiApplication : ITuiApplication
 
     private void SetupConsole()
     {
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
-        Console.CursorVisible = false;
-        Console.Title = _configManager.Config.Window.Title;
-        
         try
         {
+            
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.CursorVisible = false;
+            Console.Title = _configManager.Config.Window.Title;
+            
             Console.WindowWidth = _configManager.Config.Window.Width;
             Console.WindowHeight = _configManager.Config.Window.Height;
-            Console.BufferWidth = _configManager.Config.Window.Width;
-            Console.BufferHeight = _configManager.Config.Window.Height;
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                Console.BufferWidth = _configManager.Config.Window.Width;
+                Console.BufferHeight = _configManager.Config.Window.Height;
+            }
         }
         catch (Exception ex)
         {
@@ -98,12 +104,40 @@ public class NewTuiApplication : ITuiApplication
         _layerManager.AddLayer("overlay", 2);
         _layerManager.AddLayer("debug", 3, _showRenderStats);
     }
+    
+    private async Task InitializeScreenElements(ITuiScreen screen)
+    {
+        if (screen is BasicTuiScreen basicScreen)
+        {
+            // Inject render engine into all elements
+            foreach (var element in GetScreenElements(basicScreen))
+            {
+                if (element is IRenderEngineAware renderAware)
+                {
+                    renderAware.SetRenderEngine(_renderEngine);
+                }
+            }
+        }
+    }
+    
+    private IEnumerable<ITuiElement> GetScreenElements(BasicTuiScreen screen)
+    {
+        var elementsField = typeof(BasicTuiScreen).GetField("_elements", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        
+        if (elementsField?.GetValue(screen) is List<ITuiElement> elements)
+        {
+            return elements;
+        }
+
+        return Enumerable.Empty<ITuiElement>();
+    }
 
     private async Task MainLoop(CancellationToken cancellationToken)
     {
-        var targetFrameTime = 1000.0 / _configManager.Config.Rendering.TargetFps;
+        var targetFrameTime = 1000.0 / Math.Max(1, _configManager.Config.Rendering.TargetFps);
 
-        while (!cancellationToken.IsCancellationRequested && _isRunning)
+        while (!cancellationToken.IsCancellationRequested && _isRunning && !_disposed)
         {
             _frameStopwatch.Restart();
 
@@ -133,9 +167,10 @@ public class NewTuiApplication : ITuiApplication
             if (_configManager.Config.Rendering.VSync)
             {
                 var elapsed = _frameStopwatch.ElapsedMilliseconds;
-                if (elapsed < targetFrameTime)
+                var sleepTime = (int)(targetFrameTime - elapsed);
+                if (sleepTime > 0)
                 {
-                    await Task.Delay((int)(targetFrameTime - elapsed), cancellationToken);  
+                    await Task.Delay(sleepTime, cancellationToken);  
                 }
             }
 
@@ -151,7 +186,9 @@ public class NewTuiApplication : ITuiApplication
         {
             _showRenderStats = !_showRenderStats;
             _layerManager.GetLayers().First(l => l.Name == "debug").IsVisible = _showRenderStats;
-        } else if (IsKeyBinding(keyInfo, keyBindings.Exit))
+            _needsRedraw = true;
+        } 
+        else if (IsKeyBinding(keyInfo, keyBindings.Exit))
         {
             if (_configManager.Config.Behavior.ConfirmExit)
             {
@@ -162,28 +199,31 @@ public class NewTuiApplication : ITuiApplication
                 await StopAsync();
             }
         }
-        else if (IsKeyBinding(keyInfo, keyBindings.Screenshot))
-        {
-            await TakeScreenshot();
-        }
     }
 
-    private bool IsKeyBinding(ConsoleKeyInfo keyInfo, string binding)
+    private static bool IsKeyBinding(ConsoleKeyInfo keyInfo, string binding)
     {
-        var parts = binding.Split('+');
-        var keyPart = parts.Last();
-        var modifiers = parts.Take(parts.Length - 1);
+        try
+        {
+            var parts = binding.Split('+');
+            var keyPart = parts.Last();
+            var modifiers = parts.Take(parts.Length - 1);
 
-        if (!Enum.TryParse<ConsoleKey>(keyPart, true, out var key)) return false;
-        if (keyInfo.Key != key) return false;
-        
-        var ctrl = modifiers.Contains("Ctrl");
-        var shift = modifiers.Contains("Shift");
-        var alt = modifiers.Contains("Alt");
-        
-        return keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control) == ctrl
-            && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift) == shift
-            && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt) == alt;
+            if (!Enum.TryParse<ConsoleKey>(keyPart, true, out var key)) return false;
+            if (keyInfo.Key != key) return false;
+
+            var ctrl = modifiers.Contains("Ctrl", StringComparer.OrdinalIgnoreCase);
+            var shift = modifiers.Contains("Shift", StringComparer.OrdinalIgnoreCase);
+            var alt = modifiers.Contains("Alt", StringComparer.OrdinalIgnoreCase);
+
+            return keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control) == ctrl
+                   && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift) == shift
+                   && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt) == alt;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private async Task RenderFrame()
@@ -212,7 +252,7 @@ public class NewTuiApplication : ITuiApplication
         }
     }
     
-    private ConsoleColor ParseColor(string colorName)
+    private static ConsoleColor ParseColor(string colorName)
     {
         return Enum.TryParse<ConsoleColor>(colorName, true, out var color) 
             ? color 
@@ -281,20 +321,6 @@ public class NewTuiApplication : ITuiApplication
         }
     }
 
-    private async Task TakeScreenshot()
-    {
-        try
-        {
-            var timeStamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var filename = $"screenshot_{timeStamp}.ansi";
-            _logger.LogInformation("Screenshot saved as {Filename}", filename);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to save screenshot");
-        }
-    }
-
     public Task StopAsync()
     {
         _isRunning = false;
@@ -312,6 +338,25 @@ public class NewTuiApplication : ITuiApplication
 
     public void Dispose()
     {
-        _configManager?.Dispose();
+        if (_disposed) return;
+
+        _disposed = true;
+        _isRunning = false;
+        
+        _configManager.ConfigChanged -= OnConfigChanged;
+        
+        if (_renderEngine is IDisposable disposableRenderEngine)
+        {
+            disposableRenderEngine.Dispose();
+        }
+
+        CleanupConsole();
+        
+        GC.SuppressFinalize(this);
     }
+}
+
+public interface IRenderEngineAware
+{
+    void SetRenderEngine(IRenderEngine renderEngine);
 }

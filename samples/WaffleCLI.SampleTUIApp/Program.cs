@@ -12,7 +12,7 @@ builder.ConfigureServices(services =>
 {
     services.AddNewWaffleTui(tuiApplicationBuilder =>
     {
-        tuiApplicationBuilder.UseStartScreen<TestScreen>();
+        tuiApplicationBuilder.UseStartScreen<DiagnosticScreen>();
     });
 });
 

@@ -2,8 +2,10 @@ using WaffleCLI.Abstractions.TUI;
 
 namespace WaffleCLI.Core.TUI.Elements;
 
-public class TextElement : ITuiElement
+public class TextElement : ITuiElement, IRenderEngineAware
 {
+    private IRenderEngine? _renderEngine;
+
     public int X { get; set; }
     public int Y { get; set; }
     public int Width { get; set; }
@@ -12,64 +14,48 @@ public class TextElement : ITuiElement
     public bool isFocusable { get; set; } = false;
     public bool HasFocus { get; set; }
 
-    public string Text {get; set;} = string.Empty;
-    public ConsoleColor Color {get; set;} = ConsoleColor.White;
-    public ConsoleColor BackgroundColor {get; set;} = ConsoleColor.Black;
-    public bool HasBorder {get; set;} = false;
-    public ConsoleColor BorderColor {get; set;} = ConsoleColor.Gray;
+    public string Text { get; set; } = string.Empty;
+    public ConsoleColor Color { get; set; } = ConsoleColor.White;
+    public ConsoleColor BackgroundColor { get; set; } = ConsoleColor.Black;
+    public bool HasBorder { get; set; } = false;
+    public ConsoleColor BorderColor { get; set; } = ConsoleColor.Gray;
+
+    public void SetRenderEngine(IRenderEngine renderEngine)
+    {
+        _renderEngine = renderEngine;
+    }
 
     public void Render()
     {
-        if (!isVisible) return;
-        
-        if (Y >= Console.WindowHeight || X >= Console.WindowWidth || Y < 0 || X < 0) return;
-        
-        var oldFg =  Console.ForegroundColor;
-        var oldBg =  Console.BackgroundColor;
+        if (!isVisible || _renderEngine == null) return;
 
-        if (HasBorder) RenderBorder();
-        
-        Console.ForegroundColor = Color;
-        Console.BackgroundColor = BackgroundColor;
-        
-        var renderX = Math.Max(0, Math.Min(X, Console.WindowWidth - 1));
-        var renderY = Math.Max(0, Math.Min(Y, Console.WindowHeight - 1));
-        
-        Console.SetCursorPosition(renderX, renderY);
-        
-        var displayedText = Text.Length > Width ? Text[..Width] : Text.PadRight(Width);
-        Console.Write(displayedText);
-        
-        Console.ForegroundColor = oldFg;
-        Console.BackgroundColor = oldBg;
+        var renderX = Math.Max(0, X);
+        var renderY = Math.Max(0, Y);
+        var renderWidth = Math.Max(1, Width);
+
+        if (HasBorder)
+        {
+            RenderBorder();
+        }
+
+        var displayText = GetDisplayText();
+        _renderEngine.RenderText(renderX, renderY, displayText, Color, BackgroundColor);
     }
 
     public bool HandleInput(ConsoleKeyInfo keyInfo) => false;
 
     private void RenderBorder()
     {
-        if (X - 1 < 0 || Y - 1 < 0 || 
-            X + Width >= Console.WindowWidth || 
-            Y + Height >= Console.WindowHeight)
-            return;
-        
-        var oldFg = Console.ForegroundColor;
-        Console.ForegroundColor = BorderColor;
-        
-        Console.SetCursorPosition(X - 1, Y - 1);
-        Console.Write("+" + new string('-', Width) + "+");
+        if (_renderEngine == null) return;
 
-        for (var i = 0; i < Height; i++)
-        {
-            Console.SetCursorPosition(X - 1, Y + i);
-            Console.Write("|");
-            Console.SetCursorPosition(X + Width, Y + i);
-            Console.Write("|");
-        }
+        _renderEngine.RenderBorder(X - 1, Y - 1, Width + 2, Height + 2, BorderStyle.Single);
+    }
+
+    private string GetDisplayText()
+    {
+        if (string.IsNullOrEmpty(Text)) return new string(' ', Width);
         
-        Console.SetCursorPosition(X - 1, Y + Height);
-        Console.Write("+" + new string('-', Width) + "+");
-        
-        Console.ForegroundColor = oldFg;
+        var displayText = Text.Length > Width ? Text[..Width] : Text;
+        return displayText.PadRight(Width);
     }
 }

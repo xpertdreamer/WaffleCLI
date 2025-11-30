@@ -79,15 +79,16 @@ public static class ServiceCollectionExtensions
             var config = configManager.Config.Rendering;
             return new DoubleBufferedRenderEngine(config.PartialRendering);
         });
-
+        
         services.AddSingleton<RenderLayerManager>();    
         
         services.AddSingleton<ITuiApplication, NewTuiApplication>();
         services.AddSingleton<ProcessManager>();
         services.AddSingleton<TuiEventBus>();
         
-        services.AddTransient<ProcessManagerScreen>();
-        services.AddTransient<TestScreen>();
+        // services.AddTransient<ProcessManagerScreen>();
+        // services.AddTransient<TestScreen>();
+        // services.AddTransient<DiagnosticScreen>();
         
         var builder = new TuiApplicationBuilder(services);
         configure(builder);
