@@ -8,3 +8,5 @@ Just For Fun C# Framework for CLI-based applications
 * Fix interface duplication after fullsreen bug
 * Add animation system
 * Improve the configuration system
+* Fix a bug with initial rendering
+* Make a normal layout system
