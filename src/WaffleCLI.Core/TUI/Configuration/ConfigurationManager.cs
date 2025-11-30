@@ -4,20 +4,22 @@ using Microsoft.Extensions.Logging;
 
 namespace WaffleCLI.Core.TUI.Configuration;
 
-public class ConfigurationManager
+public class ConfigurationManager : IDisposable
 {
     private readonly ILogger<ConfigurationManager> _logger;
     private readonly string _configPath;
     private readonly FileSystemWatcher _configWatcher;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly object _configLock = new();
+    private bool _disposed = false;
     
-    public AppConfig Config { get; private set; }
+    public AppConfig Config { get; private set; } = new();
     public event Action<AppConfig>? ConfigChanged;
 
     public ConfigurationManager(ILogger<ConfigurationManager> logger, string configPath = "appsettings.json")
     {
         _logger = logger;
-        _configPath = configPath;
+        _configPath = Path.GetFullPath(configPath);
 
         _jsonOptions = new JsonSerializerOptions
         {
@@ -27,60 +29,84 @@ public class ConfigurationManager
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
 
-        _configWatcher = new FileSystemWatcher
+        var directory = Path.GetDirectoryName(_configPath) ?? Directory.GetCurrentDirectory();
+        var fileName = Path.GetFileName(_configPath);
+
+        _configWatcher = new FileSystemWatcher(directory, fileName)
         {
-            Path = Path.GetDirectoryName(Path.GetFullPath(_configPath)) ?? Directory.GetCurrentDirectory(),
-            Filter = Path.GetFileName(_configPath),
-            NotifyFilter = NotifyFilters.LastWrite
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
+            EnableRaisingEvents = Config?.Behavior?.ReloadOnConfigChange ?? true
         };
 
         _configWatcher.Changed += OnConfigFileChanged;
-        _configWatcher.EnableRaisingEvents = true;
-
         LoadConfiguration();
     }
 
     public void LoadConfiguration()
     {
-        try
+        lock (_configLock)
         {
-            if (File.Exists(_configPath))
+            try
             {
-                var json = File.ReadAllText(_configPath);
-                Config = JsonSerializer.Deserialize<AppConfig>(json, _jsonOptions) ?? new AppConfig();
-                _logger.LogInformation("Configuration loaded from {ConfigPath}", _configPath);
+                if (File.Exists(_configPath))
+                {
+                    // Retry logic for file locks
+                    for (var i = 0; i < 3; i++)
+                    {
+                        try
+                        {
+                            var json = File.ReadAllText(_configPath);
+                            var newConfig = JsonSerializer.Deserialize<AppConfig>(json, _jsonOptions);
+                            if (newConfig != null)
+                            {
+                                Config = newConfig;
+                                _logger.LogInformation("Configuration loaded from {ConfigPath}", _configPath);
+                                break;
+                            }
+                        }
+                        catch (IOException) when (i < 2)
+                        {
+                            Thread.Sleep(50);
+                        }
+                    }
+                }
+                else
+                {
+                    Config = new AppConfig();
+                    SaveConfiguration();
+                    _logger.LogInformation("Created default configuration at {ConfigPath}", _configPath);
+                }
             }
-            else
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to load configuration at {ConfigPath}, using defaults", _configPath);
                 Config = new AppConfig();
-                SaveConfiguration();
-                _logger.LogInformation("Created default configuration at {ConfigPath}", _configPath);
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to load configuration at {ConfigPath}, using defaults", _configPath);
-            Config = new AppConfig();
         }
     }
 
     public void SaveConfiguration()
     {
-        try
-        {
-            _configWatcher.EnableRaisingEvents = false;
+        if (_disposed) return;
 
-            var json = JsonSerializer.Serialize(Config, _jsonOptions);
-            File.WriteAllText(_configPath, json);
-            _logger.LogInformation("Configuration saved to {ConfigPath}", _configPath);
-        }
-        catch (Exception ex)
+        lock (_configLock)
         {
-            _logger.LogError(ex, "Failed to save configuration at {ConfigPath}", _configPath);
-        }
-        finally
-        {
-            _configWatcher.EnableRaisingEvents = true;
+            try
+            {
+                _configWatcher.EnableRaisingEvents = false;
+
+                var json = JsonSerializer.Serialize(Config, _jsonOptions);
+                File.WriteAllText(_configPath, json);
+                _logger.LogInformation("Configuration saved to {ConfigPath}", _configPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save configuration at {ConfigPath}", _configPath);
+            }
+            finally
+            {
+                _configWatcher.EnableRaisingEvents = Config.Behavior.ReloadOnConfigChange;
+            }
         }
     }
 
@@ -89,11 +115,10 @@ public class ConfigurationManager
         try
         {
             var json = JsonSerializer.Serialize(Config, _jsonOptions);
-            var document = JsonDocument.Parse(json);
-            var path = sectionPath.Replace(':', '.');
+            using var document = JsonDocument.Parse(json);
+            
             var element = document.RootElement;
-
-            foreach (var segment in path.Split('.', StringSplitOptions.RemoveEmptyEntries))
+            foreach (var segment in sectionPath.Split('.', StringSplitOptions.RemoveEmptyEntries))
             {
                 if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(segment, out var property))
                     element = property;
@@ -111,29 +136,40 @@ public class ConfigurationManager
 
     public void UpdateSection<T>(string sectionPath, T section)
     {
+        // Implementation for updating specific sections would go here
         SaveConfiguration();
     }
 
-    private void OnConfigFileChanged(object sender, FileSystemEventArgs e)
+    private async void OnConfigFileChanged(object sender, FileSystemEventArgs e)
     {
-        if (e.ChangeType == WatcherChangeTypes.Changed)
+        if (e.ChangeType != WatcherChangeTypes.Changed || _disposed) return;
+
+        // Debounce file change events
+        await Task.Delay(100);
+        
+        try
         {
-            Thread.Sleep(100);
-            try
-            {
-                LoadConfiguration();
-                ConfigChanged?.Invoke(Config);
-                _logger.LogInformation("Configuration reloaded due to file change");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to reload configuration");
-            }
+            _configWatcher.EnableRaisingEvents = false;
+            LoadConfiguration();
+            ConfigChanged?.Invoke(Config);
+            _logger.LogInformation("Configuration reloaded due to file change");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to reload configuration");
+        }
+        finally
+        {
+            _configWatcher.EnableRaisingEvents = Config.Behavior.ReloadOnConfigChange;
         }
     }
 
     public void Dispose()
     {
+        if (_disposed) return;
+        
+        _disposed = true;
         _configWatcher?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

@@ -30,7 +30,7 @@ public class WindowConfig
 {
     [JsonPropertyName("width")] public int Width { get; set; } = 80;
     [JsonPropertyName("height")] public int Height { get; set; } = 25;
-    [JsonPropertyName("title")]  public string Title { get; set; } = "WaffleTUI Application";
+    [JsonPropertyName("title")] public string Title { get; set; } = "WaffleTUI Application";
     [JsonPropertyName("resizable")] public bool Resizable { get; set; } = true;
     [JsonPropertyName("centerOnStart")] public bool CenterOnStart { get; set; } = true;
 }
@@ -42,7 +42,7 @@ public class RenderingConfig
     [JsonPropertyName("targetFps")] public int TargetFps { get; set; } = 60;
     [JsonPropertyName("vsync")] public bool VSync { get; set; } = true;
     [JsonPropertyName("renderStats")] public bool ShowRenderStats { get; set; } = false;
-    [JsonPropertyName("optimizeForTerminal")]  public string OptimizeForTerminal { get; set; } = "auto"; // auto, windows, linux, macos
+    [JsonPropertyName("optimizeForTerminal")] public string OptimizeForTerminal { get; set; } = "auto";
 }
 
 public class ThemeConfig
@@ -85,7 +85,7 @@ public class AnimationSettings
 {
     [JsonPropertyName("enabled")] public bool Enabled { get; set; } = true;
     [JsonPropertyName("duration")] public double Duration { get; set; } = 0.3;
-    [JsonPropertyName("easing")] public string Easing { get; set; } = "EaseOut"; // Linear, EaseIn, EaseOut, EaseInOut
+    [JsonPropertyName("easing")] public string Easing { get; set; } = "EaseOut";
 }
 
 public class InputConfig
@@ -111,7 +111,7 @@ public class KeyBindingsConfig
 public class BehaviorConfig
 {
     [JsonPropertyName("autoSave")] public bool AutoSave { get; set; } = true;
-    [JsonPropertyName("saveInterval")] public int SaveInterval { get; set; } = 30000; // ms
+    [JsonPropertyName("saveInterval")] public int SaveInterval { get; set; } = 30000;
     [JsonPropertyName("confirmExit")] public bool ConfirmExit { get; set; } = true;
     [JsonPropertyName("reloadOnConfigChange")] public bool ReloadOnConfigChange { get; set; } = true;
     [JsonPropertyName("culture")] public string Culture { get; set; } = "en-US";
@@ -130,7 +130,7 @@ public class LoggingConfig
 {
     [JsonPropertyName("level")] public string Level { get; set; } = "Warning";
     [JsonPropertyName("file")] public string File { get; set; } = "waffletui.log";
-    [JsonPropertyName("maxFileSize")] public long MaxFileSize { get; set; } = 10485760; // 10MB
+    [JsonPropertyName("maxFileSize")] public long MaxFileSize { get; set; } = 10485760;
     [JsonPropertyName("retainedFileCount")] public int RetainedFileCount { get; set; } = 5;
     [JsonPropertyName("consoleOutput")] public bool ConsoleOutput { get; set; } = true;
 }

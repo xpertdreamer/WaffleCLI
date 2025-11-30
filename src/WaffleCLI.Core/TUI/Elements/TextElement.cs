@@ -1,10 +1,11 @@
 using WaffleCLI.Abstractions.TUI;
+using WaffleCLI.Core.TUI.Rendering;
 
 namespace WaffleCLI.Core.TUI.Elements;
 
 public class TextElement : ITuiElement, IRenderEngineAware
 {
-    private IRenderEngine? _renderEngine;
+    protected IRenderEngine _renderEngine;
 
     public int X { get; set; }
     public int Y { get; set; }
@@ -25,13 +26,9 @@ public class TextElement : ITuiElement, IRenderEngineAware
         _renderEngine = renderEngine;
     }
 
-    public void Render()
+    public virtual void Render()
     {
         if (!isVisible || _renderEngine == null) return;
-
-        var renderX = Math.Max(0, X);
-        var renderY = Math.Max(0, Y);
-        var renderWidth = Math.Max(1, Width);
 
         if (HasBorder)
         {
@@ -39,23 +36,24 @@ public class TextElement : ITuiElement, IRenderEngineAware
         }
 
         var displayText = GetDisplayText();
-        _renderEngine.RenderText(renderX, renderY, displayText, Color, BackgroundColor);
+        _renderEngine.RenderText(X, Y, displayText, Color, BackgroundColor);
     }
 
-    public bool HandleInput(ConsoleKeyInfo keyInfo) => false;
+    public virtual bool HandleInput(ConsoleKeyInfo keyInfo) => false;
 
-    private void RenderBorder()
+    protected virtual void RenderBorder()
     {
         if (_renderEngine == null) return;
 
         _renderEngine.RenderBorder(X - 1, Y - 1, Width + 2, Height + 2, BorderStyle.Single);
     }
 
-    private string GetDisplayText()
+    protected virtual string GetDisplayText()
     {
-        if (string.IsNullOrEmpty(Text)) return new string(' ', Width);
+        if (string.IsNullOrEmpty(Text)) 
+            return new string(' ', Math.Max(1, Width));
         
-        var displayText = Text.Length > Width ? Text[..Width] : Text;
+        var displayText = Text.Length > Width ? Text.Substring(0, Width) : Text;
         return displayText.PadRight(Width);
     }
 }

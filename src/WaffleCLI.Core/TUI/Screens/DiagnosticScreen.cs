@@ -23,17 +23,18 @@ public class DiagnosticScreen : BasicTuiScreen
     public override async Task InitializeAsync()
     {
         TuiDiagnosticsService.Instance.Log("DiagnosticScreen.InitializeAsync started");
-        
+
         _startTime = DateTime.Now;
-        
+
         try
         {
             ClearElements();
 
+            // Создаем элементы
             _statusElement = new TextElement
-            {   
-                X = 2, 
-                Y = 2, 
+            {
+                X = 2,
+                Y = 2,
                 Width = 70,
                 Text = "Diagnostics Active - Press F1-F5 for tests, Tab to navigate",
                 Color = ConsoleColor.Green,
@@ -85,40 +86,96 @@ public class DiagnosticScreen : BasicTuiScreen
                 isVisible = true
             };
 
+            // Подписываемся на события
             _testButton.Clicked += OnTestButtonClicked;
 
+            // Добавляем элементы
             AddElement(_statusElement);
             AddElement(_testButton);
             AddElement(_logElement);
             AddElement(_stateElement);
 
+            // Базовая инициализация ДО установки фокуса
             await base.InitializeAsync();
+
+            // Устанавливаем фокус только после успешной инициализации
+            if (_testButton != null && _elements.Contains(_testButton))
+            {
+                SetFocus(_testButton);
+                LogEvent("ButtonElement focused during initialization");
+            }
+            else
+            {
+                LogEvent("Warning: ButtonElement not available for focus");
+            }
 
             UpdateState();
             LogEvent("Screen initialized successfully");
-            
+
             TuiDiagnosticsService.Instance.Log("DiagnosticScreen.InitializeAsync completed");
         }
         catch (Exception ex)
         {
             TuiDiagnosticsService.Instance.Log($"InitializeAsync failed: {ex}");
+            LogEvent($"Initialization failed: {ex.Message}");
             throw;
         }
     }
 
+    public override async Task RenderAsync()
+{
+    _frameCount++;
+    
+    try
+    {
+        // Принудительно обновляем состояние перед рендером
+        UpdateState();
+        
+        await base.RenderAsync();
+        
+        // Логируем состояние ButtonElement
+        var buttonElement = _elements.OfType<ButtonElement>().FirstOrDefault();
+        if (buttonElement != null)
+        {
+            TuiDiagnosticsService.Instance.Log($"ButtonElement state - Visible: {buttonElement.isVisible}, Focusable: {buttonElement.isFocusable}, HasFocus: {buttonElement.HasFocus}");
+        }
+        
+        if (_frameCount % 30 == 0) // Логируем каждые 30 кадров
+        {
+            LogEvent($"Frame {_frameCount} rendered - Button visible: {buttonElement?.isVisible ?? false}");
+        }
+    }
+    catch (Exception ex)
+    {
+        TuiDiagnosticsService.Instance.Log($"RenderAsync error: {ex}");
+    }
+}
+
     protected override void RecalculateLayout()
     {
         TuiDiagnosticsService.Instance.Log("RecalculateLayout called");
-        
+
         try
         {
             var screenWidth = Console.WindowWidth;
             var screenHeight = Console.WindowHeight;
 
+            // Обновляем размеры элементов
             if (_statusElement != null)
             {
                 _statusElement.Width = Math.Max(10, screenWidth - 4);
                 _statusElement.X = 2;
+            }
+
+            // Убеждаемся, что ButtonElement всегда видим и получает правильные координаты
+            var buttonElement = _elements.OfType<ButtonElement>().FirstOrDefault();
+            if (buttonElement != null)
+            {
+                buttonElement.X = Math.Max(2, (screenWidth - buttonElement.Width) / 2);
+                buttonElement.Y = 5;
+                buttonElement.isVisible = true; // Принудительно делаем видимым
+                TuiDiagnosticsService.Instance.Log(
+                    $"ButtonElement repositioned to ({buttonElement.X}, {buttonElement.Y})");
             }
 
             if (_logElement != null)
@@ -143,30 +200,14 @@ public class DiagnosticScreen : BasicTuiScreen
         }
     }
 
-    public override async Task RenderAsync()
-    {
-        _frameCount++;
-        
-        try
-        {
-            await base.RenderAsync();
-            UpdateState();
-            
-            if (_frameCount % 60 == 0) 
-            {
-                LogEvent($"Frame {_frameCount} rendered");
-            }
-        }
-        catch (Exception ex)
-        {
-            TuiDiagnosticsService.Instance.Log($"RenderAsync error: {ex}");
-        }
-    }
-
     public override async Task HandleInputAsync(ConsoleKeyInfo keyInfo)
     {
         LogEvent($"Input received: {keyInfo.Key} (Modifiers: {keyInfo.Modifiers})");
 
+        // Сохраняем предыдущее состояние фокуса
+        var oldFocusedElementIndex = _focusedElementIndex;
+
+        // Диагностические команды
         switch (keyInfo.Key)
         {
             case ConsoleKey.F1:
@@ -204,6 +245,22 @@ public class DiagnosticScreen : BasicTuiScreen
         try
         {
             await base.HandleInputAsync(keyInfo);
+
+            // Логируем изменение фокуса
+            if (oldFocusedElementIndex != _focusedElementIndex)
+            {
+                LogEvent($"Focus changed from {oldFocusedElementIndex} to {_focusedElementIndex}");
+
+                var focusedElement = _focusedElementIndex >= 0 && _focusedElementIndex < _elements.Count
+                    ? _elements[_focusedElementIndex]
+                    : null;
+
+                if (focusedElement is ButtonElement)
+                {
+                    LogEvent("ButtonElement now has focus!");
+                }
+            }
+
             UpdateState();
         }
         catch (Exception ex)

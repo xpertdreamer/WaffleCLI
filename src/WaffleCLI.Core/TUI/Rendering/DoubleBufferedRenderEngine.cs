@@ -7,60 +7,63 @@ namespace WaffleCLI.Core.TUI.Rendering;
 
 public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
 {
-    #region Nested Types
-    private class Cell : IEquatable<Cell>
+    #region Optimized Data Structures
+    private struct Cell : IEquatable<Cell>
     {
-        public char Character { get; set; } = ' ';
-        public ConsoleColor Foreground {get; set;} = ConsoleColor.White;
-        public ConsoleColor Background {get; set;} = ConsoleColor.Black;
-        public bool IsDirty { get; set; } = true;
-        
-        
-        public bool Equals(Cell? other)
-        {
-            if (other is null) return false;
-            return Character == other.Character && 
-                   Foreground == other.Foreground && 
-                   Background == other.Background;
-        }
-        
-        public override bool Equals(object? obj) => Equals(obj as Cell);
-        public override int GetHashCode() => HashCode.Combine(Character, Foreground, Background);
+        public char Character;
+        public ConsoleColor Foreground;
+        public ConsoleColor Background;
+        public bool IsDirty;
+
+        public readonly bool Equals(Cell other) => 
+            Character == other.Character && 
+            Foreground == other.Foreground && 
+            Background == other.Background;
+
+        public readonly override bool Equals(object? obj) => obj is Cell cell && Equals(cell);
+        public readonly override int GetHashCode() => HashCode.Combine(Character, Foreground, Background);
     }
-    
-    private record struct DirtyRegion(int X, int Y, int Width, int Height)
+
+    private readonly record struct DirtyRegion(int X, int Y, int Width, int Height)
     {
-        public static DirtyRegion FromRectangle(Rectangle rect) => 
-            new(rect.X, rect.Y, rect.Width, rect.Height);
+        public static DirtyRegion FromRectangle(Rectangle rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
     }
     #endregion
-    
+
+    // Border characters cache for performance
+    private static readonly Dictionary<BorderStyle, (char h, char v, char tl, char tr, char bl, char br)> 
+        BorderCharsCache = new()
+    {
+        [BorderStyle.Single] = ('─', '│', '┌', '┐', '└', '┘'),
+        [BorderStyle.Double] = ('═', '║', '╔', '╗', '╚', '╝'),
+        [BorderStyle.Rounded] = ('─', '│', '╭', '╮', '╰', '╯'),
+        [BorderStyle.Thick] = ('━', '┃', '┏', '┓', '┗', '┛'),
+        [BorderStyle.Dashed] = ('╌', '╎', '┌', '┐', '└', '┘'),
+    };
+
     private Cell[,] _frontBuffer;
     private Cell[,] _backBuffer;
-    private readonly List<DirtyRegion> _dirtyRegions = [];
+    private readonly List<Rectangle> _dirtyRegions = [];
     private readonly bool _enablePartialRendering;
     private readonly Stopwatch _renderStopwatch = new();
-    private readonly object _renderLock = new object();
+    private readonly object _renderLock = new();
     private bool _isInitialized = false;
     private bool _disposed = false;
     private int _totalFrames = 0;
-    private int _totalFlushes = 0;
     
     public int Width { get; private set; }
     public int Height { get; private set; }
     public bool SupportsPartialRendering => _enablePartialRendering;
     public RenderStats LastRenderStats { get; private set; }
     public int TotalFrames => _totalFrames;
-    public int TotalFlushes => _totalFlushes;
 
     public DoubleBufferedRenderEngine(bool enablePartialRendering = true)
     {
         _enablePartialRendering = enablePartialRendering;
+        LastRenderStats = new RenderStats(0, 0, 0, 0, 0);
         InitializeSafeDimensions();
         InitializeBuffers();
         _isInitialized = true;
-        
-        TuiDiagnosticsService.Instance.Log("DebugDoubleBufferedRenderEngine initialized");
     }
     
     private void InitializeSafeDimensions()
@@ -80,16 +83,24 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
 
     private void InitializeBuffers()
     {
-        _frontBuffer = new Cell[Width, Height];
-        _backBuffer = new Cell[Width, Height];
-        
-        for (var y = 0; y < Height; y++)
+        try
         {
-            for (var x = 0; x < Width; x++)
+            _frontBuffer = new Cell[Width, Height];
+            _backBuffer = new Cell[Width, Height];
+
+            // Initialize with empty cells
+            for (var y = 0; y < Height; y++)
             {
-                _frontBuffer[x, y] = new Cell();
-                _backBuffer[x, y] = new Cell();
+                for (var x = 0; x < Width; x++)
+                {
+                    _frontBuffer[x, y] = new Cell { Character = ' ', IsDirty = true };
+                    _backBuffer[x, y] = new Cell { Character = ' ', IsDirty = true };
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Buffer initialization failed: {ex.Message}", ex);
         }
     }
 
@@ -104,8 +115,6 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
             
             InitializeBuffers();
             _isInitialized = true;
-            
-            TuiDiagnosticsService.Instance.Log($"RenderEngine initialized: {Width}x{Height}");
         }
     }
 
@@ -118,6 +127,7 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
             _renderStopwatch.Restart();
             _dirtyRegions.Clear();
 
+            // Reset dirty flags in back buffer
             for (var y = 0; y < Height; y++)
             {
                 for (var x = 0; x < Width; x++)
@@ -145,34 +155,31 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
                 FlushTimeMs: 0
             );
             
-            if (_totalFrames % 100 == 0)
-            {
-                TuiDiagnosticsService.Instance.Log($"Frame {_totalFrames}: {LastRenderStats}");
-            }
+            _totalFrames++;
         }
     }
 
     public void RenderElement(ITuiElement element)
     {
-        if(!_isInitialized ||!element.isVisible || _disposed) return;
-        
-        TuiDiagnosticsService.Instance.Log($"Rendering element: {element.GetType().Name} at ({element.X}, {element.Y})");
+        if (!_isInitialized || !element.isVisible || _disposed) return;
         element.Render();
     }
 
     public void RenderText(int x, int y, string text, ConsoleColor fg, ConsoleColor bg)
     {
         if (!_isInitialized || string.IsNullOrEmpty(text) || _disposed) return;
+        if (y < 0 || y >= Height) return;
 
         lock (_renderLock)
         {
-            TuiDiagnosticsService.Instance.Log($"Rendering text: '{text}' at ({x}, {y})");
-            
-            for (var i = 0; i < text.Length; i++)
+            var length = Math.Min(text.Length, Width - x);
+            if (length <= 0) return;
+
+            // Render only visible portion of text
+            for (var i = 0; i < length; i++)
             {
                 var charX = x + i;
-                if (charX >= Width || charX < 0 || y >= Height || y < 0)
-                    continue;
+                if (charX < 0) continue;
 
                 SetCell(charX, y, text[i], fg, bg);
             }
@@ -185,15 +192,16 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
         
         lock (_renderLock)
         {
-            TuiDiagnosticsService.Instance.Log($"Rendering rect: ({x}, {y}) {width}x{height}");
-            
-            for (var rectY = y; rectY < y + height; rectY++)
-            {
-                for (var rectX = x; rectX < x + width; rectX++)
-                {
-                    if (rectX < 0 || rectX >= Width || rectY < 0 || rectY >= Height)
-                        continue;
+            // Calculate visible area only
+            var startX = Math.Max(0, x);
+            var startY = Math.Max(0, y);
+            var endX = Math.Min(Width, x + width);
+            var endY = Math.Min(Height, y + height);
 
+            for (var rectY = startY; rectY < endY; rectY++)
+            {
+                for (var rectX = startX; rectX < endX; rectX++)
+                {
                     SetCell(rectX, rectY, fillChar, color, color);
                 }
             }
@@ -203,24 +211,30 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
     public void RenderBorder(int x, int y, int width, int height, BorderStyle borderStyle)
     {
         if (!_isInitialized || _disposed) return;
-        
-        TuiDiagnosticsService.Instance.Log($"Rendering border: ({x}, {y}) {width}x{height}");
-        
-        var (horizontal, vertical, topLeft, topRight, bottomRight, bottomLeft) = GetBorderChars(borderStyle);
+        if (width < 2 || height < 2) return;
+
+        // Use cached border characters
+        if (!BorderCharsCache.TryGetValue(borderStyle, out var chars))
+            chars = BorderCharsCache[BorderStyle.Single];
+
+        var (horizontal, vertical, topLeft, topRight, bottomLeft, bottomRight) = chars;
 
         lock (_renderLock)
         {
+            // Corners
             SetCellSafe(x, y, topLeft, ConsoleColor.White, ConsoleColor.Black);
             SetCellSafe(x + width - 1, y, topRight, ConsoleColor.White, ConsoleColor.Black);
             SetCellSafe(x, y + height - 1, bottomLeft, ConsoleColor.White, ConsoleColor.Black);
             SetCellSafe(x + width - 1, y + height - 1, bottomRight, ConsoleColor.White, ConsoleColor.Black);
 
+            // Horizontal lines
             for (var i = 1; i < width - 1; i++)
             {
                 SetCellSafe(x + i, y, horizontal, ConsoleColor.White, ConsoleColor.Black);
                 SetCellSafe(x + i, y + height - 1, horizontal, ConsoleColor.White, ConsoleColor.Black);
             }
 
+            // Vertical lines
             for (var i = 1; i < height - 1; i++)
             {
                 SetCellSafe(x, y + i, vertical, ConsoleColor.White, ConsoleColor.Black);
@@ -237,28 +251,18 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
         }
     }
 
-    private static (char horizontal, char vertical, char topLeft, char topRight, char bottomRight, char bottomLeft)
-        GetBorderChars(BorderStyle borderStyle)
-    {
-        return borderStyle switch
-        {
-            // So, will implement it later
-            BorderStyle.Single => ('-', '|', '+', '+', '+', '+'),
-            BorderStyle.Double => ('═', '|', '+', '+', '+', '+'),
-            BorderStyle.Rounded => ('-', '|', '+', '+', '+', '+'),
-            BorderStyle.Thick => ('-', '|', '+', '+', '+', '+'),
-            BorderStyle.Dashed => ('-', '|', '+', '+', '+', '+'),
-            _ => ('─', '│', '┌', '┐', '└', '┘')
-        };
-    }
-
     private void SetCell(int x, int y, char character, ConsoleColor foreground, ConsoleColor background)
     {
-        if (!_isInitialized ||x < 0 || x >= Width || y < 0 || y >= Height) return;
+        if (x < 0 || x >= Width || y < 0 || y >= Height) return;
         
-        var cell = _backBuffer[x, y];
+        ref var cell = ref _backBuffer[x, y];
+        
+        // Only update if actually changed
+        if (cell.Character == character && cell.Foreground == foreground && cell.Background == background)
+            return;
+
         cell.Character = character;
-        cell.Foreground =  foreground;
+        cell.Foreground = foreground;
         cell.Background = background;
         cell.IsDirty = true;
     }
@@ -269,8 +273,6 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
 
         lock (_renderLock)
         {
-            TuiDiagnosticsService.Instance.Log("Clearing render buffer");
-            
             for (var y = 0; y < Height; y++)
             {
                 for (var x = 0; x < Width; x++)
@@ -287,16 +289,16 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
         
         lock (_renderLock)
         {
-            TuiDiagnosticsService.Instance.Log($"Clearing area: ({x}, {y}) {width}x{height}");
-            
-            for (var rectY = y; rectY < y + height; rectY++)
+            var startX = Math.Max(0, x);
+            var startY = Math.Max(0, y);
+            var endX = Math.Min(Width, x + width);
+            var endY = Math.Min(Height, y + height);
+
+            for (var rectY = startY; rectY < endY; rectY++)
             {
-                for (var rectX = x; rectX < x + width; rectX++)
+                for (var rectX = startX; rectX < endX; rectX++)
                 {
-                    if (rectX >= 0 && rectX < Width && rectY >= 0 && rectY < Height)
-                    {
-                        SetCell(rectX, rectY, ' ', ConsoleColor.White, ConsoleColor.Black);
-                    }
+                    SetCell(rectX, rectY, ' ', ConsoleColor.White, ConsoleColor.Black);
                 }
             }
         }
@@ -339,7 +341,7 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
         }
         catch (Exception ex)
         {
-            TuiDiagnosticsService.Instance.Log($"Flush error: {ex}");
+            TuiDiagnosticsService.Instance.Log($"Flush error: {ex.Message}");
         }
     }
 
@@ -350,12 +352,10 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
             
         try
         {
-            TuiDiagnosticsService.Instance.Log($"Flushing {_dirtyRegions.Count} dirty regions");
             foreach (var region in _dirtyRegions)
             {
                 FlushRegion(region);
             }
-
             SyncBuffers();
         }
         finally
@@ -367,35 +367,39 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
 
     private void FlushFull()
     {
+        if (!_isInitialized || _disposed) return;
+
         var currentFg = Console.ForegroundColor;
         var currentBg = Console.BackgroundColor;
 
         try
         {
-            TuiDiagnosticsService.Instance.Log("Flushing full buffer");
-            
             for (var y = 0; y < Height; y++)
             {
                 for (var x = 0; x < Width; x++)
                 {
-                    var backCell = _backBuffer[x, y];
-                    var frontCell = _frontBuffer[x, y];
+                    ref var backCell = ref _backBuffer[x, y];
+                    ref var frontCell = ref _frontBuffer[x, y];
 
-                    if (!backCell.IsDirty || backCell.Equals(frontCell)) 
+                    if (!backCell.IsDirty || backCell.Equals(frontCell))
                         continue;
 
-                    // Only write if position is valid
-                    if (x < Console.WindowWidth && y < Console.WindowHeight)
+                    if (x < Console.WindowWidth && y < Console.WindowHeight && x >= 0 && y >= 0)
                     {
-                        Console.SetCursorPosition(x, y);
-                        Console.ForegroundColor = backCell.Foreground;
-                        Console.BackgroundColor = backCell.Background;
-                        Console.Write(backCell.Character);
+                        try
+                        {
+                            Console.SetCursorPosition(x, y);
+                            Console.ForegroundColor = backCell.Foreground;
+                            Console.BackgroundColor = backCell.Background;
+                            Console.Write(backCell.Character);
+                        }
+                        catch (Exception ex)
+                        {
+                            TuiDiagnosticsService.Instance.Log($"Error writing at ({x}, {y}): {ex.Message}");
+                        }
                     }
 
-                    frontCell.Character = backCell.Character;
-                    frontCell.Foreground = backCell.Foreground;
-                    frontCell.Background = backCell.Background;
+                    frontCell = backCell;
                 }
             }
         }
@@ -406,8 +410,10 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
         }
     }
 
-    private void FlushRegion(DirtyRegion region)
+    private void FlushRegion(Rectangle region)
     {
+        if (!_isInitialized || _disposed) return;
+        
         var currentFg = Console.ForegroundColor;
         var currentBg = Console.BackgroundColor;
 
@@ -419,24 +425,28 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
                 {
                     if (x >= Width || y >= Height) continue;
 
-                    var backCell = _backBuffer[x, y];
-                    var frontCell = _frontBuffer[x, y];
+                    ref var backCell = ref _backBuffer[x, y];
+                    ref var frontCell = ref _frontBuffer[x, y];
 
                     if (!backCell.IsDirty || backCell.Equals(frontCell)) 
                         continue;
 
-                    // Only write if position is valid
                     if (x < Console.WindowWidth && y < Console.WindowHeight)
                     {
-                        Console.SetCursorPosition(x, y);
-                        Console.ForegroundColor = backCell.Foreground;
-                        Console.BackgroundColor = backCell.Background;
-                        Console.Write(backCell.Character);
+                        try
+                        {
+                            Console.SetCursorPosition(x, y);
+                            Console.ForegroundColor = backCell.Foreground;
+                            Console.BackgroundColor = backCell.Background;
+                            Console.Write(backCell.Character);
+                        }
+                        catch (Exception ex)
+                        {
+                            TuiDiagnosticsService.Instance.Log($"Error writing at ({x}, {y}): {ex.Message}");
+                        }
                     }
 
-                    frontCell.Character = backCell.Character;
-                    frontCell.Foreground = backCell.Foreground;
-                    frontCell.Background = backCell.Background;
+                    frontCell = backCell;
                 }
             }
         }
@@ -453,11 +463,10 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
         {
             for (var x = 0; x < Width; x++)
             {
-                if (!_backBuffer[x, y].IsDirty) continue;
-                
-                _frontBuffer[x, y].Character = _backBuffer[x, y].Character;
-                _frontBuffer[x, y].Foreground = _backBuffer[x, y].Foreground;
-                _frontBuffer[x, y].Background = _backBuffer[x, y].Background;
+                if (_backBuffer[x, y].IsDirty)
+                {
+                    _frontBuffer[x, y] = _backBuffer[x, y];
+                }
             }
         }
     }
@@ -474,7 +483,7 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
                 if (!_backBuffer[x, y].IsDirty || visited[x, y]) continue;
                 
                 var region = GrowRegion(x, y, visited);
-                _dirtyRegions.Add(DirtyRegion.FromRectangle(region));
+                _dirtyRegions.Add(region);
             }
         }
     }
@@ -490,7 +499,6 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
                     count++;
             }
         }
-
         return count;
     }
 
@@ -532,11 +540,9 @@ public class DoubleBufferedRenderEngine : IRenderEngine, IDisposable
         lock (_renderLock)
         {
             _disposed = true;
-            _frontBuffer = null!;
-            _backBuffer = null!;
+            _frontBuffer = null;
+            _backBuffer = null;
             _dirtyRegions.Clear();
-            
-            TuiDiagnosticsService.Instance.Log("DebugDoubleBufferedRenderEngine disposed");
         }
         
         GC.SuppressFinalize(this);

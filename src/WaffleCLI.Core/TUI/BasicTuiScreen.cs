@@ -1,5 +1,6 @@
 using WaffleCLI.Abstractions.TUI;
 using WaffleCLI.Core.TUI.Configuration;
+using WaffleCLI.Core.TUI.Diagnostics;
 using WaffleCLI.Core.TUI.Elements;
 using WaffleCLI.Core.TUI.Rendering;
 
@@ -7,7 +8,7 @@ namespace WaffleCLI.Core.TUI;
 
 public abstract class BasicTuiScreen : ITuiScreen
 {
-    protected readonly List<ITuiElement> _elements = [];
+    protected readonly List<ITuiElement> _elements = new();
     protected int _focusedElementIndex = -1;
     protected bool _firstRender = true;
     private (int width, int height) _lastSize;
@@ -17,22 +18,21 @@ public abstract class BasicTuiScreen : ITuiScreen
     private TextElement _footerElement;
     private bool _isInitialized = false;
     
-    protected RenderLayerManager LayerManager => 
-        ServiceLocator.GetService<RenderLayerManager>();
+    // Focus management optimization
+    private List<ITuiElement> _focusableElements = new();
+    private bool _focusCacheInvalid = true;
     
-    protected ConfigurationManager ConfigManager => 
-        ServiceLocator.GetService<ConfigurationManager>();
-    
-    protected IRenderEngine RenderEngine =>
-        ServiceLocator.GetService<IRenderEngine>();
+    protected RenderLayerManager LayerManager => ServiceLocator.GetService<RenderLayerManager>();
+    protected ConfigurationManager ConfigManager => ServiceLocator.GetService<ConfigurationManager>();
+    protected IRenderEngine RenderEngine => ServiceLocator.GetService<IRenderEngine>();
     
     public abstract string Title { get; }
 
     public virtual async Task InitializeAsync()
     {
         _needsLayoutRecalculation = true;
-
         await RegisterElementsInLayers();
+        RebuildFocusCache();
         _isInitialized = true;
     }
     
@@ -99,9 +99,9 @@ public abstract class BasicTuiScreen : ITuiScreen
         
         _needsLayoutRecalculation = true;
         _firstRender = true;
+        InvalidateFocusCache();
         
         UpdateHeaderAndFooter();
-        
         await Task.CompletedTask;
     }
 
@@ -113,12 +113,14 @@ public abstract class BasicTuiScreen : ITuiScreen
         {
             _firstRender = false;
             _lastSize = (Console.WindowWidth, Console.WindowHeight);
-            _needsLayoutRecalculation =  true;
+            _needsLayoutRecalculation = true;
         }
 
-        if (!_needsLayoutRecalculation) return;
-        RecalculateLayout();
-        _needsLayoutRecalculation = false;
+        if (_needsLayoutRecalculation)
+        {
+            RecalculateLayout();
+            _needsLayoutRecalculation = false;
+        }
 
         await Task.CompletedTask;
     }
@@ -130,11 +132,13 @@ public abstract class BasicTuiScreen : ITuiScreen
 
         foreach (var element in _elements)
         {
-            if(element.X + element.Width > screenWidth)
+            if (element.X + element.Width > screenWidth)
                 element.X = Math.Max(0, (screenWidth - element.Width) / 2);
             if (element.Y + element.Height > screenHeight - 2)
                 element.Y = Math.Max(1, (screenHeight - element.Height - 2) / 2);
         }
+        
+        InvalidateFocusCache();
     }
 
     private static ConsoleColor ParseColor(string colorName)
@@ -148,7 +152,10 @@ public abstract class BasicTuiScreen : ITuiScreen
     {
         if (keyInfo.Key == ConsoleKey.Tab)
         {
-            MoveFocusNext();
+            if (keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                MoveFocusPrevious();
+            else
+                MoveFocusNext();
             return Task.CompletedTask;
         }
 
@@ -169,71 +176,67 @@ public abstract class BasicTuiScreen : ITuiScreen
         
         return Task.CompletedTask;
     }
-    
-    protected virtual void ClearContentArea()
-    {
-        Console.ResetColor();
-        
-        for (var row = 1; row < Console.WindowHeight - 1; row++)
-        {
-            Console.SetCursorPosition(0, row);
-            Console.Write(new string(' ', Console.WindowWidth));
-        }
-    }
 
-    protected virtual void RenderHeader()
-    {
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.BackgroundColor = ConsoleColor.Black;
-        
-        Console.SetCursorPosition(0, 0);
-        Console.Write(new string(' ', Console.WindowWidth));
-        
-        Console.SetCursorPosition(0, 0);
-        var titleText = $" {Title} ";
-        Console.Write(titleText);
-        
-        var remainWidth = Console.WindowWidth - titleText.Length;
-        if (remainWidth > 0)
-        {
-            Console.Write(new string('=', remainWidth));
-        }
-        
-        Console.ResetColor();
-    }
+    // Focus management methods
+    private void InvalidateFocusCache() => _focusCacheInvalid = true;
 
-    protected virtual void RenderFooter()
+    private void RebuildFocusCache()
     {
-        Console.ForegroundColor = ConsoleColor.DarkGray;
-        Console.BackgroundColor = ConsoleColor.Black;
+        if (!_focusCacheInvalid) return;
         
-        Console.SetCursorPosition(0, Console.WindowHeight - 1);
-        Console.Write(new string(' ', Console.WindowWidth));
-        
-        Console.SetCursorPosition(0, Console.WindowHeight - 1);
-        const string footerText = " Tab:Navigate | Enter:Select | Ctrl+Q:Exit";
-        Console.Write(footerText);
-        
-        Console.ResetColor();
+        _focusableElements = _elements
+            .Where(e => e is { isVisible: true, isFocusable: true })
+            .ToList();
+        _focusCacheInvalid = false;
+
+        // Validate current focus index
+        if (_focusedElementIndex >= 0 && _focusedElementIndex < _elements.Count)
+        {
+            var focusedElement = _elements[_focusedElementIndex];
+            if (!focusedElement.isVisible || !focusedElement.isFocusable)
+            {
+                MoveFocusNext();
+            }
+        }
+        else if (_focusableElements.Count > 0)
+        {
+            // Auto-focus first focusable element
+            _focusedElementIndex = _elements.IndexOf(_focusableElements[0]);
+            UpdateFocus();
+        }
     }
 
     protected void AddElement(ITuiElement element)
     {
+        if (element == null) return;
+        
         _elements.Add(element);
+        InvalidateFocusCache();
 
-        if (_focusedElementIndex != -1 || !element.isVisible || !element.isFocusable) return;
-        _focusedElementIndex = _elements.Count - 1;
-        UpdateFocus();
+        // Auto-focus only if this is the first focusable element
+        if (_focusedElementIndex == -1 && element is { isVisible: true, isFocusable: true })
+        {
+            _focusedElementIndex = _elements.Count - 1;
+            UpdateFocus();
+        }
     }
 
     protected void RemoveElement(ITuiElement element)
     {
         var index = _elements.IndexOf(element);
-        _elements.Remove(element);
-
-        if (index == _focusedElementIndex)
+        if (index >= 0)
         {
-            MoveFocusNext();
+            _elements.RemoveAt(index);
+            InvalidateFocusCache();
+
+            if (index == _focusedElementIndex)
+            {
+                MoveFocusNext();
+            }
+            else if (index < _focusedElementIndex)
+            {
+                _focusedElementIndex--;
+            }
         }
     }
 
@@ -241,29 +244,65 @@ public abstract class BasicTuiScreen : ITuiScreen
     {
         _elements.Clear();
         _focusedElementIndex = -1;
+        InvalidateFocusCache();
     }
 
     protected void SetFocus(ITuiElement element)
     {
+        if (element == null) return;
+
         var index = _elements.IndexOf(element);
-        if (index < 0) return;
-        _focusedElementIndex = index;
-        UpdateFocus();
+        if (index >= 0 && element.isVisible && element.isFocusable)
+        {
+            _focusedElementIndex = index;
+            UpdateFocus();
+        }
     }
 
     protected void MoveFocusNext()
     {
-        if (_elements.Count == 0) return;
+        RebuildFocusCache();
+        if (_focusableElements.Count == 0)
+        {
+            _focusedElementIndex = -1;
+            UpdateFocus();
+            return;
+        }
 
-        var focusableElements = _elements
-            .Where(e => e is { isVisible: true, isFocusable: true })
-            .ToList();
+        var currentFocused = _focusedElementIndex >= 0 && _focusedElementIndex < _elements.Count 
+            ? _elements[_focusedElementIndex] 
+            : null;
+
+        var currentIndex = currentFocused != null 
+            ? _focusableElements.IndexOf(currentFocused) 
+            : -1;
+
+        var nextIndex = (currentIndex + 1) % _focusableElements.Count;
+        _focusedElementIndex = _elements.IndexOf(_focusableElements[nextIndex]);
         
-        if (focusableElements.Count == 0) return;
+        UpdateFocus();
+    }
 
-        var currentIndex = GetVisibleElementIndex(_focusedElementIndex);
-        var nextIndex = (currentIndex + 1) % focusableElements.Count;
-        _focusedElementIndex = _elements.IndexOf(focusableElements[nextIndex]);
+    protected void MoveFocusPrevious()
+    {
+        RebuildFocusCache();
+        if (_focusableElements.Count == 0)
+        {
+            _focusedElementIndex = -1;
+            UpdateFocus();
+            return;
+        }
+
+        var currentFocused = _focusedElementIndex >= 0 && _focusedElementIndex < _elements.Count 
+            ? _elements[_focusedElementIndex] 
+            : null;
+
+        var currentIndex = currentFocused != null 
+            ? _focusableElements.IndexOf(currentFocused) 
+            : -1;
+
+        var nextIndex = currentIndex <= 0 ? _focusableElements.Count - 1 : currentIndex - 1;
+        _focusedElementIndex = _elements.IndexOf(_focusableElements[nextIndex]);
         
         UpdateFocus();
     }
@@ -273,21 +312,17 @@ public abstract class BasicTuiScreen : ITuiScreen
         for (var i = 0; i < _elements.Count; i++)
         {
             var element = _elements[i];
-            var hasFocusProperty =  element.GetType().GetProperty("HasFocus");
-            if (hasFocusProperty != null && hasFocusProperty.CanWrite)
+            if (element != null)
             {
-                hasFocusProperty.SetValue(element, i == _focusedElementIndex);
+                try
+                {
+                    element.HasFocus = (i == _focusedElementIndex);
+                }
+                catch (Exception ex)
+                {
+                    TuiDiagnosticsService.Instance.Log($"Error setting focus for element {i}: {ex.Message}");
+                }
             }
         }
-    }
-
-    private int GetVisibleElementIndex(int elementIndex)
-    {
-        if (elementIndex < 0 || elementIndex >= _elements.Count)
-            return -1;
-
-        var visibleElements = _elements.Where(e => e.isVisible).ToList();
-        var element = visibleElements[elementIndex];
-        return visibleElements.IndexOf(element);
     }
 }

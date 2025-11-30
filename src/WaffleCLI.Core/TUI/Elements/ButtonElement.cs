@@ -3,32 +3,24 @@ using WaffleCLI.Core.TUI.Rendering;
 
 namespace WaffleCLI.Core.TUI.Elements;
 
-public class ButtonElement : ITuiElement, IRenderEngineAware
+public class ButtonElement : TextElement
 {
-    private IRenderEngine? _renderEngine;
-
-    public int X { get; set; }
-    public int Y { get; set; }
-    public int Width { get; set; } = 20;
-    public int Height { get; set; } = 3;
-    public bool isVisible { get; set; } = true;
-    public bool isFocusable { get; set; } = true;
-    public bool HasFocus { get; set; }
-
-    public string Text { get; set; } = "Button";
-    public ConsoleColor Color { get; set; } = ConsoleColor.White;
-    public ConsoleColor BackgroundColor { get; set; } = ConsoleColor.DarkBlue;
     public ConsoleColor FocusColor { get; set; } = ConsoleColor.Black;
     public ConsoleColor FocusBackgroundColor { get; set; } = ConsoleColor.Yellow;
 
     public event Action? Clicked;
 
-    public void SetRenderEngine(IRenderEngine renderEngine)
+    public ButtonElement()
     {
-        _renderEngine = renderEngine;
+        isFocusable = true;
+        Width = 20;
+        Height = 3;
+        Text = "Button";
+        Color = ConsoleColor.White;
+        BackgroundColor = ConsoleColor.DarkBlue;
     }
 
-    public void Render()
+    public override void Render()
     {
         if (!isVisible || _renderEngine == null) return;
 
@@ -42,12 +34,14 @@ public class ButtonElement : ITuiElement, IRenderEngineAware
         _renderEngine.RenderBorder(X, Y, Width, Height, BorderStyle.Single);
 
         // Render text
-        var textX = X + (Width - Text.Length) / 2;
+        var textX = X + Math.Max(0, (Width - Text.Length) / 2);
         var textY = Y + Height / 2;
-        _renderEngine.RenderText(textX, textY, Text, currentColor, currentBackground);
+        
+        var displayText = GetDisplayText();
+        _renderEngine.RenderText(textX, textY, displayText, currentColor, currentBackground);
     }
 
-    public bool HandleInput(ConsoleKeyInfo keyInfo)
+    public override bool HandleInput(ConsoleKeyInfo keyInfo)
     {
         if (!HasFocus) return false;
 
@@ -58,5 +52,15 @@ public class ButtonElement : ITuiElement, IRenderEngineAware
         }
 
         return false;
+    }
+
+    protected override string GetDisplayText()
+    {
+        if (string.IsNullOrEmpty(Text)) 
+            return new string(' ', Math.Max(1, Width));
+        
+        // For buttons, we want to center the text, so don't pad right
+        var displayText = Text.Length > Width ? Text.Substring(0, Width) : Text;
+        return displayText;
     }
 }
