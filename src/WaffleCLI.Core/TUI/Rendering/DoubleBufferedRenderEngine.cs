@@ -20,12 +20,14 @@ public class DoubleBufferedRenderEngine : IRenderEngine
         }
     }
 
-    private readonly Cell[,] _frontBuffer;
-    private readonly Cell[,] _backBuffer;
+    private Cell[,] _frontBuffer;
+    private Cell[,] _backBuffer;
     private readonly List<Rectangle> _dirtyRegions = [];
     private readonly bool _enablePartialRendering;
     private readonly Stopwatch _renderStopwatch = new();
     private readonly StringBuilder _outputBuffer = new();
+    private readonly object _renderLock = new object();
+    private bool _isInitialized = false;
     
     public int Width { get; private set; }
     public int Height { get; private set; }
@@ -36,17 +38,26 @@ public class DoubleBufferedRenderEngine : IRenderEngine
     public DoubleBufferedRenderEngine(bool enablePartialRendering = true)
     {
         _enablePartialRendering = enablePartialRendering;
-        Width = Console.WindowWidth;
-        Height = Console.WindowHeight;
-        
-        _frontBuffer = new Cell[Width, Height];
-        _backBuffer = new Cell[Width, Height];
+        try
+        {
+            Width = Math.Max(1, Console.WindowWidth);
+            Height = Math.Max(1, Console.WindowHeight);
+        }
+        catch
+        {
+            Width = 80;
+            Height = 25;
+        }
 
         InitializeBuffers();
+        _isInitialized = true;
     }
 
     private void InitializeBuffers()
     {
+        _frontBuffer = new Cell[Width, Height];
+        _backBuffer = new Cell[Width, Height];
+        
         for (var y = 0; y < Height; y++)
         {
             for (var x = 0; x < Width; x++)
@@ -59,13 +70,20 @@ public class DoubleBufferedRenderEngine : IRenderEngine
 
     public void Initialize(int width, int height)
     {
-        Width = width;
-        Height = height;
-        InitializeBuffers();
+        lock (_renderLock)
+        {
+            Width = Math.Max(1, width);
+            Height = Math.Max(1, height);
+            
+            InitializeBuffers();
+            _isInitialized = true;
+        }
     }
 
     public void BeginFrame()
     {
+        if (!_isInitialized) return;
+        
         _renderStopwatch.Restart();
         _dirtyRegions.Clear();
 
@@ -80,6 +98,8 @@ public class DoubleBufferedRenderEngine : IRenderEngine
 
     public void EndFrame()
     {
+        if (!_isInitialized) return;
+        
         if (_enablePartialRendering)
             CalculateDirtyRegions();
 
@@ -94,14 +114,14 @@ public class DoubleBufferedRenderEngine : IRenderEngine
 
     public void RenderElement(ITuiElement element)
     {
-        if(!element.isVisible) return;
+        if(!_isInitialized ||!element.isVisible) return;
         
         element.Render();
     }
 
     public void RenderText(int x, int y, string text, ConsoleColor fg, ConsoleColor bg)
     {
-        if (string.IsNullOrEmpty(text)) return;
+        if (!_isInitialized || string.IsNullOrEmpty(text)) return;
 
         for (var i = 0; i < text.Length; i++)
         {
@@ -115,6 +135,8 @@ public class DoubleBufferedRenderEngine : IRenderEngine
 
     public void RenderRect(int x, int y, int width, int height, ConsoleColor color, char fillChar = ' ')
     {
+        if (!_isInitialized) return;
+        
         for (var rectY = y; rectY < y + height; rectY++)
         {
             for (var rectX = x; rectX < x + width; rectX++)
@@ -129,6 +151,8 @@ public class DoubleBufferedRenderEngine : IRenderEngine
 
     public void RenderBorder(int x, int y, int width, int height, BorderStyle borderStyle)
     {
+        if (!_isInitialized) return;
+        
         var (horizontal, vertical, topLeft, topRight, bottomRight, bottomLeft) = GetBorderChars(borderStyle);
         
         SetCell(x, y, topLeft, ConsoleColor.White, ConsoleColor.Black);
@@ -166,7 +190,7 @@ public class DoubleBufferedRenderEngine : IRenderEngine
 
     private void SetCell(int x, int y, char character, ConsoleColor foreground, ConsoleColor background)
     {
-        if (x < 0 || x >= Width || y < 0 || y >= Height) return;
+        if (!_isInitialized ||x < 0 || x >= Width || y < 0 || y >= Height) return;
         
         var cell = _backBuffer[x, y];
         cell.Character = character;
@@ -177,6 +201,8 @@ public class DoubleBufferedRenderEngine : IRenderEngine
 
     public void Clear()
     {
+        if (!_isInitialized) return;
+        
         for (var y = 0; y < Height; y++)
         {
             for (var x = 0; x < Width; x++)
@@ -188,6 +214,8 @@ public class DoubleBufferedRenderEngine : IRenderEngine
     
     public void ClearArea(int x, int y, int width, int height)
     {
+        if (!_isInitialized) return;
+        
         for (var rectY = y; rectY < y + height; rectY++)
         {
             for (var rectX = x; rectX < x + width; rectX++)
@@ -199,19 +227,41 @@ public class DoubleBufferedRenderEngine : IRenderEngine
     
     public void SetCursorPosition(int x, int y)
     {
-        // We will process the cursor separately
+        if (!_isInitialized) return;
+        
+        try
+        {
+            if (x >= 0 && x < Console.WindowWidth && y >= 0 && y < Console.WindowHeight)
+            {
+                Console.SetCursorPosition(x, y);
+            }
+        }
+        catch
+        {
+            // Ignore cursor position errors
+        }
     }
 
     public void Flush()
     {
+        if (!_isInitialized) return;
+
         var flushStopwatch = Stopwatch.StartNew();
 
-        if (_enablePartialRendering && _dirtyRegions.Count > 0)
-            FlushPartial();
-        else
-            FlushFull();
-        
-        LastRenderStats = LastRenderStats with {FlushTimeMs = flushStopwatch.Elapsed.TotalMilliseconds};
+        try
+        {
+            if (_enablePartialRendering && _dirtyRegions.Count > 0)
+                FlushPartial();
+            else
+                FlushFull();
+
+            LastRenderStats = LastRenderStats with { FlushTimeMs = flushStopwatch.Elapsed.TotalMilliseconds };
+        }
+        catch (Exception ex)
+        {
+            // Log flush errors but don't crash
+            Debug.WriteLine($"Flush error: {ex.Message}");
+        }
     }
 
     private void FlushPartial()

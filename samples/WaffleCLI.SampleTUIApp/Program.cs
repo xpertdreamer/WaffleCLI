@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using WaffleCLI.Abstractions.TUI;
+using WaffleCLI.Core.TUI;
 using WaffleCLI.Core.TUI.Screens;
 using WaffleCLI.Runtime.Hosting;
 
@@ -9,7 +10,7 @@ var builder = Host.CreateDefaultBuilder(args);
 
 builder.ConfigureServices(services =>
 {
-    services.AddWaffleTui(tuiApplicationBuilder =>
+    services.AddNewWaffleTui(tuiApplicationBuilder =>
     {
         tuiApplicationBuilder.UseStartScreen<ProcessManagerScreen>();
     });
@@ -23,6 +24,7 @@ builder.ConfigureLogging(logging =>
 });
 
 var host = builder.Build();
+ServiceLocator.Initialize(host.Services);
 
 try
 {

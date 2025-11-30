@@ -27,9 +27,20 @@ public class RenderLayerManager
     public void AddElementsToLayer(string layerName, ITuiElement element)
     {
         var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+        if (layer == null)
+        {
+            AddLayer(layerName, 1);
+            AddElementsToLayer(layerName, element);
+        }
         layer?.Elements.Add(element);
     }
 
+    public void RemoveElementFromLayer(string layerName, ITuiElement element)
+    {
+        var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+        layer?.Elements.Remove(element);
+    }
+    
     public void RenderAllLayers()
     {
         foreach (var layer in _layers.Where(l => l.IsVisible))

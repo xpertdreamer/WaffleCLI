@@ -1,4 +1,7 @@
 using WaffleCLI.Abstractions.TUI;
+using WaffleCLI.Core.TUI.Configuration;
+using WaffleCLI.Core.TUI.Elements;
+using WaffleCLI.Core.TUI.Rendering;
 
 namespace WaffleCLI.Core.TUI;
 
@@ -10,48 +13,114 @@ public abstract class BasicTuiScreen : ITuiScreen
     private (int width, int height) _lastSize;
     private bool _needsLayoutRecalculation = true;
     
+    private TextElement _headerElement;
+    private TextElement _footerElement;
+    private bool _isInitialized = false;
+    
+    protected RenderLayerManager LayerManager => 
+        ServiceLocator.GetService<RenderLayerManager>();
+    
+    protected ConfigurationManager ConfigManager => 
+        ServiceLocator.GetService<ConfigurationManager>();
+    
+    protected IRenderEngine RenderEngine =>
+        ServiceLocator.GetService<IRenderEngine>();
+    
     public abstract string Title { get; }
 
-    public virtual Task InitializeAsync()
+    public virtual async Task InitializeAsync()
     {
         _needsLayoutRecalculation = true;
-        return Task.CompletedTask;
+
+        await RegisterElementsInLayers();
+        _isInitialized = true;
+    }
+    
+    protected virtual async Task RegisterElementsInLayers()
+    {
+        await CreateHeaderAndFooter();
+        
+        foreach (var element in _elements)
+        {
+            LayerManager.AddElementsToLayer("content", element);
+        }
+    }
+    
+    protected virtual async Task CreateHeaderAndFooter()
+    {
+        var config = ConfigManager.Config;
+        var theme = config.Theme.Themes[config.Theme.Current];
+        
+        _headerElement = new TextElement
+        {
+            X = 0, 
+            Y = 0,
+            Width = RenderEngine.Width,
+            Height = 1,
+            Text = $" {Title} ",
+            Color = ParseColor(theme.Colors.Text),
+            BackgroundColor = ParseColor(theme.Colors.Primary),
+            isFocusable = false,
+            isVisible = true
+        };
+        
+        LayerManager.AddElementsToLayer("header", _headerElement);
+
+        _footerElement = new TextElement
+        {
+            X = 0, 
+            Y = RenderEngine.Height - 1,
+            Width = RenderEngine.Width,
+            Height = 1,
+            Text = " Tab:Navigate | Enter:Select | Ctrl+Q:Exit ",
+            Color = ParseColor(theme.Colors.Text),
+            BackgroundColor = ParseColor(theme.Colors.Secondary),
+            isFocusable = false,
+            isVisible = true
+        };
+        
+        LayerManager.AddElementsToLayer("footer", _footerElement);
+
+        await Task.CompletedTask;
     }
 
-    public virtual Task HandleResizeAsync()
+    protected virtual void UpdateHeaderAndFooter()
     {
+        _headerElement.Width = RenderEngine.Width;
+        _headerElement.Text = $" {Title} ";
+
+        _footerElement.Width = RenderEngine.Width;
+        _footerElement.Y = RenderEngine.Height - 1;
+    }
+
+    public virtual async Task HandleResizeAsync()
+    {
+        if (!_isInitialized) return;
+        
         _needsLayoutRecalculation = true;
         _firstRender = true;
-        return Task.CompletedTask;
+        
+        UpdateHeaderAndFooter();
+        
+        await Task.CompletedTask;
     }
 
-    public virtual Task RenderAsync()
+    public virtual async Task RenderAsync()
     {
+        if (!_isInitialized) return;
+        
         if (_firstRender || Console.WindowWidth != _lastSize.width || Console.WindowHeight != _lastSize.height)
         {
-            Console.Clear();
             _firstRender = false;
             _lastSize = (Console.WindowWidth, Console.WindowHeight);
             _needsLayoutRecalculation =  true;
         }
 
-        if (_needsLayoutRecalculation)
-        {
-            RecalculateLayout();
-            _needsLayoutRecalculation = false;
-        }
-        
-        RenderHeader();
-        ClearContentArea();
+        if (!_needsLayoutRecalculation) return;
+        RecalculateLayout();
+        _needsLayoutRecalculation = false;
 
-        foreach (var element in _elements.Where(e => e.isVisible))
-        {
-            element.Render();
-        }
-
-        RenderFooter();
-        
-        return Task.CompletedTask;
+        await Task.CompletedTask;
     }
 
     protected virtual void RecalculateLayout()
@@ -63,11 +132,18 @@ public abstract class BasicTuiScreen : ITuiScreen
         {
             if(element.X + element.Width > screenWidth)
                 element.X = Math.Max(0, (screenWidth - element.Width) / 2);
-            if (element.Y + element.Height > screenHeight - 1)
+            if (element.Y + element.Height > screenHeight - 2)
                 element.Y = Math.Max(1, (screenHeight - element.Height - 2) / 2);
         }
     }
 
+    private static ConsoleColor ParseColor(string colorName)
+    {
+        return Enum.TryParse<ConsoleColor>(colorName, true, out var color) 
+            ? color 
+            : ConsoleColor.White;
+    }
+    
     public virtual Task HandleInputAsync(ConsoleKeyInfo keyInfo)
     {
         if (keyInfo.Key == ConsoleKey.Tab)

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 
 namespace WaffleCLI.Core.TUI.Configuration;
@@ -23,11 +24,12 @@ public class ConfigurationManager
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             ReadCommentHandling = JsonCommentHandling.Skip,
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
 
         _configWatcher = new FileSystemWatcher
         {
-            Path = Path.GetDirectoryName(Path.GetFullPath(_configPath)) ?? ".",
+            Path = Path.GetDirectoryName(Path.GetFullPath(_configPath)) ?? Directory.GetCurrentDirectory(),
             Filter = Path.GetFileName(_configPath),
             NotifyFilter = NotifyFilters.LastWrite
         };

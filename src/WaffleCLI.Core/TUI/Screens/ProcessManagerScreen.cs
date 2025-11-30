@@ -8,7 +8,7 @@ namespace WaffleCLI.Core.TUI.Screens;
 public class ProcessManagerScreen : BasicTuiScreen
 {
     private readonly ProcessManager _processManager;
-    private readonly List<IProcessComponent> _processe = [];
+    private readonly List<IProcessComponent> _processes = [];
     private IProcessComponent _activeProcess;
     private TextElement _statusElement;
 
@@ -19,8 +19,10 @@ public class ProcessManagerScreen : BasicTuiScreen
     
     public override string Title => "Process Manager";
 
-    public override Task InitializeAsync()
+    public override async Task InitializeAsync()
     {
+        await base.InitializeAsync();
+        
         ClearElements();
 
         _statusElement = new TextElement
@@ -75,8 +77,6 @@ public class ProcessManagerScreen : BasicTuiScreen
         CreateNewProcess(Environment.OSVersion.Platform == PlatformID.Win32NT ? "cmd" : "bash");
 
         UpdateStatus();
-
-        return Task.CompletedTask;
     }
     
      protected override void RecalculateLayout()
@@ -88,7 +88,7 @@ public class ProcessManagerScreen : BasicTuiScreen
         _statusElement.X = 2;
 
         var processY = 6;
-        foreach (var process in _processe)
+        foreach (var process in _processes)
         {
             process.X = 2;
             process.Y = processY;
@@ -125,7 +125,7 @@ public class ProcessManagerScreen : BasicTuiScreen
             }
 
             ConfigureProcessComponent(process);
-            _processe.Add(process);
+            _processes.Add(process);
             AddElement(process);
             
             _activeProcess = process;
@@ -133,7 +133,7 @@ public class ProcessManagerScreen : BasicTuiScreen
             
             _ = process.StartAsync();
             
-            UpdateStatus($"Started {type} process. Total processes: {_processe.Count}");
+            UpdateStatus($"Started {type} process. Total processes: {_processes.Count}");
         }
         catch (Exception ex)
         {
@@ -145,17 +145,17 @@ public class ProcessManagerScreen : BasicTuiScreen
     {
         process.ProcessExited += exitCode =>
         {
-            _processe.Remove(process);
+            _processes.Remove(process);
             RemoveElement(process);
             
             if (_activeProcess == process)
             {
-                _activeProcess = _processe.FirstOrDefault();
+                _activeProcess = _processes.FirstOrDefault();
                 if (_activeProcess != null)
                     SetFocus(_activeProcess);
             }
             
-            UpdateStatus($"Process exited with code {exitCode}. Remaining: {_processe.Count}");
+            UpdateStatus($"Process exited with code {exitCode}. Remaining: {_processes.Count}");
         };
 
         process.OutputReceived += output =>
@@ -185,7 +185,6 @@ public class ProcessManagerScreen : BasicTuiScreen
 
         CreateNewProcess("custom");
         
-        // Убираем диалог через 2 секунды
         Task.Delay(2000).ContinueWith(_ => 
         {
             RemoveElement(dialog);
@@ -195,19 +194,19 @@ public class ProcessManagerScreen : BasicTuiScreen
 
     private async Task KillAllProcesses()
     {
-        if (_processe.Count == 0)
+        if (_processes.Count == 0)
         {
             UpdateStatus("No processes to kill");
             return;
         }
 
-        var processesToKill = _processe.ToList();
+        var processesToKill = _processes.ToList();
         foreach (var process in processesToKill)
         {
             await process.StopAsync();
         }
 
-        _processe.Clear();
+        _processes.Clear();
         UpdateStatus($"Killed {processesToKill.Count} processes");
     }
 
@@ -221,7 +220,7 @@ public class ProcessManagerScreen : BasicTuiScreen
             }
             else
             {
-                _statusElement.Text = $"Processes: {_processe.Count} | " +
+                _statusElement.Text = $"Processes: {_processes.Count} | " +
                                     $"Active: {(_activeProcess != null ? "Yes" : "No")} | " +
                                     $"Screen: {Console.WindowWidth}x{Console.WindowHeight}";
             }
@@ -266,20 +265,20 @@ public class ProcessManagerScreen : BasicTuiScreen
 
     private void SwitchToNextProcess()
     {
-        if (_processe.Count < 2) return;
+        if (_processes.Count < 2) return;
 
-        var currentIndex = _processe.IndexOf(_activeProcess);
-        var nextIndex = (currentIndex + 1) % _processe.Count;
+        var currentIndex = _processes.IndexOf(_activeProcess);
+        var nextIndex = (currentIndex + 1) % _processes.Count;
         
-        _activeProcess = _processe[nextIndex];
+        _activeProcess = _processes[nextIndex];
         SetFocus(_activeProcess);
-        UpdateStatus($"Switched to process {nextIndex + 1} of {_processe.Count}");
+        UpdateStatus($"Switched to process {nextIndex + 1} of {_processes.Count}");
     }
 
-    public override Task HandleResizeAsync()
+    public override async Task HandleResizeAsync()
     {
+        await base.HandleResizeAsync();
         UpdateStatus($"Screen resized to {Console.WindowWidth}x{Console.WindowHeight}");
-        return base.HandleResizeAsync();
     }
 
     private static void RequestRedraw()

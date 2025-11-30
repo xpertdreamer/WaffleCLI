@@ -13,9 +13,11 @@ using Microsoft.Extensions.Logging;
 using WaffleCLI.Abstractions.TUI;
 using WaffleCLI.Core.Middleware;
 using WaffleCLI.Core.TUI;
+using WaffleCLI.Core.TUI.Configuration;
 using WaffleCLI.Core.TUI.Elements;
 using WaffleCLI.Core.TUI.Events;
 using WaffleCLI.Core.TUI.Process;
+using WaffleCLI.Core.TUI.Rendering;
 using WaffleCLI.Core.TUI.Screens;
 using WaffleCLI.Runtime.Options;
 
@@ -53,7 +55,51 @@ public static class ServiceCollectionExtensions
         
         return services;
     }
-    
+
+    public static IServiceCollection AddNewWaffleTui(this IServiceCollection services,
+        string configFileName = "appsettings.json")
+    {
+        return services.AddNewWaffleTui(builder => builder.UseStartScreen<ProcessManagerScreen>(), configFileName);
+    }
+
+    public static IServiceCollection AddNewWaffleTui(
+        this IServiceCollection services,
+        Action<TuiApplicationBuilder> configure,
+        string configPath = "appsettings.json")
+    {
+        services.AddSingleton<ConfigurationManager>(provider =>
+        {
+            var logger = provider.GetRequiredService<ILogger<ConfigurationManager>>();
+            return new ConfigurationManager(logger, configPath);
+        });
+        
+        services.AddSingleton<IRenderEngine>(provider =>
+        {
+            var configManager = provider.GetRequiredService<ConfigurationManager>();
+            var config = configManager.Config.Rendering;
+            return new DoubleBufferedRenderEngine(config.PartialRendering);
+        });
+
+        services.AddSingleton<RenderLayerManager>();    
+        
+        services.AddSingleton<ITuiApplication, NewTuiApplication>();
+        services.AddSingleton<ProcessManager>();
+        services.AddSingleton<TuiEventBus>();
+        
+        services.AddTransient<ProcessManagerScreen>();
+        
+        var builder = new TuiApplicationBuilder(services);
+        configure(builder);
+        
+        services.AddTransient<ITuiScreen>(provider => 
+        {
+            var screen = provider.GetRequiredService(builder.GetStartScreenType()) as ITuiScreen;
+            return screen ?? throw new InvalidOperationException($"Type {builder.GetStartScreenType().Name} does not implement ITuiScreen");
+        });
+        
+        return services;
+    }
+
     /// <summary>
     /// Adds the core WaffleCLI services to the service collection.
     /// </summary>
