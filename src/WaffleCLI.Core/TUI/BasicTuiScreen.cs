@@ -8,10 +8,10 @@ namespace WaffleCLI.Core.TUI;
 public abstract class BasicTuiScreen : ITuiScreen
 {
     protected readonly List<ITuiElement> _elements = [];
-    private int _focusedElementIndex = -1;
-    private bool _firstRender = true;
+    protected int _focusedElementIndex = -1;
+    protected bool _firstRender = true;
     private (int width, int height) _lastSize;
-    private bool _needsLayoutRecalculation = true;
+    protected bool _needsLayoutRecalculation = true;
     
     private TextElement _headerElement;
     private TextElement _footerElement;
@@ -251,7 +251,7 @@ public abstract class BasicTuiScreen : ITuiScreen
         UpdateFocus();
     }
 
-    private void MoveFocusNext()
+    protected void MoveFocusNext()
     {
         if (_elements.Count == 0) return;
 

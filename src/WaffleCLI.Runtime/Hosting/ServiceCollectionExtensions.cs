@@ -87,6 +87,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<TuiEventBus>();
         
         services.AddTransient<ProcessManagerScreen>();
+        services.AddTransient<TestScreen>();
         
         var builder = new TuiApplicationBuilder(services);
         configure(builder);
