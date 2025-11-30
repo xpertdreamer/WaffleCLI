@@ -5,7 +5,7 @@ using WaffleCLI.Abstractions.TUI.Exceptions;
 namespace WaffleCLI.Core.TUI.Rendering
 {
     /// <summary>
-    /// High-performance render engine with smart update strategies
+    /// Optimized render engine with performance improvements
     /// </summary>
     public class RenderEngine : IRenderEngine
     {
@@ -14,9 +14,8 @@ namespace WaffleCLI.Core.TUI.Rendering
         private int _viewportX, _viewportY, _viewportWidth, _viewportHeight;
         private bool _viewportActive = false;
         private ColorScheme _clearColors = ColorScheme.Default;
-        private bool _requiresFullRender = true;
         private DateTime _lastRenderTime = DateTime.Now;
-        private const int MIN_RENDER_INTERVAL_MS = 16; // ~60 FPS max
+        private const int RENDER_THROTTLE_MS = 8; // ~120 FPS max
 
         public int Width => _buffer?.Width ?? 0;
         public int Height => _buffer?.Height ?? 0;
@@ -28,40 +27,28 @@ namespace WaffleCLI.Core.TUI.Rendering
 
             _buffer = new DoubleBuffer(width, height);
             _initialized = true;
-            _requiresFullRender = true;
             
             SetupConsole();
         }
 
         public void BeginFrame()
         {
-            if (!_initialized || _buffer == null)
-                return;
-
+            if (!_initialized || _buffer == null) return;
             _buffer.Clear(_clearColors);
         }
 
         public void EndFrame()
         {
-            if (!_initialized || _buffer == null) 
-                return;
+            if (!_initialized || _buffer == null) return;
             
-            // Throttle rendering to prevent excessive CPU usage
+            // Throttle rendering to prevent excessive updates
             var now = DateTime.Now;
-            if ((now - _lastRenderTime).TotalMilliseconds < MIN_RENDER_INTERVAL_MS)
+            if ((now - _lastRenderTime).TotalMilliseconds < RENDER_THROTTLE_MS)
                 return;
             
-            try
-            {
-                _buffer.Swap();
-                _buffer.RenderToConsole(_requiresFullRender);
-                _requiresFullRender = false;
-                _lastRenderTime = now;
-            }
-            catch (Exception ex)
-            {
-                _requiresFullRender = true; // Force full render on error
-            }
+            _buffer.Swap();
+            _buffer.RenderToConsole();
+            _lastRenderTime = now;
         }
 
         public void DrawString(int x, int y, string text, ColorScheme colors)
@@ -69,36 +56,33 @@ namespace WaffleCLI.Core.TUI.Rendering
             if (!_initialized || string.IsNullOrEmpty(text) || _buffer == null) 
                 return;
 
-            // Optimized: draw entire string at once if possible
-            for (int i = 0; i < text.Length; i++)
+            // Optimized: calculate visible range
+            int startX = Math.Max(0, x);
+            int endX = Math.Min(Width, x + text.Length);
+            int drawY = y;
+            
+            if (drawY < 0 || drawY >= Height) return;
+            if (startX >= endX) return;
+
+            int textStart = Math.Max(0, -x);
+            int textLength = Math.Min(text.Length, endX - startX);
+            
+            if (textLength <= 0) return;
+
+            string visibleText = text.Substring(textStart, textLength);
+            
+            for (int i = 0; i < visibleText.Length; i++)
             {
-                int drawX = _viewportActive ? x + i + _viewportX : x + i;
-                int drawY = _viewportActive ? y + _viewportY : y;
-                
-                if (drawX >= 0 && drawX < Width && drawY >= 0 && drawY < Height)
-                {
-                    if (!_viewportActive || IsInViewport(x + i, y))
-                    {
-                        _buffer.SetPixel(drawX, drawY, text[i], colors.Foreground, colors.Background);
-                    }
-                }
+                _buffer.SetPixel(startX + i, drawY, visibleText[i], colors.Foreground, colors.Background);
             }
         }
 
         public void DrawChar(int x, int y, char character, ColorScheme colors)
         {
             if (!_initialized || _buffer == null) return;
-
-            int drawX = _viewportActive ? x + _viewportX : x;
-            int drawY = _viewportActive ? y + _viewportY : y;
-
-            if (drawX >= 0 && drawX < Width && drawY >= 0 && drawY < Height)
-            {
-                if (!_viewportActive || IsInViewport(x, y))
-                {
-                    _buffer.SetPixel(drawX, drawY, character, colors.Foreground, colors.Background);
-                }
-            }
+            if (x < 0 || x >= Width || y < 0 || y >= Height) return;
+            
+            _buffer.SetPixel(x, y, character, colors.Foreground, colors.Background);
         }
 
         public void DrawBox(int x, int y, int width, int height, BorderStyle border, ColorScheme colors)
@@ -108,24 +92,48 @@ namespace WaffleCLI.Core.TUI.Rendering
             var borderChars = GetBorderChars(border);
             if (borderChars == null) return;
 
-            // Optimized box drawing - only draw visible parts
-            DrawChar(x, y, borderChars.Value.TopLeft, colors);
-            DrawChar(x + width - 1, y, borderChars.Value.TopRight, colors);
-            DrawChar(x, y + height - 1, borderChars.Value.BottomLeft, colors);
-            DrawChar(x + width - 1, y + height - 1, borderChars.Value.BottomRight, colors);
+            // Calculate visible area
+            int visibleX1 = Math.Max(0, x);
+            int visibleY1 = Math.Max(0, y);
+            int visibleX2 = Math.Min(Width - 1, x + width - 1);
+            int visibleY2 = Math.Min(Height - 1, y + height - 1);
 
-            // Horizontal lines
-            for (int i = 1; i < width - 1; i++)
+            // Only draw visible corners
+            if (visibleX1 <= visibleX2 && visibleY1 <= visibleY2)
             {
-                DrawChar(x + i, y, borderChars.Value.Horizontal, colors);
-                DrawChar(x + i, y + height - 1, borderChars.Value.Horizontal, colors);
-            }
+                // Corners
+                if (visibleX1 == x && visibleY1 == y)
+                    DrawChar(x, y, borderChars.Value.TopLeft, colors);
+                if (visibleX2 == x + width - 1 && visibleY1 == y)
+                    DrawChar(x + width - 1, y, borderChars.Value.TopRight, colors);
+                if (visibleX1 == x && visibleY2 == y + height - 1)
+                    DrawChar(x, y + height - 1, borderChars.Value.BottomLeft, colors);
+                if (visibleX2 == x + width - 1 && visibleY2 == y + height - 1)
+                    DrawChar(x + width - 1, y + height - 1, borderChars.Value.BottomRight, colors);
 
-            // Vertical lines
-            for (int i = 1; i < height - 1; i++)
-            {
-                DrawChar(x, y + i, borderChars.Value.Vertical, colors);
-                DrawChar(x + width - 1, y + i, borderChars.Value.Vertical, colors);
+                // Horizontal lines (only visible portions)
+                for (int i = visibleX1 + 1; i < visibleX2; i++)
+                {
+                    if (i > x && i < x + width - 1)
+                    {
+                        if (visibleY1 == y)
+                            DrawChar(i, y, borderChars.Value.Horizontal, colors);
+                        if (visibleY2 == y + height - 1)
+                            DrawChar(i, y + height - 1, borderChars.Value.Horizontal, colors);
+                    }
+                }
+
+                // Vertical lines (only visible portions)
+                for (int i = visibleY1 + 1; i < visibleY2; i++)
+                {
+                    if (i > y && i < y + height - 1)
+                    {
+                        if (visibleX1 == x)
+                            DrawChar(x, i, borderChars.Value.Vertical, colors);
+                        if (visibleX2 == x + width - 1)
+                            DrawChar(x + width - 1, i, borderChars.Value.Vertical, colors);
+                    }
+                }
             }
         }
 
@@ -133,7 +141,7 @@ namespace WaffleCLI.Core.TUI.Rendering
         {
             if (!_initialized || _buffer == null) return;
 
-            // Bresenham's line algorithm (optimized)
+            // Bresenham's line algorithm (clipped to visible area)
             int dx = Math.Abs(x2 - x1);
             int dy = Math.Abs(y2 - y1);
             int sx = x1 < x2 ? 1 : -1;
@@ -142,9 +150,14 @@ namespace WaffleCLI.Core.TUI.Rendering
 
             while (true)
             {
-                DrawChar(x1, y1, lineChar, colors);
+                // Only draw if within visible area
+                if (x1 >= 0 && x1 < Width && y1 >= 0 && y1 < Height)
+                {
+                    DrawChar(x1, y1, lineChar, colors);
+                }
+
                 if (x1 == x2 && y1 == y2) break;
-                
+
                 int e2 = 2 * err;
                 if (e2 > -dy) { err -= dy; x1 += sx; }
                 if (e2 < dx) { err += dx; y1 += sy; }
@@ -155,13 +168,16 @@ namespace WaffleCLI.Core.TUI.Rendering
         {
             if (!_initialized || _buffer == null) return;
 
-            // Optimized: only fill visible area
-            int endX = Math.Min(x + width, Width);
-            int endY = Math.Min(y + height, Height);
-            
-            for (int row = Math.Max(y, 0); row < endY; row++)
+            // Calculate visible area
+            int startX = Math.Max(0, x);
+            int startY = Math.Max(0, y);
+            int endX = Math.Min(Width, x + width);
+            int endY = Math.Min(Height, y + height);
+
+            // Only fill visible portion
+            for (int row = startY; row < endY; row++)
             {
-                for (int col = Math.Max(x, 0); col < endX; col++)
+                for (int col = startX; col < endX; col++)
                 {
                     DrawChar(col, row, fillChar, colors);
                 }
@@ -171,9 +187,7 @@ namespace WaffleCLI.Core.TUI.Rendering
         public void Clear(ColorScheme colors)
         {
             if (!_initialized || _buffer == null) return;
-            
             _clearColors = colors;
-            _requiresFullRender = true;
         }
 
         public void SetViewport(int x, int y, int width, int height)
@@ -183,24 +197,11 @@ namespace WaffleCLI.Core.TUI.Rendering
             _viewportWidth = Math.Max(0, width);
             _viewportHeight = Math.Max(0, height);
             _viewportActive = true;
-            _requiresFullRender = true;
         }
 
         public void ResetViewport()
         {
             _viewportActive = false;
-            _requiresFullRender = true;
-        }
-
-        public void RequestFullRedraw()
-        {
-            _requiresFullRender = true;
-        }
-
-        private bool IsInViewport(int x, int y)
-        {
-            return x >= _viewportX && x < _viewportX + _viewportWidth &&
-                   y >= _viewportY && y < _viewportY + _viewportHeight;
         }
 
         private BorderChars? GetBorderChars(BorderStyle style)
@@ -239,7 +240,6 @@ namespace WaffleCLI.Core.TUI.Rendering
             {
                 Console.ResetColor();
                 Console.CursorVisible = true;
-                Console.Clear();
             }
             catch
             {

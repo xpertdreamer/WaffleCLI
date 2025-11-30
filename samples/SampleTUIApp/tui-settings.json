@@ -2,7 +2,7 @@
   "theme": "default",
   "frameRate": 60,
   "enableDoubleBuffering": true,
-  "enableInputLogging": false,
+  "enableInputLogging": true,
   "components": {
     "button": {
       "defaultWidth": 12,

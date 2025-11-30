@@ -4,7 +4,7 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 namespace WaffleCLI.Core.TUI.Rendering
 {
     /// <summary>
-    /// High-performance double buffer with smart rendering
+    /// Highly optimized double buffer with minimal console operations
     /// </summary>
     public class DoubleBuffer : IBuffer
     {
@@ -17,8 +17,9 @@ namespace WaffleCLI.Core.TUI.Rendering
         private readonly int _width;
         private readonly int _height;
         private bool _disposed = false;
-        private int _changeCount = 0;
-        private const int DIFFERENTIAL_THRESHOLD = 500; // Use differential if fewer than 500 changes
+        private bool _firstRender = true;
+        private readonly bool[] _dirtyLines;
+        private int _dirtyLineCount = 0;
 
         public int Width => _width;
         public int Height => _height;
@@ -35,70 +36,91 @@ namespace WaffleCLI.Core.TUI.Rendering
             _backForeground = new ConsoleColor[bufferSize];
             _frontBackground = new ConsoleColor[bufferSize];
             _backBackground = new ConsoleColor[bufferSize];
+            _dirtyLines = new bool[height];
             
             ClearBuffers();
         }
 
         public void SetPixel(int x, int y, char character, ConsoleColor foreground, ConsoleColor background)
         {
-            if (x >= 0 && x < _width && y >= 0 && y < _height)
+            if (x < 0 || x >= _width || y < 0 || y >= _height) return;
+
+            int index = y * _width + x;
+            
+            // Only mark dirty if actually changed
+            if (_backBuffer[index] != character || 
+                _backForeground[index] != foreground || 
+                _backBackground[index] != background)
             {
-                int index = y * _width + x;
                 _backBuffer[index] = character;
                 _backForeground[index] = foreground;
                 _backBackground[index] = background;
-                _changeCount++;
+                
+                if (!_dirtyLines[y])
+                {
+                    _dirtyLines[y] = true;
+                    _dirtyLineCount++;
+                }
             }
         }
 
         public void Clear(ColorScheme colors)
         {
+            // Only clear if colors changed or buffer is dirty
+            bool needsClear = _dirtyLineCount > 0;
+            
             for (int i = 0; i < _backBuffer.Length; i++)
             {
                 _backBuffer[i] = ' ';
                 _backForeground[i] = colors.Foreground;
                 _backBackground[i] = colors.Background;
             }
-            _changeCount = int.MaxValue; // Force full render on clear
+            
+            // Mark all lines as dirty
+            for (int y = 0; y < _height; y++)
+            {
+                if (!_dirtyLines[y])
+                {
+                    _dirtyLines[y] = true;
+                    _dirtyLineCount++;
+                }
+            }
         }
 
         public void Swap()
         {
+            // Swap buffers
             Array.Copy(_backBuffer, _frontBuffer, _backBuffer.Length);
             Array.Copy(_backForeground, _frontForeground, _backForeground.Length);
             Array.Copy(_backBackground, _frontBackground, _backBackground.Length);
         }
 
-        public void RenderToConsole(bool forceFullRender = false)
+        public void RenderToConsole()
         {
             try
             {
-                // Smart rendering: use differential for small changes, full for large changes
-                bool useDifferential = !forceFullRender && _changeCount > 0 && _changeCount < DIFFERENTIAL_THRESHOLD;
-                
-                if (useDifferential)
+                if (_firstRender || _dirtyLineCount > _height / 2)
                 {
-                    RenderDifferential();
-                }
-                else
-                {
+                    // Full render for first frame or many changes
                     RenderFullFrame();
+                    _firstRender = false;
+                }
+                else if (_dirtyLineCount > 0)
+                {
+                    // Optimized render for few changes
+                    RenderDirtyLines();
                 }
                 
-                _changeCount = 0; // Reset change counter
+                // Reset dirty tracking
+                Array.Fill(_dirtyLines, false);
+                _dirtyLineCount = 0;
             }
             catch (Exception ex)
             {
-                // Fallback to simple rendering on error
-                try
-                {
-                    Console.Clear();
-                    RenderFullFrame();
-                }
-                catch
-                {
-                    // Last resort
-                }
+                // Fallback to full render on error
+                RenderFullFrame();
+                Array.Fill(_dirtyLines, false);
+                _dirtyLineCount = 0;
             }
             finally
             {
@@ -112,65 +134,67 @@ namespace WaffleCLI.Core.TUI.Rendering
             
             for (int y = 0; y < _height; y++)
             {
-                Console.SetCursorPosition(0, y);
+                RenderLine(y);
                 
-                for (int x = 0; x < _width; x++)
+                // Move to next line if not last
+                if (y < _height - 1)
                 {
-                    int index = y * _width + x;
-                    Console.ForegroundColor = _backForeground[index];
-                    Console.BackgroundColor = _backBackground[index];
-                    Console.Write(_backBuffer[index]);
-                }
-                
-                // Clear the rest of the line if needed
-                if (_width < Console.WindowWidth)
-                {
-                    Console.Write(new string(' ', Console.WindowWidth - _width));
+                    Console.WriteLine();
                 }
             }
-            
-            // Clear any remaining lines
-            for (int y = _height; y < Console.WindowHeight; y++)
-            {
-                Console.SetCursorPosition(0, y);
-                Console.Write(new string(' ', Console.WindowWidth));
-            }
-            
-            Console.SetCursorPosition(0, 0);
         }
 
-        private void RenderDifferential()
+        private void RenderDirtyLines()
         {
-            int updated = 0;
-            ConsoleColor currentFg = ConsoleColor.White;
-            ConsoleColor currentBg = ConsoleColor.Black;
-            
             for (int y = 0; y < _height; y++)
             {
-                for (int x = 0; x < _width; x++)
+                if (_dirtyLines[y])
                 {
-                    int index = y * _width + x;
-                    
-                    if (_frontBuffer[index] != _backBuffer[index] ||
-                        _frontForeground[index] != _backForeground[index] ||
-                        _frontBackground[index] != _backBackground[index])
-                    {
-                        // Only set cursor position when necessary
-                        Console.SetCursorPosition(x, y);
-                        
-                        // Only change colors when necessary (reduces console API calls)
-                        if (currentFg != _backForeground[index] || currentBg != _backBackground[index])
-                        {
-                            Console.ForegroundColor = _backForeground[index];
-                            Console.BackgroundColor = _backBackground[index];
-                            currentFg = _backForeground[index];
-                            currentBg = _backBackground[index];
-                        }
-                        
-                        Console.Write(_backBuffer[index]);
-                        updated++;
-                    }
+                    Console.SetCursorPosition(0, y);
+                    RenderLine(y);
                 }
+            }
+        }
+
+        private void RenderLine(int y)
+        {
+            int lineStart = y * _width;
+            ConsoleColor currentFg = _frontForeground[lineStart];
+            ConsoleColor currentBg = _frontBackground[lineStart];
+            
+            Console.ForegroundColor = currentFg;
+            Console.BackgroundColor = currentBg;
+
+            // Build line efficiently
+            var lineBuilder = new System.Text.StringBuilder(_width);
+            
+            for (int x = 0; x < _width; x++)
+            {
+                int index = lineStart + x;
+                var cellFg = _frontForeground[index];
+                var cellBg = _frontBackground[index];
+                
+                // Only change colors when necessary
+                if (cellFg != currentFg || cellBg != currentBg)
+                {
+                    if (lineBuilder.Length > 0)
+                    {
+                        Console.Write(lineBuilder.ToString());
+                        lineBuilder.Clear();
+                    }
+                    Console.ForegroundColor = cellFg;
+                    Console.BackgroundColor = cellBg;
+                    currentFg = cellFg;
+                    currentBg = cellBg;
+                }
+                
+                lineBuilder.Append(_frontBuffer[index]);
+            }
+            
+            // Write remaining characters
+            if (lineBuilder.Length > 0)
+            {
+                Console.Write(lineBuilder.ToString());
             }
         }
 
@@ -187,18 +211,12 @@ namespace WaffleCLI.Core.TUI.Rendering
             }
         }
 
-        protected virtual void Dispose(bool disposing)
+        public void Dispose()
         {
             if (!_disposed)
             {
                 _disposed = true;
             }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
     }
 }

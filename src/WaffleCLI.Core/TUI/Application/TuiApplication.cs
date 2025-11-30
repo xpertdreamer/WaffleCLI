@@ -11,7 +11,7 @@ using WaffleCLI.Core.TUI.Configuration;
 namespace WaffleCLI.Core.TUI.Application
 {
     /// <summary>
-    /// High-performance TUI application with optimized rendering
+    /// Optimized TUI application with minimal overhead
     /// </summary>
     public class TuiApplication : ITuiApplication
     {
@@ -23,13 +23,10 @@ namespace WaffleCLI.Core.TUI.Application
         private readonly ITuiConfiguration _configuration;
         private bool _isRunning = false;
         private readonly System.Diagnostics.Stopwatch _frameTimer;
-        private int _targetFrameTimeMs;
+        private readonly int _targetFrameTimeMs;
         private int _lastWidth, _lastHeight;
-        private bool _needsRender = true;
-        private DateTime _lastInputTime = DateTime.Now;
-        private const int FAST_RENDER_FPS = 60;
-        private const int IDLE_RENDER_FPS = 10;
-        private int _currentFps = FAST_RENDER_FPS;
+        private int _framesSinceLastRender = 0;
+        private const int FORCE_RENDER_INTERVAL = 2; // Force render every 3rd frame
 
         public IComponent RootComponent { get; }
         public bool IsRunning => _isRunning;
@@ -67,23 +64,36 @@ namespace WaffleCLI.Core.TUI.Application
                     ProcessInput();
                     Update();
                     
-                    // Smart rendering: only render when needed
-                    if (_needsRender || HasRecentInput())
+                    // Smart rendering: only render when necessary
+                    bool shouldRender = _framesSinceLastRender >= FORCE_RENDER_INTERVAL || 
+                                       Console.KeyAvailable || 
+                                       CheckConsoleResize();
+                    
+                    if (shouldRender)
                     {
                         Render();
-                        _needsRender = false;
+                        _framesSinceLastRender = 0;
+                    }
+                    else
+                    {
+                        _framesSinceLastRender++;
                     }
                     
-                    // Adaptive frame rate based on activity
-                    AdjustFrameRate();
-                    
-                    // Efficient waiting
+                    // Efficient frame rate limiting
                     int elapsed = (int)_frameTimer.ElapsedMilliseconds;
-                    int sleepTime = Math.Max(1, _targetFrameTimeMs - elapsed);
+                    int sleepTime = _targetFrameTimeMs - elapsed;
                     
                     if (sleepTime > 0)
                     {
-                        Thread.Sleep(sleepTime);
+                        // Use precise sleep for small intervals, Thread.Sleep for larger
+                        if (sleepTime < 15)
+                        {
+                            PreciseSleep(sleepTime);
+                        }
+                        else
+                        {
+                            Thread.Sleep(1);
+                        }
                     }
                 }
             }
@@ -104,7 +114,7 @@ namespace WaffleCLI.Core.TUI.Application
 
         public void Refresh()
         {
-            _needsRender = true;
+            Render();
         }
 
         private void Initialize()
@@ -114,18 +124,12 @@ namespace WaffleCLI.Core.TUI.Application
                 Console.CursorVisible = false;
                 Console.Clear();
                 
-                // Get console dimensions
                 _lastWidth = Math.Max(40, Console.WindowWidth);
                 _lastHeight = Math.Max(20, Console.WindowHeight - 1);
                 
                 _renderEngine.Initialize(_lastWidth, _lastHeight);
                 
-                // Register global hotkeys
                 _keyBindingManager.RegisterGlobalHotkey(ConsoleKey.Escape, KeyModifiers.None, Stop);
-                _keyBindingManager.RegisterGlobalHotkey(ConsoleKey.F5, KeyModifiers.None, () => {
-                    _renderEngine.RequestFullRedraw();
-                    _needsRender = true;
-                });
             }
             catch (Exception ex)
             {
@@ -137,16 +141,11 @@ namespace WaffleCLI.Core.TUI.Application
         {
             try
             {
-                if (Console.KeyAvailable)
-                {
-                    _inputHandler.ProcessInput();
-                    _lastInputTime = DateTime.Now;
-                    _needsRender = true; // Input always requires render
-                }
+                _inputHandler.ProcessInput();
             }
             catch (Exception ex)
             {
-                // Log input errors but don't crash
+                // Input errors shouldn't crash the app
             }
         }
 
@@ -154,17 +153,11 @@ namespace WaffleCLI.Core.TUI.Application
         {
             try
             {
-                // Check for console resize
-                if (CheckConsoleResize())
-                {
-                    _needsRender = true;
-                }
-                
                 RootComponent.Update();
             }
             catch (Exception ex)
             {
-                // Log update errors but don't crash
+                // Update errors shouldn't crash the app
             }
         }
 
@@ -178,7 +171,7 @@ namespace WaffleCLI.Core.TUI.Application
             }
             catch (Exception ex)
             {
-                // Log render errors but don't crash
+                // Render errors shouldn't crash the app
             }
         }
 
@@ -216,24 +209,16 @@ namespace WaffleCLI.Core.TUI.Application
 
         private void OnFocusChanged(IFocusable? focusedComponent)
         {
-            _needsRender = true; // Focus changes require re-render
+            // Force render on focus change for immediate visual feedback
+            _framesSinceLastRender = FORCE_RENDER_INTERVAL;
         }
 
-        private bool HasRecentInput()
+        private void PreciseSleep(int milliseconds)
         {
-            // Consider input "recent" if it happened in the last 100ms
-            return (DateTime.Now - _lastInputTime).TotalMilliseconds < 100;
-        }
-
-        private void AdjustFrameRate()
-        {
-            // Adaptive frame rate: fast when active, slow when idle
-            int newFps = HasRecentInput() || _needsRender ? FAST_RENDER_FPS : IDLE_RENDER_FPS;
-            
-            if (newFps != _currentFps)
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            while (sw.ElapsedMilliseconds < milliseconds)
             {
-                _currentFps = newFps;
-                _targetFrameTimeMs = 1000 / _currentFps;
+                Thread.SpinWait(100);
             }
         }
 
