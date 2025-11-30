@@ -13,4 +13,10 @@
         <ProjectReference Include="..\..\src\WaffleCLI\WaffleCLI.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Include="tui-settings.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
 </Project>

@@ -71,6 +71,7 @@ namespace WaffleCLI.Core.TUI.Application
             }
             catch (Exception ex)
             {
+                TuiLogger.LogError("Application runtime error", ex);
                 throw new TuiException("Application runtime error", ex);
             }
             finally
@@ -92,14 +93,13 @@ namespace WaffleCLI.Core.TUI.Application
             }
         }
 
-        // В метод Initialize добавьте:
         private void Initialize()
         {
             try
             {
                 Console.CursorVisible = false;
                 Console.Clear();
-        
+                
                 // Safe console dimension reading
                 int width = 80;
                 int height = 24;
@@ -113,9 +113,9 @@ namespace WaffleCLI.Core.TUI.Application
                     // Use default dimensions if console is not available
                     TuiLogger.LogInfo("Using default console dimensions");
                 }
-        
+                
                 _renderEngine.Initialize(width, height);
-        
+                
                 // Register global exit hotkey
                 var keyBindingManager = _serviceProvider.GetRequiredService<KeyBindingManager>();
                 keyBindingManager.RegisterGlobalHotkey(ConsoleKey.Escape, KeyModifiers.None, Stop);
@@ -135,7 +135,7 @@ namespace WaffleCLI.Core.TUI.Application
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Input processing error: {ex.Message}");
+                TuiLogger.LogError("Input processing error", ex);
             }
         }
 
@@ -147,7 +147,7 @@ namespace WaffleCLI.Core.TUI.Application
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Update error: {ex.Message}");
+                TuiLogger.LogError("Update error", ex);
             }
         }
 
@@ -161,7 +161,7 @@ namespace WaffleCLI.Core.TUI.Application
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Render error: {ex.Message}");
+                TuiLogger.LogError("Render error", ex);
             }
         }
 

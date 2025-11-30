@@ -31,8 +31,8 @@ namespace WaffleCLI.Core.TUI.Components.Base
         public virtual void Render(IRenderEngine renderEngine)
         {
             if (!IsVisible) return;
-        
-            // CRITICAL FIX: Ensure children are rendered with proper coordinate context
+            
+            // Render children
             foreach (var child in _children.Where(c => c.IsVisible))
             {
                 child.Render(renderEngine);

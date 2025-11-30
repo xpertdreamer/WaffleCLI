@@ -35,7 +35,7 @@ namespace WaffleCLI.Core.TUI.Infrastructure.Logging
 
         public static void LogError(string message, Exception? ex = null)
         {
-            var errorMessage = $"ERROR: {message}";
+            var errorMessage = $"❌ ERROR: {message}";
             if (ex != null)
             {
                 errorMessage += $"\n       Exception: {ex.GetType().Name}: {ex.Message}";
@@ -46,17 +46,17 @@ namespace WaffleCLI.Core.TUI.Infrastructure.Logging
 
         public static void LogInfo(string message)
         {
-            Log($" INFO: {message}");
+            Log($"ℹ️ INFO: {message}");
         }
 
         public static void LogDebug(string message)
         {
-            Log($" DEBUG: {message}");
+            Log($"🔍 DEBUG: {message}");
         }
 
         public static void LogWarning(string message)
         {
-            Log($" WARN: {message}");
+            Log($"⚠️ WARN: {message}");
         }
 
         public static void ClearLog()

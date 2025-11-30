@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using WaffleCLI.Abstractions.TUI.Components;
 using WaffleCLI.Abstractions.TUI.Configuration;
 using WaffleCLI.Core.TUI.Application;
 using WaffleCLI.Core.TUI.Components.Primitive;
 using WaffleCLI.Core.TUI.Components.Layout;
+using WaffleCLI.Core.TUI.Input;
 using WaffleCLI.Core.TUI.Configuration;
 using WaffleCLI.Core.TUI.Infrastructure.Logging;
 
@@ -128,7 +128,7 @@ public class DemoApp : Panel
             Y = 1,
             Width = Width - 4,
             Height = 1,
-            Text = " WaffleCLI TUI Framework Demo ",
+            Text = "🐹 WaffleCLI TUI Framework Demo 🐹",
             Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue)
         };
 
@@ -177,7 +177,7 @@ public class DemoApp : Panel
             Y = 18,
             Width = Width - 4,
             Height = 1,
-            Text = " Framework initialized! Use Tab to navigate, Esc to exit."
+            Text = "✅ Framework initialized! Use Tab to navigate, Esc to exit."
         };
 
         // Instructions
@@ -203,20 +203,15 @@ public class DemoApp : Panel
         TuiLogger.LogInfo("DemoApp constructor completed");
     }
 
-    public sealed override void AddChild(IComponent child)
-    {
-        base.AddChild(child);
-    }
-
     private void HandleButtonClick()
     {
         _clickCount++;
         var text = string.IsNullOrEmpty(_textBox.Text) ? "<empty>" : _textBox.Text;
-        _statusLabel.Text = $" Button clicked {_clickCount} times! Text: '{text}'";
+        _statusLabel.Text = $"🎉 Button clicked {_clickCount} times! Text: '{text}'";
         
         if (!string.IsNullOrEmpty(_textBox.Text))
         {
-            _listBox.Items.Add($" User entry: {_textBox.Text}");
+            _listBox.Items.Add($"📝 User entry: {_textBox.Text}");
             _textBox.Text = string.Empty;
         }
     }
@@ -226,13 +221,13 @@ public class DemoApp : Panel
         if (index >= 0 && index < _listBox.Items.Count)
         {
             var item = _listBox.Items[index];
-            _statusLabel.Text = $" Selected: {item} (index {index})";
+            _statusLabel.Text = $"🔍 Selected: {item} (index {index})";
         }
     }
 
     public override void Render(WaffleCLI.Abstractions.TUI.Rendering.IRenderEngine renderEngine)
     {
-        // TuiLogger.LogDebug($"DemoApp.Render called - Visible: {IsVisible}, Children: {Children.Count}");
+        TuiLogger.LogDebug($"DemoApp.Render called - Visible: {IsVisible}, Children: {Children.Count}");
         base.Render(renderEngine);
     }
 }

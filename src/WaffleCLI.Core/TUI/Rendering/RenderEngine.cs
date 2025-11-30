@@ -20,7 +20,7 @@ namespace WaffleCLI.Core.TUI.Rendering
 
         public void Initialize(int width, int height)
         {
-            // TuiLogger.LogInfo($"Initializing RenderEngine with dimensions: {width}x{height}");
+            TuiLogger.LogInfo($"Initializing RenderEngine with dimensions: {width}x{height}");
             
             if (width <= 0 || height <= 0)
             {
@@ -32,7 +32,7 @@ namespace WaffleCLI.Core.TUI.Rendering
             {
                 _buffer = new DoubleBuffer(width, height);
                 _initialized = true;
-                // TuiLogger.LogInfo("RenderEngine initialized successfully");
+                TuiLogger.LogInfo("RenderEngine initialized successfully");
                 
                 SetupConsole();
             }
@@ -73,18 +73,15 @@ namespace WaffleCLI.Core.TUI.Rendering
 
         public void DrawString(int x, int y, string text, ColorScheme colors)
         {
-            if (!_initialized || string.IsNullOrEmpty(text) || _buffer == null) return;
-
-            // DEBUG: Ensure coordinates are within bounds
-            if (x < 0 || y < 0 || x >= Width || y >= Height) return;
+            if (!_initialized || string.IsNullOrEmpty(text) || _buffer == null) 
+            {
+                if (!_initialized) TuiLogger.LogDebug("RenderEngine not initialized in DrawString");
+                return;
+            }
 
             for (int i = 0; i < text.Length; i++)
             {
-                int currentX = x + i;
-                if (currentX >= 0 && currentX < Width && y >= 0 && y < Height)
-                {
-                    DrawChar(currentX, y, text[i], colors);
-                }
+                DrawChar(x + i, y, text[i], colors);
             }
         }
 
@@ -92,13 +89,10 @@ namespace WaffleCLI.Core.TUI.Rendering
         {
             if (!_initialized || _buffer == null) return;
 
-            // DEBUG: Ensure coordinates are within bounds
-            if (x < 0 || x >= Width || y < 0 || y >= Height) return;
-
             int drawX = _viewportActive ? x + _viewportX : x;
             int drawY = _viewportActive ? y + _viewportY : y;
 
-            // Final bounds check
+            // Only draw if within buffer bounds
             if (drawX >= 0 && drawX < Width && drawY >= 0 && drawY < Height)
             {
                 _buffer.SetPixel(drawX, drawY, character, colors.Foreground, colors.Background);
@@ -188,27 +182,6 @@ namespace WaffleCLI.Core.TUI.Rendering
             _buffer.Clear(colors);
         }
 
-        private void SetupConsole()
-        {
-            try
-            {
-                Console.CursorVisible = false;
-                Console.OutputEncoding = System.Text.Encoding.UTF8;
-                // TuiLogger.LogInfo("Console setup completed");
-                
-                // Enable ANSI support on Windows
-                if (OperatingSystem.IsWindows())
-                {
-                    EnableAnsiOnWindows();
-                }
-            }
-            catch (Exception ex)
-            {
-                TuiLogger.LogError("Failed to setup console", ex);
-                throw new TuiException("Failed to setup console", ex);
-            }
-        }
-
         public void SetViewport(int x, int y, int width, int height)
         {
             _viewportX = x;
@@ -223,7 +196,7 @@ namespace WaffleCLI.Core.TUI.Rendering
             _viewportActive = false;
         }
 
-        private static BorderChars? GetBorderChars(BorderStyle style)
+        private BorderChars? GetBorderChars(BorderStyle style)
         {
             return style switch
             {
@@ -235,7 +208,28 @@ namespace WaffleCLI.Core.TUI.Rendering
             };
         }
 
-        private static void EnableAnsiOnWindows()
+        private void SetupConsole()
+        {
+            try
+            {
+                Console.CursorVisible = false;
+                Console.OutputEncoding = System.Text.Encoding.UTF8;
+                TuiLogger.LogInfo("Console setup completed");
+                
+                // Enable ANSI support on Windows
+                if (OperatingSystem.IsWindows())
+                {
+                    EnableAnsiOnWindows();
+                }
+            }
+            catch (Exception ex)
+            {
+                TuiLogger.LogError("Failed to setup console", ex);
+                throw new TuiException("Failed to setup console", ex);
+            }
+        }
+
+        private void EnableAnsiOnWindows()
         {
             try
             {

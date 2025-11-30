@@ -35,7 +35,7 @@ namespace WaffleCLI.Core.TUI.Rendering
             _frontBackground = new ConsoleColor[bufferSize];
             _backBackground = new ConsoleColor[bufferSize];
             
-            // TuiLogger.LogInfo($"DoubleBuffer created: {width}x{height} (total cells: {bufferSize})");
+            TuiLogger.LogInfo($"DoubleBuffer created: {width}x{height} (total cells: {bufferSize})");
             ClearBuffers();
         }
 

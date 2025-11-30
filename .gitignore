@@ -8,6 +8,7 @@
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 
 /.idea
+/samples/SampleTUIApp/tui-debug.log
 
 # Build results
 [Dd]ebug/

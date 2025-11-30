@@ -14,7 +14,7 @@ namespace WaffleCLI.Abstractions.TUI.Components
         int Height { get; set; }
         bool IsVisible { get; set; }
         bool IsEnabled { get; set; }
-        IComponent? Parent { get; } // Only getter - setter internal in implementation
+        IComponent? Parent { get; }
         IReadOnlyList<IComponent> Children { get; }
         
         void Render(IRenderEngine renderEngine);
