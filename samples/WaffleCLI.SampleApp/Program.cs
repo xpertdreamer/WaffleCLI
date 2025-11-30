@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using WaffleCLI.Abstractions.Commands;
-using WaffleCLI.Abstractions.TUI;
-using WaffleCLI.Core.TUI;
 using WaffleCLI.Runtime.Hosting;
 using WaffleCLI.Runtime.Services;
 using WaffleCLI.SampleApp.Commands;
