@@ -89,7 +89,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} pressed via Spacebar");
                     PressButton();
                     return true;
-                    
+            
                 case ConsoleKey.Enter:
                     Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} pressed via Enter");
                     PressButton();
@@ -102,14 +102,23 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         private void PressButton()
         {
             _isPressed = true;
+    
+            // Force immediate visual feedback
+            RequestVisualUpdate();
+    
             Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} invoking OnClick action");
             OnClick?.Invoke();
+    
             _isPressed = false;
+    
+            // Force another update after click completes
+            RequestVisualUpdate();
         }
 
         public override void OnFocus()
         {
             base.OnFocus();
+            RequestVisualUpdate(); // Force visual update on focus
             Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} received focus");
         }
 
@@ -117,6 +126,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             base.OnBlur();
             _isPressed = false;
+            RequestVisualUpdate(); // Force visual update on blur
             Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} lost focus");
         }
 

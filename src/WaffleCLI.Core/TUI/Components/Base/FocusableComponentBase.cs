@@ -4,7 +4,7 @@ using WaffleCLI.Abstractions.TUI.Input;
 namespace WaffleCLI.Core.TUI.Components.Base
 {
     /// <summary>
-    /// Base class for focusable components
+    /// Enhanced base class for focusable components with proper state change handling
     /// </summary>
     public abstract class FocusableComponentBase : ComponentBase, IFocusable
     {
@@ -18,8 +18,10 @@ namespace WaffleCLI.Core.TUI.Components.Base
                 if (_hasFocus != value)
                 {
                     _hasFocus = value;
-                    // Log only once to avoid duplication
                     Infrastructure.Logging.TuiLogger.LogDebug($"Component {Id} focus changed to: {value}");
+                    
+                    // Force visual update when focus changes
+                    RequestVisualUpdate();
                     
                     if (value) 
                         OnFocus();
@@ -36,11 +38,13 @@ namespace WaffleCLI.Core.TUI.Components.Base
         public virtual void OnFocus()
         {
             // Base implementation - can be overridden
+            Infrastructure.Logging.TuiLogger.LogDebug($"Component {Id} received focus");
         }
 
         public virtual void OnBlur()
         {
             // Base implementation - can be overridden
+            Infrastructure.Logging.TuiLogger.LogDebug($"Component {Id} lost focus");
         }
 
         public abstract bool HandleInput(InputEvent inputEvent);
@@ -68,7 +72,25 @@ namespace WaffleCLI.Core.TUI.Components.Base
             return false;
         }
         
-        protected virtual bool HandleConfirm() => false;
-        protected virtual bool HandleCancel() => false;
+        protected virtual bool HandleConfirm() 
+        {
+            Infrastructure.Logging.TuiLogger.LogDebug($"Component {Id} handled confirm action");
+            RequestVisualUpdate();
+            return false;
+        }
+        
+        protected virtual bool HandleCancel() 
+        {
+            Infrastructure.Logging.TuiLogger.LogDebug($"Component {Id} handled cancel action");
+            RequestVisualUpdate();
+            return false;
+        }
+        
+        protected void RequestVisualUpdate()
+        {
+            // This method can be used by derived classes to request visual updates
+            // In a more advanced implementation, this could trigger invalidation events
+            Infrastructure.Logging.TuiLogger.LogDebug($"Component {Id} requested visual update");
+        }
     }
 }

@@ -1,11 +1,10 @@
 using WaffleCLI.Abstractions.TUI.Rendering;
 using WaffleCLI.Abstractions.TUI.Rendering.Enums;
-using WaffleCLI.Core.TUI.Infrastructure.Logging;
 
 namespace WaffleCLI.Core.TUI.Rendering
 {
     /// <summary>
-    /// Optimized double buffer implementation for flicker-free rendering
+    /// Fixed DoubleBuffer with proper console buffer management
     /// </summary>
     public class DoubleBuffer : IBuffer
     {
@@ -18,7 +17,6 @@ namespace WaffleCLI.Core.TUI.Rendering
         private readonly int _width;
         private readonly int _height;
         private bool _disposed = false;
-        private bool _firstRender = true;
 
         public int Width => _width;
         public int Height => _height;
@@ -36,7 +34,7 @@ namespace WaffleCLI.Core.TUI.Rendering
             _frontBackground = new ConsoleColor[bufferSize];
             _backBackground = new ConsoleColor[bufferSize];
             
-            TuiLogger.LogInfo($"DoubleBuffer created: {width}x{height} (total cells: {bufferSize})");
+            Infrastructure.Logging.TuiLogger.LogInfo($"DoubleBuffer created: {width}x{height} (total cells: {bufferSize})");
             ClearBuffers();
         }
 
@@ -72,23 +70,22 @@ namespace WaffleCLI.Core.TUI.Rendering
         {
             try
             {
-                if (_firstRender)
-                {
-                    // Force full render on first frame
-                    RenderFullFrame();
-                    _firstRender = false;
-                }
-                else
-                {
-                    // Differential rendering for subsequent frames
-                    RenderDifferential();
-                }
+                // ALWAYS use full frame rendering to ensure clean updates
+                RenderFullFrame();
             }
             catch (Exception ex)
             {
-                TuiLogger.LogError("Error in RenderToConsole", ex);
-                // Fallback to full render on error
-                RenderFullFrame();
+                Infrastructure.Logging.TuiLogger.LogError("Error in RenderToConsole", ex);
+                // Fallback to simple clear and render
+                try
+                {
+                    Console.Clear();
+                    RenderFullFrame();
+                }
+                catch
+                {
+                    // Last resort
+                }
             }
             finally
             {
@@ -98,52 +95,50 @@ namespace WaffleCLI.Core.TUI.Rendering
 
         private void RenderFullFrame()
         {
-            Console.SetCursorPosition(0, 0);
-            for (int y = 0; y < _height; y++)
+            try
             {
-                for (int x = 0; x < _width; x++)
-                {
-                    int index = y * _width + x;
-                    Console.ForegroundColor = _backForeground[index];
-                    Console.BackgroundColor = _backBackground[index];
-                    Console.Write(_backBuffer[index]);
-                }
+                // Set cursor to top-left before rendering
+                Console.SetCursorPosition(0, 0);
                 
-                // Move to next line if not at the bottom
-                if (y < _height - 1)
+                for (int y = 0; y < _height; y++)
                 {
-                    Console.WriteLine();
-                }
-            }
-        }
-
-        private void RenderDifferential()
-        {
-            int changedPixels = 0;
-            
-            for (int y = 0; y < _height; y++)
-            {
-                for (int x = 0; x < _width; x++)
-                {
-                    int index = y * _width + x;
-                    
-                    // Only update changed pixels
-                    if (_frontBuffer[index] != _backBuffer[index] ||
-                        _frontForeground[index] != _backForeground[index] ||
-                        _frontBackground[index] != _backBackground[index])
+                    // For each line, set cursor to beginning of line
+                    // This prevents the console from auto-scrolling
+                    if (y > 0)
                     {
-                        changedPixels++;
-                        Console.SetCursorPosition(x, y);
+                        Console.SetCursorPosition(0, y);
+                    }
+                    
+                    for (int x = 0; x < _width; x++)
+                    {
+                        int index = y * _width + x;
                         Console.ForegroundColor = _backForeground[index];
                         Console.BackgroundColor = _backBackground[index];
                         Console.Write(_backBuffer[index]);
                     }
+                    
+                    // If we're not at the last line and the line is shorter than console width,
+                    // we need to clear the rest of the line to prevent artifacts
+                    if (Console.WindowWidth > _width)
+                    {
+                        Console.Write(new string(' ', Console.WindowWidth - _width));
+                    }
                 }
+                
+                // Clear any remaining lines below our content to prevent artifacts
+                for (int y = _height; y < Console.WindowHeight; y++)
+                {
+                    Console.SetCursorPosition(0, y);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                }
+                
+                // Reset cursor to top-left to prevent auto-scroll
+                Console.SetCursorPosition(0, 0);
             }
-            
-            if (changedPixels > 1000) // Log only if significant changes
+            catch (Exception ex)
             {
-                TuiLogger.LogDebug($"Rendered {changedPixels} changed pixels (differential)");
+                Infrastructure.Logging.TuiLogger.LogError("Error in RenderFullFrame", ex);
+                throw;
             }
         }
 
@@ -165,7 +160,7 @@ namespace WaffleCLI.Core.TUI.Rendering
             if (!_disposed)
             {
                 _disposed = true;
-                TuiLogger.LogInfo("DoubleBuffer disposed");
+                Infrastructure.Logging.TuiLogger.LogInfo("DoubleBuffer disposed");
             }
         }
 

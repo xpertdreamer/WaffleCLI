@@ -1,12 +1,11 @@
 using WaffleCLI.Abstractions.TUI.Rendering;
 using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 using WaffleCLI.Abstractions.TUI.Exceptions;
-using WaffleCLI.Core.TUI.Infrastructure.Logging;
 
 namespace WaffleCLI.Core.TUI.Rendering
 {
     /// <summary>
-    /// Main render engine with double buffering and cross-platform support
+    /// Enhanced render engine with forced redraw capabilities
     /// </summary>
     public class RenderEngine : IRenderEngine
     {
@@ -15,17 +14,18 @@ namespace WaffleCLI.Core.TUI.Rendering
         private int _viewportX, _viewportY, _viewportWidth, _viewportHeight;
         private bool _viewportActive = false;
         private ColorScheme _clearColors = ColorScheme.Default;
+        private bool _forceFullRedraw = true;
 
         public int Width => _buffer?.Width ?? 0;
         public int Height => _buffer?.Height ?? 0;
 
         public void Initialize(int width, int height)
         {
-            TuiLogger.LogInfo($"Initializing RenderEngine with dimensions: {width}x{height}");
+            Infrastructure.Logging.TuiLogger.LogInfo($"Initializing RenderEngine with dimensions: {width}x{height}");
             
             if (width <= 0 || height <= 0)
             {
-                TuiLogger.LogError($"Invalid buffer dimensions: {width}x{height}");
+                Infrastructure.Logging.TuiLogger.LogError($"Invalid buffer dimensions: {width}x{height}");
                 throw new ArgumentException("Invalid buffer dimensions");
             }
 
@@ -33,13 +33,15 @@ namespace WaffleCLI.Core.TUI.Rendering
             {
                 _buffer = new DoubleBuffer(width, height);
                 _initialized = true;
-                TuiLogger.LogInfo("RenderEngine initialized successfully");
+                _forceFullRedraw = true;
+                
+                Infrastructure.Logging.TuiLogger.LogInfo("RenderEngine initialized successfully");
                 
                 SetupConsole();
             }
             catch (Exception ex)
             {
-                TuiLogger.LogError("Failed to initialize RenderEngine", ex);
+                Infrastructure.Logging.TuiLogger.LogError("Failed to initialize RenderEngine", ex);
                 throw new TuiException("Failed to initialize RenderEngine", ex);
             }
         }
@@ -48,7 +50,7 @@ namespace WaffleCLI.Core.TUI.Rendering
         {
             if (!_initialized || _buffer == null)
             {
-                TuiLogger.LogError("RenderEngine not initialized in BeginFrame");
+                Infrastructure.Logging.TuiLogger.LogError("RenderEngine not initialized in BeginFrame");
                 throw new TuiException("RenderEngine not initialized");
             }
 
@@ -60,7 +62,7 @@ namespace WaffleCLI.Core.TUI.Rendering
         {
             if (!_initialized || _buffer == null) 
             {
-                TuiLogger.LogError("RenderEngine not initialized in EndFrame");
+                Infrastructure.Logging.TuiLogger.LogError("RenderEngine not initialized in EndFrame");
                 return;
             }
             
@@ -68,10 +70,15 @@ namespace WaffleCLI.Core.TUI.Rendering
             {
                 _buffer.Swap();
                 _buffer.RenderToConsole();
+                
+                // Reset force flag after successful render
+                _forceFullRedraw = false;
             }
             catch (Exception ex)
             {
-                TuiLogger.LogError("Error in EndFrame", ex);
+                Infrastructure.Logging.TuiLogger.LogError("Error in EndFrame", ex);
+                // Set force redraw for next frame on error
+                _forceFullRedraw = true;
             }
         }
 
@@ -186,6 +193,7 @@ namespace WaffleCLI.Core.TUI.Rendering
             
             _clearColors = colors;
             _buffer.Clear(colors);
+            _forceFullRedraw = true;
         }
 
         public void SetViewport(int x, int y, int width, int height)
@@ -195,11 +203,18 @@ namespace WaffleCLI.Core.TUI.Rendering
             _viewportWidth = Math.Max(0, width);
             _viewportHeight = Math.Max(0, height);
             _viewportActive = true;
+            _forceFullRedraw = true;
         }
 
         public void ResetViewport()
         {
             _viewportActive = false;
+            _forceFullRedraw = true;
+        }
+
+        public void RequestFullRedraw()
+        {
+            _forceFullRedraw = true;
         }
 
         private bool IsInViewport(int x, int y)
@@ -231,11 +246,11 @@ namespace WaffleCLI.Core.TUI.Rendering
                 Console.Clear();
                 Console.SetCursorPosition(0, 0);
                 
-                TuiLogger.LogInfo("Console setup completed");
+                Infrastructure.Logging.TuiLogger.LogInfo("Console setup completed");
             }
             catch (Exception ex)
             {
-                TuiLogger.LogError("Failed to setup console", ex);
+                Infrastructure.Logging.TuiLogger.LogError("Failed to setup console", ex);
                 throw new TuiException("Failed to setup console", ex);
             }
         }
