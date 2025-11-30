@@ -8,11 +8,12 @@ using WaffleCLI.Abstractions.TUI.Rendering;
 using WaffleCLI.Core.TUI.Rendering;
 using WaffleCLI.Core.TUI.Input;
 using WaffleCLI.Core.TUI.Configuration;
+using WaffleCLI.Core.TUI.Infrastructure.Logging;
 
 namespace WaffleCLI.Core.TUI.Application
 {
     /// <summary>
-    /// Fluent builder for TUI applications
+    /// Fluent builder for TUI applications with proper DI registration
     /// </summary>
     public class TuiApplicationBuilder : ITuiApplicationBuilder
     {
@@ -34,15 +35,19 @@ namespace WaffleCLI.Core.TUI.Application
             _services.AddSingleton<IRenderEngine, RenderEngine>();
             _services.AddSingleton<IInputHandler, InputHandler>();
             _services.AddSingleton<ITuiConfiguration, TuiConfiguration>();
+            
+            TuiLogger.LogInfo("Default services configured");
         }
 
         public ITuiApplicationBuilder UseRootComponent<T>() where T : class, IComponent
         {
             _rootComponentType = typeof(T);
             
-            // Register the root component as both the concrete type and IComponent
-            _services.AddSingleton<T>();
-            _services.AddSingleton<IComponent>(provider => provider.GetRequiredService<T>());
+            // Register the root component as transient to avoid disposal issues
+            _services.AddTransient<T>();
+            _services.AddTransient<IComponent, T>(provider => provider.GetRequiredService<T>());
+            
+            TuiLogger.LogInfo($"Registered root component: {_rootComponentType.Name}");
             
             return this;
         }
@@ -50,6 +55,7 @@ namespace WaffleCLI.Core.TUI.Application
         public ITuiApplicationBuilder ConfigureServices(Action<IServiceCollection> configureAction)
         {
             configureAction(_services);
+            TuiLogger.LogInfo("Custom services configuration applied");
             return this;
         }
 
@@ -62,12 +68,14 @@ namespace WaffleCLI.Core.TUI.Application
 
             var serviceProvider = _services.BuildServiceProvider();
             
-            // Get the root component - now it should be properly registered
-            var rootComponent = serviceProvider.GetRequiredService(_rootComponentType) as IComponent;
+            // Validate that root component can be resolved
+            var rootComponent = serviceProvider.GetService(_rootComponentType) as IComponent;
             if (rootComponent == null)
             {
                 throw new InvalidOperationException($"Failed to resolve root component of type {_rootComponentType.Name}");
             }
+            
+            TuiLogger.LogInfo("TuiApplication built successfully");
             
             return new TuiApplication(serviceProvider, rootComponent);
         }

@@ -15,7 +15,7 @@ namespace WaffleCLI.Core.TUI.Application
     {
         public static IServiceCollection AddTuiFramework(this IServiceCollection services)
         {
-            services.AddSingleton<FocusManager>();
+            services.AddSingleton<FocusManager, EnhancedFocusManager>();
             services.AddSingleton<KeyBindingManager>();
             services.AddSingleton<ThemeManager>();
             services.AddSingleton<IRenderEngine, RenderEngine>();

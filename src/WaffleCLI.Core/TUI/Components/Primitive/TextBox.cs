@@ -14,6 +14,8 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         private string _text = string.Empty;
         private int _cursorPosition = 0;
         private string _placeholder = string.Empty;
+        private DateTime _lastCursorBlink = DateTime.Now;
+        private bool _cursorVisible = true;
 
         public string Text
         {
@@ -33,7 +35,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
         public int MaxLength { get; set; } = 256;
         public ColorScheme NormalColors { get; set; } = ColorScheme.Default;
-        public ColorScheme FocusColors { get; set; } = ColorScheme.Focus;
+        public ColorScheme FocusColors { get; set; } = new ColorScheme(ConsoleColor.Black, ConsoleColor.Gray);
         public ColorScheme PlaceholderColors { get; set; } = new ColorScheme(ConsoleColor.DarkGray, ConsoleColor.Black);
 
         public TextBox(string id) : base(id)
@@ -47,12 +49,13 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             if (!IsVisible) return;
 
             var colors = HasFocus ? FocusColors : NormalColors;
+            var borderStyle = HasFocus ? BorderStyle.Double : BorderStyle.Single;
             
             // Draw background
             renderEngine.FillRectangle(X, Y, Width, Height, ' ', colors);
             
             // Draw border
-            renderEngine.DrawBox(X, Y, Width, Height, GetBorderStyle(), colors);
+            renderEngine.DrawBox(X, Y, Width, Height, borderStyle, colors);
 
             // Calculate available space for text
             int maxDisplayLength = Math.Max(0, Width - 2);
@@ -93,14 +96,23 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             // Draw cursor if focused and enabled
             if (HasFocus && IsEnabled)
             {
-                int cursorDisplayPos = _cursorPosition - displayStart;
-                if (cursorDisplayPos >= 0 && cursorDisplayPos < maxDisplayLength)
+                // Blink cursor (toggle every 500ms)
+                if ((DateTime.Now - _lastCursorBlink).TotalMilliseconds > 500)
                 {
-                    int cursorX = X + 1 + cursorDisplayPos;
-                    // Show blinking cursor (simple implementation)
-                    if (DateTime.Now.Millisecond < 500)
+                    _cursorVisible = !_cursorVisible;
+                    _lastCursorBlink = DateTime.Now;
+                }
+
+                if (_cursorVisible)
+                {
+                    int cursorDisplayPos = _cursorPosition - displayStart;
+                    if (cursorDisplayPos >= 0 && cursorDisplayPos < maxDisplayLength)
                     {
-                        renderEngine.DrawChar(cursorX, Y, '_', colors);
+                        int cursorX = X + 1 + cursorDisplayPos;
+                        // Invert colors for cursor
+                        var cursorColors = new ColorScheme(colors.Background, colors.Foreground);
+                        char cursorChar = cursorDisplayPos < displayText.Length ? displayText[cursorDisplayPos] : ' ';
+                        renderEngine.DrawChar(cursorX, Y, cursorChar, cursorColors);
                     }
                 }
             }
@@ -122,6 +134,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         _text = _text.Remove(_cursorPosition - 1, 1);
                         _cursorPosition--;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"TextBox {Id}: Backspace, text: '{_text}'");
                     }
                     return true;
 
@@ -129,6 +142,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     if (_cursorPosition < _text.Length)
                     {
                         _text = _text.Remove(_cursorPosition, 1);
+                        Infrastructure.Logging.TuiLogger.LogDebug($"TextBox {Id}: Delete, text: '{_text}'");
                     }
                     return true;
 
@@ -136,6 +150,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     if (_cursorPosition > 0)
                     {
                         _cursorPosition--;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"TextBox {Id}: Move left, position: {_cursorPosition}");
                     }
                     return true;
 
@@ -143,15 +158,18 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     if (_cursorPosition < _text.Length)
                     {
                         _cursorPosition++;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"TextBox {Id}: Move right, position: {_cursorPosition}");
                     }
                     return true;
 
                 case ConsoleKey.Home:
                     _cursorPosition = 0;
+                    Infrastructure.Logging.TuiLogger.LogDebug($"TextBox {Id}: Home, position: {_cursorPosition}");
                     return true;
 
                 case ConsoleKey.End:
                     _cursorPosition = _text.Length;
+                    Infrastructure.Logging.TuiLogger.LogDebug($"TextBox {Id}: End, position: {_cursorPosition}");
                     return true;
 
                 default:
@@ -162,6 +180,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         _text = _text.Insert(_cursorPosition, inputEvent.Character.ToString());
                         _cursorPosition++;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"TextBox {Id}: Added char '{inputEvent.Character}', text: '{_text}'");
                         return true;
                     }
                     break;
@@ -169,10 +188,19 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
             return false;
         }
-        
-        private BorderStyle GetBorderStyle()
+
+        public override void OnFocus()
         {
-            return HasFocus ? BorderStyle.Double : BorderStyle.Single;
+            base.OnFocus();
+            _cursorVisible = true;
+            _lastCursorBlink = DateTime.Now;
+            Infrastructure.Logging.TuiLogger.LogDebug($"TextBox {Id} received focus");
+        }
+
+        public override void OnBlur()
+        {
+            base.OnBlur();
+            Infrastructure.Logging.TuiLogger.LogDebug($"TextBox {Id} lost focus");
         }
     }
 }

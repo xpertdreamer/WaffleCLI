@@ -7,7 +7,7 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 namespace WaffleCLI.Core.TUI.Components.Primitive
 {
     /// <summary>
-    /// Button component
+    /// Fixed Button component with proper input handling
     /// </summary>
     public class Button : FocusableComponentBase, IButton
     {
@@ -20,7 +20,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             set
             {
                 _text = value ?? string.Empty;
-                // Truncate if too long (respecting borders)
                 if (_text.Length > Width - 4)
                     _text = _text.Substring(0, Width - 4);
             }
@@ -28,7 +27,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
         public Action? OnClick { get; set; }
         public ColorScheme NormalColors { get; set; } = ColorScheme.Primary;
-        public ColorScheme FocusColors { get; set; } = ColorScheme.Focus;
+        public ColorScheme FocusColors { get; set; } = new ColorScheme(ConsoleColor.Black, ConsoleColor.White);
         public ColorScheme PressedColors { get; set; } = new ColorScheme(ConsoleColor.White, ConsoleColor.DarkRed);
         public ColorScheme DisabledColors { get; set; } = new ColorScheme(ConsoleColor.DarkGray, ConsoleColor.Black);
 
@@ -43,20 +42,20 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             if (!IsVisible) return;
 
             var colors = GetCurrentColors();
+            var borderStyle = GetBorderStyle();
             
             // Draw button background
             renderEngine.FillRectangle(X, Y, Width, Height, ' ', colors);
             
             // Draw button border
-            renderEngine.DrawBox(X, Y, Width, Height, GetBorderStyle(), colors);
+            renderEngine.DrawBox(X, Y, Width, Height, borderStyle, colors);
             
-            // Draw text centered (only if there's space)
+            // Draw text centered
             if (!string.IsNullOrEmpty(Text) && Width >= 4 && Height >= 1)
             {
                 int textX = X + Math.Max(1, (Width - Text.Length) / 2);
                 int textY = Y + Math.Max(0, Height / 2);
                 
-                // Ensure text doesn't overflow
                 if (textX >= X && textX + Text.Length <= X + Width && textY >= Y && textY < Y + Height)
                 {
                     renderEngine.DrawString(textX, textY, Text, colors);
@@ -68,34 +67,57 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
         public override bool HandleInput(InputEvent inputEvent)
         {
-            if (!IsEnabled) return false;
+            if (!IsEnabled) 
+            {
+                Infrastructure.Logging.TuiLogger.LogDebug($"Button {Id} is disabled, ignoring input");
+                return false;
+            }
 
+            Infrastructure.Logging.TuiLogger.LogDebug($"Button {Id} received input: {inputEvent.Key}");
+
+            // First try common navigation (Tab, Enter, Escape)
             if (HandleCommonNavigation(inputEvent))
+            {
+                Infrastructure.Logging.TuiLogger.LogDebug($"Button {Id} handled common navigation");
                 return true;
+            }
 
+            // Handle button-specific input
             switch (inputEvent.Key)
             {
-                case ConsoleKey.Enter:
                 case ConsoleKey.Spacebar:
-                    _isPressed = true;
-                    OnClick?.Invoke();
-                    System.Threading.Thread.Sleep(100); // Visual feedback
-                    _isPressed = false;
+                    Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} pressed via Spacebar");
+                    PressButton();
+                    return true;
+                    
+                case ConsoleKey.Enter:
+                    Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} pressed via Enter");
+                    PressButton();
                     return true;
             }
 
             return false;
         }
 
+        private void PressButton()
+        {
+            _isPressed = true;
+            Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} invoking OnClick action");
+            OnClick?.Invoke();
+            _isPressed = false;
+        }
+
         public override void OnFocus()
         {
             base.OnFocus();
+            Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} received focus");
         }
 
         public override void OnBlur()
         {
             base.OnBlur();
             _isPressed = false;
+            Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} lost focus");
         }
 
         private ColorScheme GetCurrentColors()
@@ -114,9 +136,8 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             if (IsEnabled && OnClick != null)
             {
-                _isPressed = true;
-                OnClick();
-                _isPressed = false;
+                Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} confirmed via HandleConfirm");
+                PressButton();
                 return true;
             }
             return false;

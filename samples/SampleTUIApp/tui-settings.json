@@ -21,7 +21,7 @@
     }
   },
   "colors": {
-    "primary": "White:DarkBlue",
+    "primary": "White:Black",
     "secondary": "Gray:Black",
     "focus": "Black:White",
     "success": "Green:Black",

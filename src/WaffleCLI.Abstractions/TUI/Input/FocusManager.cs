@@ -3,26 +3,44 @@ using WaffleCLI.Abstractions.TUI.Components;
 namespace WaffleCLI.Abstractions.TUI.Input
 {
     /// <summary>
-    /// Manages focus between focusable components
+    /// Fixed FocusManager without Core dependencies
     /// </summary>
     public class FocusManager
     {
         private readonly List<IFocusable> _focusableComponents = new();
         private int _currentFocusIndex = -1;
+        private bool _isEnabled = true;
 
-        public IFocusable? CurrentFocus => _currentFocusIndex >= 0 ? _focusableComponents[_currentFocusIndex] : null;
+        public IFocusable? CurrentFocus => _currentFocusIndex >= 0 && _currentFocusIndex < _focusableComponents.Count 
+            ? _focusableComponents[_currentFocusIndex] 
+            : null;
+            
         public IReadOnlyList<IFocusable> FocusableComponents => _focusableComponents.AsReadOnly();
+        public bool IsEnabled 
+        { 
+            get => _isEnabled;
+            set
+            {
+                _isEnabled = value;
+                if (!value && CurrentFocus != null)
+                {
+                    CurrentFocus.HasFocus = false;
+                }
+            }
+        }
 
         public event Action<IFocusable?>? FocusChanged;
 
         public void RegisterFocusable(IFocusable component)
         {
+            if (component == null) return;
+            
             if (!_focusableComponents.Contains(component))
             {
                 _focusableComponents.Add(component);
                 
-                // Auto-focus first component if none focused
-                if (_currentFocusIndex == -1 && _focusableComponents.Count > 0)
+                // Auto-focus first component if none focused and manager is enabled
+                if (_currentFocusIndex == -1 && _focusableComponents.Count > 0 && _isEnabled)
                 {
                     SetFocus(0);
                 }
@@ -31,6 +49,8 @@ namespace WaffleCLI.Abstractions.TUI.Input
 
         public void UnregisterFocusable(IFocusable component)
         {
+            if (component == null) return;
+            
             int index = _focusableComponents.IndexOf(component);
             if (index >= 0)
             {
@@ -48,56 +68,89 @@ namespace WaffleCLI.Abstractions.TUI.Input
             }
         }
 
-        public void MoveFocusForward()
+        public bool MoveFocusForward()
         {
-            if (_focusableComponents.Count == 0) return;
+            if (!_isEnabled || _focusableComponents.Count == 0) return false;
             
             var newIndex = (_currentFocusIndex + 1) % _focusableComponents.Count;
-            SetFocus(newIndex);
+            return SetFocus(newIndex);
         }
 
-        public void MoveFocusBackward()
+        public bool MoveFocusBackward()
         {
-            if (_focusableComponents.Count == 0) return;
+            if (!_isEnabled || _focusableComponents.Count == 0) return false;
             
             var newIndex = _currentFocusIndex - 1;
             if (newIndex < 0) newIndex = _focusableComponents.Count - 1;
-            SetFocus(newIndex);
+            return SetFocus(newIndex);
         }
 
-        public void MoveFocus(Direction direction)
+        public bool MoveFocus(Direction direction)
         {
-            // Simple implementation - just move forward
-            // Could be enhanced with spatial navigation
-            MoveFocusForward();
+            // For now, just move forward - could implement spatial navigation later
+            return MoveFocusForward();
         }
 
-        public void SetFocus(IFocusable component)
+        public bool SetFocus(IFocusable component)
         {
+            if (!_isEnabled || component == null) return false;
+            
             int index = _focusableComponents.IndexOf(component);
             if (index >= 0)
             {
-                SetFocus(index);
+                return SetFocus(index);
+            }
+            return false;
+        }
+
+        public bool SetFocus(int newIndex)
+        {
+            if (!_isEnabled || newIndex < 0 || newIndex >= _focusableComponents.Count) 
+                return false;
+
+            try
+            {
+                // Remove focus from current component
+                if (_currentFocusIndex >= 0 && _currentFocusIndex < _focusableComponents.Count)
+                {
+                    var current = _focusableComponents[_currentFocusIndex];
+                    current.HasFocus = false;
+                }
+
+                _currentFocusIndex = newIndex;
+
+                // Set focus to new component
+                if (_currentFocusIndex >= 0 && _currentFocusIndex < _focusableComponents.Count)
+                {
+                    var newFocus = _focusableComponents[_currentFocusIndex];
+                    newFocus.HasFocus = true;
+                }
+                
+                FocusChanged?.Invoke(CurrentFocus);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Logging would be handled by the implementation
+                return false;
             }
         }
 
-        private void SetFocus(int newIndex)
+        public void ClearFocus()
         {
             if (_currentFocusIndex >= 0 && _currentFocusIndex < _focusableComponents.Count)
             {
                 _focusableComponents[_currentFocusIndex].HasFocus = false;
-                _focusableComponents[_currentFocusIndex].OnBlur();
+                _currentFocusIndex = -1;
+                FocusChanged?.Invoke(null);
             }
+        }
 
-            _currentFocusIndex = newIndex;
-
-            if (_currentFocusIndex >= 0 && _currentFocusIndex < _focusableComponents.Count)
-            {
-                _focusableComponents[_currentFocusIndex].HasFocus = true;
-                _focusableComponents[_currentFocusIndex].OnFocus();
-            }
-            
-            FocusChanged?.Invoke(CurrentFocus);
+        public void Reset()
+        {
+            ClearFocus();
+            _focusableComponents.Clear();
+            _currentFocusIndex = -1;
         }
     }
 }

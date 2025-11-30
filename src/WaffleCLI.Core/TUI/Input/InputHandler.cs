@@ -1,17 +1,17 @@
 using WaffleCLI.Abstractions.TUI.Input;
 using WaffleCLI.Abstractions.TUI.Components;
-using WaffleCLI.Abstractions.TUI.Exceptions;
 
 namespace WaffleCLI.Core.TUI.Input
 {
     /// <summary>
-    /// Input handler with focus management and hotkey support
+    /// Fixed InputHandler with proper input routing
     /// </summary>
     public class InputHandler : IInputHandler
     {
         private readonly FocusManager _focusManager;
         private readonly KeyBindingManager _keyBindingManager;
         private bool _isRunning = true;
+        private DateTime _lastInputLog = DateTime.MinValue;
 
         public InputHandler(FocusManager focusManager, KeyBindingManager keyBindingManager)
         {
@@ -21,26 +21,44 @@ namespace WaffleCLI.Core.TUI.Input
 
         public void ProcessInput()
         {
-            if (!Console.KeyAvailable) return;
+            if (!_isRunning || !Console.KeyAvailable) return;
 
             try
             {
                 var keyInfo = Console.ReadKey(intercept: true);
                 var inputEvent = CreateInputEvent(keyInfo);
 
+                // Log important inputs immediately
+                if (inputEvent.Key == ConsoleKey.Enter || inputEvent.Key == ConsoleKey.Spacebar || 
+                    inputEvent.Key == ConsoleKey.Tab || inputEvent.Key == ConsoleKey.Escape)
+                {
+                    Infrastructure.Logging.TuiLogger.LogDebug($"Important input: {inputEvent.Key} (Modifiers: {inputEvent.Modifiers})");
+                }
+
                 // First, try global hotkeys
                 if (_keyBindingManager.TryHandleGlobalHotkey(inputEvent))
                 {
+                    Infrastructure.Logging.TuiLogger.LogDebug($"Global hotkey handled: {inputEvent.Key}");
                     return;
                 }
 
                 // Then, try focused component
-                if (_focusManager.CurrentFocus is IFocusable focused)
+                if (_focusManager.CurrentFocus is IFocusable focused && focused.IsEnabled)
                 {
+                    Infrastructure.Logging.TuiLogger.LogDebug($"Routing input to focused component: {focused.Id}");
                     if (focused.HandleInput(inputEvent))
                     {
+                        Infrastructure.Logging.TuiLogger.LogDebug($"Input handled by focused component: {focused.Id}");
                         return;
                     }
+                    else
+                    {
+                        Infrastructure.Logging.TuiLogger.LogDebug($"Focused component did not handle input: {focused.Id}");
+                    }
+                }
+                else
+                {
+                    Infrastructure.Logging.TuiLogger.LogDebug($"No focused component or component disabled");
                 }
 
                 // Finally, handle navigation keys
@@ -48,7 +66,7 @@ namespace WaffleCLI.Core.TUI.Input
             }
             catch (Exception ex)
             {
-                throw new TuiException("Input processing failed", ex);
+                Infrastructure.Logging.TuiLogger.LogError("Input processing failed", ex);
             }
         }
 
@@ -82,30 +100,49 @@ namespace WaffleCLI.Core.TUI.Input
 
         private void HandleNavigationKeys(InputEvent inputEvent)
         {
+            if (!_focusManager.IsEnabled) return;
+
+            bool handled = false;
+            
             switch (inputEvent.Key)
             {
                 case ConsoleKey.Tab:
                     if (inputEvent.Modifiers.HasFlag(KeyModifiers.Shift))
-                        _focusManager.MoveFocusBackward();
+                    {
+                        handled = _focusManager.MoveFocusBackward();
+                        Infrastructure.Logging.TuiLogger.LogDebug($"Focus moved backward: {handled}");
+                    }
                     else
-                        _focusManager.MoveFocusForward();
+                    {
+                        handled = _focusManager.MoveFocusForward();
+                        Infrastructure.Logging.TuiLogger.LogDebug($"Focus moved forward: {handled}");
+                    }
                     break;
                     
                 case ConsoleKey.UpArrow:
-                    _focusManager.MoveFocus(Direction.Up);
+                    handled = _focusManager.MoveFocus(Direction.Up);
+                    Infrastructure.Logging.TuiLogger.LogDebug($"Focus moved up: {handled}");
                     break;
                     
                 case ConsoleKey.DownArrow:
-                    _focusManager.MoveFocus(Direction.Down);
+                    handled = _focusManager.MoveFocus(Direction.Down);
+                    Infrastructure.Logging.TuiLogger.LogDebug($"Focus moved down: {handled}");
                     break;
                     
                 case ConsoleKey.LeftArrow:
-                    _focusManager.MoveFocus(Direction.Left);
+                    handled = _focusManager.MoveFocus(Direction.Left);
+                    Infrastructure.Logging.TuiLogger.LogDebug($"Focus moved left: {handled}");
                     break;
                     
                 case ConsoleKey.RightArrow:
-                    _focusManager.MoveFocus(Direction.Right);
+                    handled = _focusManager.MoveFocus(Direction.Right);
+                    Infrastructure.Logging.TuiLogger.LogDebug($"Focus moved right: {handled}");
                     break;
+            }
+
+            if (handled)
+            {
+                Infrastructure.Logging.TuiLogger.LogDebug($"Navigation handled: {inputEvent.Key}");
             }
         }
     }

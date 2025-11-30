@@ -43,6 +43,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                 {
                     _selectedIndex = newIndex;
                     EnsureVisible(_selectedIndex);
+                    Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: Selection changed to index {_selectedIndex}");
                     OnSelectionChanged?.Invoke(_selectedIndex);
                 }
             }
@@ -51,7 +52,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         public string? SelectedItem => _selectedIndex >= 0 ? _items[_selectedIndex]?.ToString() : null;
         public Action<int>? OnSelectionChanged { get; set; }
         public ColorScheme NormalColors { get; set; } = ColorScheme.Default;
-        public ColorScheme FocusColors { get; set; } = ColorScheme.Focus;
+        public ColorScheme FocusColors { get; set; } = new ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue);
         public ColorScheme SelectedColors { get; set; } = ColorScheme.Primary;
         public ColorScheme SelectedFocusColors { get; set; } = new ColorScheme(ConsoleColor.Black, ConsoleColor.Cyan);
 
@@ -66,16 +67,17 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             if (!IsVisible) return;
 
             var colors = HasFocus ? FocusColors : NormalColors;
+            var borderStyle = HasFocus ? BorderStyle.Double : BorderStyle.Single;
             
             // Draw border
-            renderEngine.DrawBox(X, Y, Width, Height, GetBorderStyle(), colors);
+            renderEngine.DrawBox(X, Y, Width, Height, borderStyle, colors);
 
             // Draw items
-            int visibleItems = Height - 2;
+            int visibleItems = Math.Max(0, Height - 2);
             for (int i = 0; i < visibleItems; i++)
             {
                 int itemIndex = _scrollOffset + i;
-                if (itemIndex < _items.Count)
+                if (itemIndex >= 0 && itemIndex < _items.Count)
                 {
                     int itemY = Y + 1 + i;
                     bool isSelected = itemIndex == _selectedIndex;
@@ -84,17 +86,22 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                         : colors;
                     
                     string displayText = _items[itemIndex]?.ToString() ?? string.Empty;
-                    if (displayText.Length > Width - 2)
+                    
+                    // Truncate text if too long
+                    if (displayText.Length > Width - 3) // -3 for border and selection indicator
                     {
-                        displayText = displayText.Substring(0, Width - 2);
+                        displayText = displayText.Substring(0, Width - 3) + "...";
                     }
 
-                    renderEngine.DrawString(X + 1, itemY, displayText, itemColors);
-                    
                     // Draw selection indicator
                     if (isSelected && HasFocus)
                     {
-                        renderEngine.DrawChar(X, itemY, '>', itemColors);
+                        renderEngine.DrawChar(X + 1, itemY, '►', itemColors);
+                        renderEngine.DrawString(X + 2, itemY, displayText, itemColors);
+                    }
+                    else
+                    {
+                        renderEngine.DrawString(X + 1, itemY, displayText, itemColors);
                     }
                 }
             }
@@ -121,10 +128,12 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     if (_selectedIndex > 0)
                     {
                         SelectedIndex--;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: Move up, selected index: {_selectedIndex}");
                     }
                     else if (_selectedIndex == -1 && _items.Count > 0)
                     {
                         SelectedIndex = _items.Count - 1;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: Move to last, selected index: {_selectedIndex}");
                     }
                     return true;
 
@@ -132,24 +141,30 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     if (_selectedIndex < _items.Count - 1)
                     {
                         SelectedIndex++;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: Move down, selected index: {_selectedIndex}");
                     }
                     else if (_selectedIndex == -1 && _items.Count > 0)
                     {
                         SelectedIndex = 0;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: Move to first, selected index: {_selectedIndex}");
                     }
                     return true;
 
                 case ConsoleKey.PageUp:
                     if (_items.Count > 0)
                     {
-                        SelectedIndex = Math.Max(0, _selectedIndex - (Height - 2));
+                        int newIndex = Math.Max(0, _selectedIndex - (Height - 2));
+                        SelectedIndex = newIndex;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: Page up, selected index: {_selectedIndex}");
                     }
                     return true;
 
                 case ConsoleKey.PageDown:
                     if (_items.Count > 0)
                     {
-                        SelectedIndex = Math.Min(_items.Count - 1, _selectedIndex + (Height - 2));
+                        int newIndex = Math.Min(_items.Count - 1, _selectedIndex + (Height - 2));
+                        SelectedIndex = newIndex;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: Page down, selected index: {_selectedIndex}");
                     }
                     return true;
 
@@ -157,6 +172,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     if (_items.Count > 0)
                     {
                         SelectedIndex = 0;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: Home, selected index: {_selectedIndex}");
                     }
                     return true;
 
@@ -164,8 +180,18 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     if (_items.Count > 0)
                     {
                         SelectedIndex = _items.Count - 1;
+                        Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: End, selected index: {_selectedIndex}");
                     }
                     return true;
+
+                case ConsoleKey.Enter:
+                    if (_selectedIndex >= 0)
+                    {
+                        Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: Enter pressed on index {_selectedIndex}");
+                        OnSelectionChanged?.Invoke(_selectedIndex);
+                        return true;
+                    }
+                    break;
             }
 
             return false;
@@ -175,17 +201,30 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             if (_selectedIndex >= 0)
             {
+                Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id}: Confirm selection at index {_selectedIndex}");
                 OnSelectionChanged?.Invoke(_selectedIndex);
                 return true;
             }
             return false;
         }
 
+        public override void OnFocus()
+        {
+            base.OnFocus();
+            Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id} received focus");
+        }
+
+        public override void OnBlur()
+        {
+            base.OnBlur();
+            Infrastructure.Logging.TuiLogger.LogDebug($"ListBox {Id} lost focus");
+        }
+
         private void EnsureVisible(int index)
         {
             if (index < 0) return;
             
-            int visibleItems = Height - 2;
+            int visibleItems = Math.Max(0, Height - 2);
             
             if (index < _scrollOffset)
             {
@@ -199,9 +238,11 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
         private void DrawScrollbar(IRenderEngine renderEngine, ColorScheme colors)
         {
-            int scrollbarHeight = Height - 2;
+            int scrollbarHeight = Math.Max(0, Height - 2);
             int scrollbarX = X + Width - 1;
             
+            if (_items.Count == 0) return;
+
             double visibleRatio = (double)scrollbarHeight / _items.Count;
             int thumbHeight = Math.Max(1, (int)(scrollbarHeight * visibleRatio));
             int thumbPosition = (int)(_scrollOffset * visibleRatio);
@@ -211,11 +252,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                 char scrollChar = (i >= thumbPosition && i < thumbPosition + thumbHeight) ? '█' : '│';
                 renderEngine.DrawChar(scrollbarX, Y + 1 + i, scrollChar, colors);
             }
-        }
-        
-        private BorderStyle GetBorderStyle()
-        {
-            return HasFocus ? BorderStyle.Double : BorderStyle.Single;
         }
     }
 }

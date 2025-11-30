@@ -6,7 +6,7 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 namespace WaffleCLI.Core.TUI.Components.Primitive
 {
     /// <summary>
-    /// Panel container component
+    /// Panel container component with resize support
     /// </summary>
     public class Panel : ContainerBase
     {
@@ -34,19 +34,32 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                 renderEngine.DrawBox(X, Y, Width, Height, Border, BorderColors);
             }
 
-            // CRITICAL FIX: Render children with proper coordinates
-            foreach (var child in Children)
-            {
-                if (child.IsVisible)
-                {
-                    child.Render(renderEngine);
-                }
-            }
+            base.Render(renderEngine);
         }
 
         public override void DoLayout()
         {
             // Basic layout - children keep their positions
+            // This can be enhanced with layout managers
+            foreach (var child in Children)
+            {
+                // Ensure children don't exceed panel bounds
+                if (child.X + child.Width > Width)
+                {
+                    child.Width = Math.Max(1, Width - child.X);
+                }
+                if (child.Y + child.Height > Height)
+                {
+                    child.Height = Math.Max(1, Height - child.Y);
+                }
+            }
+        }
+
+        public override void Update()
+        {
+            // Update layout when dimensions change
+            DoLayout();
+            base.Update();
         }
     }
 }

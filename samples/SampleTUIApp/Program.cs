@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using WaffleCLI.Abstractions.TUI.Configuration;
+using WaffleCLI.Abstractions.TUI.Input;
 using WaffleCLI.Core.TUI.Application;
 using WaffleCLI.Core.TUI.Components.Primitive;
 using WaffleCLI.Core.TUI.Components.Layout;
@@ -7,8 +8,9 @@ using WaffleCLI.Core.TUI.Input;
 using WaffleCLI.Core.TUI.Configuration;
 using WaffleCLI.Core.TUI.Infrastructure.Logging;
 
-// Enable detailed logging
+// Enable logging but use quiet mode to avoid console spam
 TuiLogger.EnableLogging = true;
+TuiLogger.QuietMode = true; // This is the key setting - no console output from logs
 TuiLogger.LogFile = "tui-debug.log";
 TuiLogger.ClearLog();
 
@@ -23,7 +25,6 @@ try
     Console.WriteLine("📝 Loading settings...");
     var settingsManager = new SettingsManager("tui-settings.json");
     
-    // Don't try to create settings file if it fails - use defaults
     if (!File.Exists("tui-settings.json"))
     {
         TuiLogger.LogInfo("Settings file not found, using defaults");
@@ -37,7 +38,6 @@ try
     var settings = settingsManager.Settings;
 
     Console.WriteLine("🔨 Building TUI application...");
-    TuiLogger.LogInfo("Building TuiApplication");
     
     var app = new TuiApplicationBuilder()
         .ConfigureServices(services =>
@@ -45,13 +45,13 @@ try
             TuiLogger.LogInfo("Configuring services");
             services.AddSingleton(settingsManager);
             
-            // Apply configuration
+            // Apply configuration with optimized settings
             services.AddSingleton<ITuiConfiguration>(new TuiConfiguration
             {
                 DefaultTheme = settings.Theme,
-                FrameRate = settings.FrameRate,
+                FrameRate = 30, // Reduced for better performance
                 EnableDoubleBuffering = settings.EnableDoubleBuffering,
-                EnableInputLogging = settings.EnableInputLogging
+                EnableInputLogging = false // Disable input logging to reduce spam
             });
         })
         .UseRootComponent<DemoApp>()
@@ -70,12 +70,17 @@ try
     Console.ReadKey(true);
     
     TuiLogger.LogInfo("Starting application main loop");
-    Console.Clear(); // Clear the startup messages
+    Console.Clear();
     
     // Run the application
     app.Run();
     
     TuiLogger.LogInfo("Application exited normally");
+    
+    // Show exit message
+    Console.WriteLine("👋 Application finished. Check tui-debug.log for details.");
+    Console.WriteLine("Press any key to exit...");
+    Console.ReadKey();
 }
 catch (Exception ex)
 {
@@ -95,18 +100,20 @@ public class DemoApp : Panel
     private readonly Label _statusLabel;
     private readonly Label _header;
     private readonly Label _instructions;
+    private readonly Label _debugLabel;
     private int _clickCount = 0;
+    private string _lastAction = "App started";
 
     public DemoApp() : base("mainApp")
     {
         TuiLogger.LogInfo("DemoApp constructor started");
         
-        // Safe console dimensions with fallback
+        // Safe console dimensions with fallback and validation
         try
         {
-            Width = Console.WindowWidth;
-            Height = Console.WindowHeight;
-            TuiLogger.LogInfo($"Console dimensions: {Width}x{Height}");
+            Width = Math.Max(40, Console.WindowWidth);
+            Height = Math.Max(20, Console.WindowHeight);
+            TuiLogger.LogInfo($"DemoApp dimensions: {Width}x{Height}");
         }
         catch (Exception ex)
         {
@@ -115,18 +122,18 @@ public class DemoApp : Panel
             Height = 24;
         }
 
-        // Ensure minimum dimensions
-        Width = Math.Max(40, Width);
-        Height = Math.Max(20, Height);
+        BackgroundColors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Black, ConsoleColor.DarkBlue);
+        Border = WaffleCLI.Abstractions.TUI.Rendering.Enums.BorderStyle.Single;
+        BorderColors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue);
 
         TuiLogger.LogInfo("Creating UI components");
 
-        // Create header
+        // Create header with safe positioning
         _header = new Label("header")
         {
             X = 2,
             Y = 1,
-            Width = Width - 4,
+            Width = Math.Max(10, Width - 4),
             Height = 1,
             Text = "🐹 WaffleCLI TUI Framework Demo 🐹",
             Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue)
@@ -170,14 +177,26 @@ public class DemoApp : Panel
             _listBox.Items.Add($"Sample Item {i}");
         }
 
+        // Debug label to show current focus
+        _debugLabel = new Label("debugLabel")
+        {
+            X = 35,
+            Y = 3,
+            Width = 40,
+            Height = 1,
+            Text = "Debug: No focus",
+            Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Cyan, ConsoleColor.DarkBlue)
+        };
+
         // Status label
         _statusLabel = new Label("statusLabel")
         {
             X = 2,
             Y = 18,
-            Width = Width - 4,
+            Width = Math.Max(10, Width - 4),
             Height = 1,
-            Text = "✅ Framework initialized! Use Tab to navigate, Esc to exit."
+            Text = "✅ Framework initialized! Use Tab to navigate, Esc to exit.",
+            Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue)
         };
 
         // Instructions
@@ -185,9 +204,10 @@ public class DemoApp : Panel
         {
             X = 2,
             Y = 20,
-            Width = Width - 4,
+            Width = Math.Max(10, Width - 4),
             Height = 3,
-            Text = "Controls: Tab=Navigate, Arrows=Lists, Enter=Buttons, Type=Text, Esc=Exit"
+            Text = "Controls: Tab=Navigate, Arrows=Lists, Enter=Buttons, Type=Text, Esc=Exit",
+            Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue)
         };
 
         TuiLogger.LogInfo("Adding components to panel");
@@ -197,6 +217,7 @@ public class DemoApp : Panel
         AddChild(_button);
         AddChild(_textBox);
         AddChild(_listBox);
+        AddChild(_debugLabel);
         AddChild(_statusLabel);
         AddChild(_instructions);
 
@@ -208,7 +229,10 @@ public class DemoApp : Panel
         _clickCount++;
         var text = string.IsNullOrEmpty(_textBox.Text) ? "<empty>" : _textBox.Text;
         _statusLabel.Text = $"🎉 Button clicked {_clickCount} times! Text: '{text}'";
+        _lastAction = $"Button clicked {_clickCount} times";
         
+        TuiLogger.LogInfo($"Button clicked! Count: {_clickCount}, Text: '{text}'");
+
         if (!string.IsNullOrEmpty(_textBox.Text))
         {
             _listBox.Items.Add($"📝 User entry: {_textBox.Text}");
@@ -222,12 +246,32 @@ public class DemoApp : Panel
         {
             var item = _listBox.Items[index];
             _statusLabel.Text = $"🔍 Selected: {item} (index {index})";
+            _lastAction = $"Selected: {item}";
+            TuiLogger.LogInfo($"List selection: {item} at index {index}");
         }
     }
 
-    public override void Render(WaffleCLI.Abstractions.TUI.Rendering.IRenderEngine renderEngine)
+    public override void Update()
     {
-        TuiLogger.LogDebug($"DemoApp.Render called - Visible: {IsVisible}, Children: {Children.Count}");
-        base.Render(renderEngine);
+        // Update debug info
+        UpdateDebugInfo();
+        base.Update();
+    }
+
+    private void UpdateDebugInfo()
+    {
+        // This is a simplified way to track focus - in a real app you'd inject FocusManager
+        string focusInfo = "Focus: ";
+        
+        if (_button.HasFocus)
+            focusInfo = "Focus: Button";
+        else if (_textBox.HasFocus)
+            focusInfo = "Focus: TextBox";
+        else if (_listBox.HasFocus)
+            focusInfo = "Focus: ListBox";
+        else
+            focusInfo = "Focus: None";
+
+        _debugLabel.Text = $"{focusInfo} | Last: {_lastAction}";
     }
 }

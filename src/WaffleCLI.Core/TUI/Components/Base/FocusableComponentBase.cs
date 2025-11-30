@@ -18,8 +18,13 @@ namespace WaffleCLI.Core.TUI.Components.Base
                 if (_hasFocus != value)
                 {
                     _hasFocus = value;
-                    if (value) OnFocus();
-                    else OnBlur();
+                    // Log only once to avoid duplication
+                    Infrastructure.Logging.TuiLogger.LogDebug($"Component {Id} focus changed to: {value}");
+                    
+                    if (value) 
+                        OnFocus();
+                    else 
+                        OnBlur();
                 }
             }
         }
@@ -30,39 +35,34 @@ namespace WaffleCLI.Core.TUI.Components.Base
 
         public virtual void OnFocus()
         {
-            // Can be overridden by derived classes
+            // Base implementation - can be overridden
         }
 
         public virtual void OnBlur()
         {
-            // Can be overridden by derived classes
+            // Base implementation - can be overridden
         }
 
         public abstract bool HandleInput(InputEvent inputEvent);
         
         protected virtual bool HandleCommonNavigation(InputEvent inputEvent)
         {
-            switch (inputEvent.Key)
+            // Handle Tab navigation - let FocusManager handle this
+            if (inputEvent.Key == ConsoleKey.Tab)
             {
-                case ConsoleKey.Tab:
-                    if (inputEvent.Modifiers.HasFlag(KeyModifiers.Shift))
-                    {
-                        // Focus previous - handled by FocusManager
-                        return false;
-                    }
-                    else
-                    {
-                        // Focus next - handled by FocusManager
-                        return false;
-                    }
-                    
-                case ConsoleKey.Enter:
-                    // Confirm action
-                    return HandleConfirm();
-                    
-                case ConsoleKey.Escape:
-                    // Cancel action
-                    return HandleCancel();
+                return false;
+            }
+            
+            // Handle Enter as confirm
+            if (inputEvent.Key == ConsoleKey.Enter)
+            {
+                return HandleConfirm();
+            }
+            
+            // Handle Escape as cancel
+            if (inputEvent.Key == ConsoleKey.Escape)
+            {
+                return HandleCancel();
             }
             
             return false;

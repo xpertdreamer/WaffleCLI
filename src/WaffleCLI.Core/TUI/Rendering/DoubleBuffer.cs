@@ -5,7 +5,7 @@ using WaffleCLI.Core.TUI.Infrastructure.Logging;
 namespace WaffleCLI.Core.TUI.Rendering
 {
     /// <summary>
-    /// Double buffer implementation for flicker-free rendering
+    /// Optimized double buffer implementation for flicker-free rendering
     /// </summary>
     public class DoubleBuffer : IBuffer
     {
@@ -18,6 +18,7 @@ namespace WaffleCLI.Core.TUI.Rendering
         private readonly int _width;
         private readonly int _height;
         private bool _disposed = false;
+        private bool _firstRender = true;
 
         public int Width => _width;
         public int Height => _height;
@@ -58,7 +59,6 @@ namespace WaffleCLI.Core.TUI.Rendering
                 _backForeground[i] = colors.Foreground;
                 _backBackground[i] = colors.Background;
             }
-            TuiLogger.LogDebug($"Buffer cleared with colors: {colors.Foreground}/{colors.Background}");
         }
 
         public void Swap()
@@ -72,41 +72,78 @@ namespace WaffleCLI.Core.TUI.Rendering
         {
             try
             {
-                int changedPixels = 0;
-                Console.SetCursorPosition(0, 0);
-                
-                for (int y = 0; y < _height; y++)
+                if (_firstRender)
                 {
-                    for (int x = 0; x < _width; x++)
-                    {
-                        int index = y * _width + x;
-                        
-                        // Only update changed pixels
-                        if (_frontBuffer[index] != _backBuffer[index] ||
-                            _frontForeground[index] != _backForeground[index] ||
-                            _frontBackground[index] != _backBackground[index])
-                        {
-                            changedPixels++;
-                            Console.SetCursorPosition(x, y);
-                            Console.ForegroundColor = _backForeground[index];
-                            Console.BackgroundColor = _backBackground[index];
-                            Console.Write(_backBuffer[index]);
-                        }
-                    }
+                    // Force full render on first frame
+                    RenderFullFrame();
+                    _firstRender = false;
                 }
-                
-                if (changedPixels > 0)
+                else
                 {
-                    TuiLogger.LogDebug($"Rendered {changedPixels} changed pixels");
+                    // Differential rendering for subsequent frames
+                    RenderDifferential();
                 }
             }
             catch (Exception ex)
             {
                 TuiLogger.LogError("Error in RenderToConsole", ex);
+                // Fallback to full render on error
+                RenderFullFrame();
             }
             finally
             {
                 Console.ResetColor();
+            }
+        }
+
+        private void RenderFullFrame()
+        {
+            Console.SetCursorPosition(0, 0);
+            for (int y = 0; y < _height; y++)
+            {
+                for (int x = 0; x < _width; x++)
+                {
+                    int index = y * _width + x;
+                    Console.ForegroundColor = _backForeground[index];
+                    Console.BackgroundColor = _backBackground[index];
+                    Console.Write(_backBuffer[index]);
+                }
+                
+                // Move to next line if not at the bottom
+                if (y < _height - 1)
+                {
+                    Console.WriteLine();
+                }
+            }
+        }
+
+        private void RenderDifferential()
+        {
+            int changedPixels = 0;
+            
+            for (int y = 0; y < _height; y++)
+            {
+                for (int x = 0; x < _width; x++)
+                {
+                    int index = y * _width + x;
+                    
+                    // Only update changed pixels
+                    if (_frontBuffer[index] != _backBuffer[index] ||
+                        _frontForeground[index] != _backForeground[index] ||
+                        _frontBackground[index] != _backBackground[index])
+                    {
+                        changedPixels++;
+                        Console.SetCursorPosition(x, y);
+                        Console.ForegroundColor = _backForeground[index];
+                        Console.BackgroundColor = _backBackground[index];
+                        Console.Write(_backBuffer[index]);
+                    }
+                }
+            }
+            
+            if (changedPixels > 1000) // Log only if significant changes
+            {
+                TuiLogger.LogDebug($"Rendered {changedPixels} changed pixels (differential)");
             }
         }
 
