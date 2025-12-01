@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <PublishAot>true</PublishAot>
+        <InvariantGlobalization>true</InvariantGlobalization>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\WaffleCLI\WaffleCLI.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="binaries.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="bin\Debug\net8.0\WaffleCLI.Runtime.pdb" />
+        <Content Include="tui-settings.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ClCompile Include="cpp_examples\hello_world\hello_world.cpp" />
+      <ClCompile Include="cpp_examples\simple_calc\simple_calc.cpp" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="bin\Debug\net8.0\hello_world.exe" />
+      <None Include="bin\Debug\net8.0\simple_calc.exe" />
+      <None Include="bin\hello_world.exe" />
+      <None Include="bin\simple_calc.exe" />
+    </ItemGroup>
+
+</Project>
