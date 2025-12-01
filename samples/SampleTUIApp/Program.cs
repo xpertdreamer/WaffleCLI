@@ -1,11 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using WaffleCLI.Abstractions.TUI.Configuration;
-using WaffleCLI.Abstractions.TUI.Input;
 using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 using WaffleCLI.Core.TUI.Application;
 using WaffleCLI.Core.TUI.Components.Primitive;
-using WaffleCLI.Core.TUI.Components.Layout;
-using WaffleCLI.Core.TUI.Input;
 using WaffleCLI.Core.TUI.Configuration;
 using WaffleCLI.Core.TUI.Infrastructure.Logging;
 
