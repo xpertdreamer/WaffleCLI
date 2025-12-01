@@ -1,0 +1,10 @@
+Compilation Instructions:
+-----------------------
+Windows (Visual Studio):
+  cl hello_world.cpp /EHsc /Fe:hello_world.exe
+
+Windows (MinGW):
+  g++ -o hello_world.exe hello_world.cpp -static
+
+Linux/macOS:
+  g++ -o hello_world hello_world.cpp -std=c++17

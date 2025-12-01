@@ -4,7 +4,7 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 namespace WaffleCLI.Core.TUI.Rendering
 {
     /// <summary>
-    /// Highly optimized double buffer with minimal console operations
+    /// Optimized double buffer with precise cursor control to prevent scrolling
     /// </summary>
     public class DoubleBuffer : IBuffer
     {
@@ -20,6 +20,8 @@ namespace WaffleCLI.Core.TUI.Rendering
         private bool _firstRender = true;
         private readonly bool[] _dirtyLines;
         private int _dirtyLineCount = 0;
+        private ConsoleColor _clearForeground = ConsoleColor.Gray;
+        private ConsoleColor _clearBackground = ConsoleColor.Black;
 
         public int Width => _width;
         public int Height => _height;
@@ -66,9 +68,10 @@ namespace WaffleCLI.Core.TUI.Rendering
 
         public void Clear(ColorScheme colors)
         {
-            // Only clear if colors changed or buffer is dirty
-            bool needsClear = _dirtyLineCount > 0;
-            
+            _clearForeground = colors.Foreground;
+            _clearBackground = colors.Background;
+
+            // Clear back buffer with specified colors
             for (int i = 0; i < _backBuffer.Length; i++)
             {
                 _backBuffer[i] = ' ';
@@ -76,7 +79,7 @@ namespace WaffleCLI.Core.TUI.Rendering
                 _backBackground[i] = colors.Background;
             }
             
-            // Mark all lines as dirty
+            // Mark all lines as dirty for next render
             for (int y = 0; y < _height; y++)
             {
                 if (!_dirtyLines[y])
@@ -130,18 +133,14 @@ namespace WaffleCLI.Core.TUI.Rendering
 
         private void RenderFullFrame()
         {
-            Console.SetCursorPosition(0, 0);
-            
+            // For full frame render, we render all lines
             for (int y = 0; y < _height; y++)
             {
                 RenderLine(y);
-                
-                // Move to next line if not last
-                if (y < _height - 1)
-                {
-                    Console.WriteLine();
-                }
             }
+            
+            // Ensure cursor is at the bottom after rendering
+            Console.SetCursorPosition(0, Math.Min(_height, Console.WindowHeight - 1));
         }
 
         private void RenderDirtyLines()
@@ -150,23 +149,34 @@ namespace WaffleCLI.Core.TUI.Rendering
             {
                 if (_dirtyLines[y])
                 {
-                    Console.SetCursorPosition(0, y);
                     RenderLine(y);
                 }
             }
+            
+            // Ensure cursor is at the bottom after rendering
+            Console.SetCursorPosition(0, Math.Min(_height, Console.WindowHeight - 1));
         }
 
         private void RenderLine(int y)
         {
             int lineStart = y * _width;
+            
+            // Position cursor at the beginning of the line
+            // Ensure we don't try to write beyond console bounds
+            if (y >= Console.WindowHeight) return;
+            
+            Console.SetCursorPosition(0, y);
+            
             ConsoleColor currentFg = _frontForeground[lineStart];
             ConsoleColor currentBg = _frontBackground[lineStart];
             
             Console.ForegroundColor = currentFg;
             Console.BackgroundColor = currentBg;
 
-            // Build line efficiently
+            // Build and render the entire line at once
             var lineBuilder = new System.Text.StringBuilder(_width);
+            var spans = new List<(string text, ConsoleColor fg, ConsoleColor bg)>();
+            string currentSpan = "";
             
             for (int x = 0; x < _width; x++)
             {
@@ -174,27 +184,43 @@ namespace WaffleCLI.Core.TUI.Rendering
                 var cellFg = _frontForeground[index];
                 var cellBg = _frontBackground[index];
                 
-                // Only change colors when necessary
+                // Check if we need to start a new color span
                 if (cellFg != currentFg || cellBg != currentBg)
                 {
-                    if (lineBuilder.Length > 0)
+                    if (!string.IsNullOrEmpty(currentSpan))
                     {
-                        Console.Write(lineBuilder.ToString());
-                        lineBuilder.Clear();
+                        spans.Add((currentSpan, currentFg, currentBg));
                     }
-                    Console.ForegroundColor = cellFg;
-                    Console.BackgroundColor = cellBg;
+                    
                     currentFg = cellFg;
                     currentBg = cellBg;
+                    currentSpan = _frontBuffer[index].ToString();
                 }
-                
-                lineBuilder.Append(_frontBuffer[index]);
+                else
+                {
+                    currentSpan += _frontBuffer[index];
+                }
             }
             
-            // Write remaining characters
-            if (lineBuilder.Length > 0)
+            // Add the last span
+            if (!string.IsNullOrEmpty(currentSpan))
             {
-                Console.Write(lineBuilder.ToString());
+                spans.Add((currentSpan, currentFg, currentBg));
+            }
+            
+            // Render all spans
+            foreach (var span in spans)
+            {
+                Console.ForegroundColor = span.fg;
+                Console.BackgroundColor = span.bg;
+                Console.Write(span.text);
+            }
+            
+            // Clear the rest of the line if console is wider than buffer
+            int remainingWidth = Console.WindowWidth - _width;
+            if (remainingWidth > 0)
+            {
+                Console.Write(new string(' ', remainingWidth));
             }
         }
 

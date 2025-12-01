@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "lastUpdated": "2025-12-01T10:30:00Z",
+  "binaries": [
+    {
+      "id": "cpp_calculator",
+      "name": "C++ Calculator",
+      "description": "Interactive C++ calculator with basic math operations",
+      "executablePath": "../../simple_calc.exe",
+      "arguments": "",
+      "workingDirectory": "./",
+      "category": "C++ Examples",
+      "icon": "🧮",
+      "enabled": true,
+      "requiresInput": true,
+      "inputPrompt": "Enter math command:",
+      "tags": ["cpp", "calculator", "math", "interactive"]
+    },
+    {
+      "id": "hello_world",
+      "name": "Hello World!",
+      "description": "Just a simple program",
+      "executablePath": "../../hello_world.exe",
+      "arguments": "",
+      "workingDirectory": "./",
+      "category": "C++ Examples",
+      "icon": "👋",
+      "enabled": true,
+      "requiresInput": false,
+      "inputPrompt": "",
+      "tags": ["cpp", "hello", "world", "hello_world"]
+    }
+  ],
+  "categories": ["C++ Examples"]
+}

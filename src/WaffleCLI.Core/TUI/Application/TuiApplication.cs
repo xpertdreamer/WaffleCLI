@@ -125,9 +125,16 @@ namespace WaffleCLI.Core.TUI.Application
                 Console.Clear();
                 
                 _lastWidth = Math.Max(40, Console.WindowWidth);
-                _lastHeight = Math.Max(20, Console.WindowHeight - 1);
+                _lastHeight = Math.Max(20, Console.WindowHeight);
+                
+                if (_lastWidth < 40) _lastWidth = 40;
+                if (_lastHeight < 20) _lastHeight = 20;
                 
                 _renderEngine.Initialize(_lastWidth, _lastHeight);
+                
+                Console.SetCursorPosition(0, 0);
+                Console.Write(new string(' ', _lastWidth * _lastHeight));
+                Console.SetCursorPosition(0, 0);
                 
                 _keyBindingManager.RegisterGlobalHotkey(ConsoleKey.Escape, KeyModifiers.None, Stop);
             }
@@ -193,7 +200,11 @@ namespace WaffleCLI.Core.TUI.Application
                     {
                         panel.Width = currentWidth;
                         panel.Height = currentHeight;
-                        panel.DoLayout();
+                        // panel.DoLayout();
+                        if (panel is WaffleCLI.Core.TUI.Components.Base.ContainerBase container)
+                        {
+                            container.DoLayout();
+                        }
                     }
                     
                     return true;
@@ -201,7 +212,8 @@ namespace WaffleCLI.Core.TUI.Application
             }
             catch (Exception ex)
             {
-                // Ignore resize errors
+                // Log resize error but don't crash
+                Infrastructure.Logging.TuiLogger.LogError("Console resize failed", ex);
             }
             
             return false;

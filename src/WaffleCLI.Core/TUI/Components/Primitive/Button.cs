@@ -105,7 +105,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
     
             // Force immediate visual feedback
             RequestVisualUpdate();
-    
+            
             Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} invoking OnClick action");
             OnClick?.Invoke();
     

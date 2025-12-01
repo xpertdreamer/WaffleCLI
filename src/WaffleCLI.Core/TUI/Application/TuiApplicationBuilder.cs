@@ -31,6 +31,7 @@ namespace WaffleCLI.Core.TUI.Application
             _services.AddSingleton<FocusManager>();
             _services.AddSingleton<KeyBindingManager>();
             _services.AddSingleton<ThemeManager>();
+            _services.AddSingleton<BinariesManager>();
             _services.AddSingleton<IRenderEngine, RenderEngine>();
             _services.AddSingleton<IInputHandler, InputHandler>();
             _services.AddSingleton<ITuiConfiguration, TuiConfiguration>();

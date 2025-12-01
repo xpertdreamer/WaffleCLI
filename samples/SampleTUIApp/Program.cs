@@ -192,7 +192,7 @@ public class DemoApp : Panel
         {
             X = 2,
             Y = 18,
-            Width = Math.Max(10, Width - 4),
+            Width = Math.Max(10, Width - 6),
             Height = 1,
             Text = "✅ Framework initialized! Use Tab to navigate, Esc to exit.",
             Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue)

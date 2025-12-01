@@ -43,7 +43,7 @@ namespace WaffleCLI.Core.TUI.Input
                 }
 
                 // Then, try focused component
-                if (_focusManager.CurrentFocus is IFocusable focused && focused.IsEnabled)
+                if (_focusManager.CurrentFocus is { IsEnabled: true } focused)
                 {
                     Infrastructure.Logging.TuiLogger.LogDebug($"Routing input to focused component: {focused.Id}");
                     if (focused.HandleInput(inputEvent))

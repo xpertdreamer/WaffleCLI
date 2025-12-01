@@ -56,10 +56,10 @@ namespace WaffleCLI.Core.TUI.Rendering
             if (!_initialized || string.IsNullOrEmpty(text) || _buffer == null) 
                 return;
 
-            // Optimized: calculate visible range
+            // Clamp coordinates to buffer bounds
             int startX = Math.Max(0, x);
             int endX = Math.Min(Width, x + text.Length);
-            int drawY = y;
+            int drawY = Math.Clamp(y, 0, Height - 1);
             
             if (drawY < 0 || drawY >= Height) return;
             if (startX >= endX) return;
@@ -80,9 +80,12 @@ namespace WaffleCLI.Core.TUI.Rendering
         public void DrawChar(int x, int y, char character, ColorScheme colors)
         {
             if (!_initialized || _buffer == null) return;
-            if (x < 0 || x >= Width || y < 0 || y >= Height) return;
             
-            _buffer.SetPixel(x, y, character, colors.Foreground, colors.Background);
+            // Clamp coordinates to buffer bounds
+            int clampedX = Math.Clamp(x, 0, Width - 1);
+            int clampedY = Math.Clamp(y, 0, Height - 1);
+            
+            _buffer.SetPixel(clampedX, clampedY, character, colors.Foreground, colors.Background);
         }
 
         public void DrawBox(int x, int y, int width, int height, BorderStyle border, ColorScheme colors)

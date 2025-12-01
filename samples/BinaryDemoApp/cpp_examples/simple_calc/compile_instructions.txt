@@ -1,0 +1,10 @@
+Compilation Instructions:
+-----------------------
+Windows (Visual Studio):
+  cl simple_calc.cpp /EHsc /Fe:simple_calc.exe
+
+Windows (MinGW):
+  g++ -o simple_calc.exe simple_calc.cpp -static
+
+Linux/macOS:
+  g++ -o simple_calc simple_calc.cpp -std=c++17
