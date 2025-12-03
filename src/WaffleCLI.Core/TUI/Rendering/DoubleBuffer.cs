@@ -4,7 +4,7 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 namespace WaffleCLI.Core.TUI.Rendering
 {
     /// <summary>
-    /// Optimized double buffer with precise cursor control to prevent scrolling
+    /// Optimized double buffer with boundary checking
     /// </summary>
     public class DoubleBuffer : IBuffer
     {
@@ -45,6 +45,7 @@ namespace WaffleCLI.Core.TUI.Rendering
 
         public void SetPixel(int x, int y, char character, ConsoleColor foreground, ConsoleColor background)
         {
+            // Boundary checking
             if (x < 0 || x >= _width || y < 0 || y >= _height) return;
 
             int index = y * _width + x;

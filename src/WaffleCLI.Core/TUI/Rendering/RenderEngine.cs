@@ -67,20 +67,23 @@ namespace WaffleCLI.Core.TUI.Rendering
         }
 
         /// <summary>
-        /// Draws a string
+        /// Draws a string with boundary checking
         /// </summary>
         public void DrawString(int x, int y, string text, ColorScheme colors)
         {
             if (!_initialized || string.IsNullOrEmpty(text) || _buffer == null) 
                 return;
 
+            // Check if Y coordinate is within buffer bounds
+            if (y < 0 || y >= Height) return;
+
+            // Calculate visible portion of the string
             int startX = Math.Max(0, x);
             int endX = Math.Min(Width, x + text.Length);
-            int drawY = y;
             
-            if (drawY < 0 || drawY >= Height) return;
-            if (startX >= endX) return;
+            if (startX >= endX) return; // No visible part
 
+            // Calculate which part of the text to display
             int textStart = Math.Max(0, -x);
             int textLength = Math.Min(text.Length, endX - startX);
             
@@ -88,25 +91,32 @@ namespace WaffleCLI.Core.TUI.Rendering
 
             string visibleText = text.Substring(textStart, textLength);
             
+            // Draw each character with boundary checking
             for (int i = 0; i < visibleText.Length; i++)
             {
-                _buffer.SetPixel(startX + i, drawY, visibleText[i], colors.Foreground, colors.Background);
+                int drawX = startX + i;
+                if (drawX >= 0 && drawX < Width)
+                {
+                    _buffer.SetPixel(drawX, y, visibleText[i], colors.Foreground, colors.Background);
+                }
             }
         }
 
         /// <summary>
-        /// Draws a character
+        /// Draws a single character with boundary checking
         /// </summary>
         public void DrawChar(int x, int y, char character, ColorScheme colors)
         {
             if (!_initialized || _buffer == null) return;
+            
+            // Check if coordinates are within buffer bounds
             if (x < 0 || x >= Width || y < 0 || y >= Height) return;
             
             _buffer.SetPixel(x, y, character, colors.Foreground, colors.Background);
         }
 
         /// <summary>
-        /// Draws a box
+        /// Draws a box with boundary checking
         /// </summary>
         public void DrawBox(int x, int y, int width, int height, BorderStyle border, ColorScheme colors)
         {
@@ -115,60 +125,62 @@ namespace WaffleCLI.Core.TUI.Rendering
             var borderChars = GetBorderChars(border);
             if (borderChars == null) return;
 
-            // Ensure coordinates are within buffer bounds
+            // Clamp coordinates to buffer bounds
             int x1 = Math.Max(0, x);
             int y1 = Math.Max(0, y);
             int x2 = Math.Min(Width - 1, x + width - 1);
             int y2 = Math.Min(Height - 1, y + height - 1);
             
-            // Adjust width and height to fit within bounds
             int visibleWidth = x2 - x1 + 1;
             int visibleHeight = y2 - y1 + 1;
             
             if (visibleWidth < 2 || visibleHeight < 2) 
-                return; // Too small to draw a proper box
+                return;
 
-            // Draw corners only if they're visible
-            if (x1 == x && y1 == y)
+            // Draw corners only if they fit within original box area
+            if (x >= 0 && x < Width && y >= 0 && y < Height)
                 DrawChar(x, y, borderChars.Value.TopLeft, colors);
-            if (x2 == x + width - 1 && y1 == y)
+            
+            if (x + width - 1 >= 0 && x + width - 1 < Width && y >= 0 && y < Height)
                 DrawChar(x + width - 1, y, borderChars.Value.TopRight, colors);
-            if (x1 == x && y2 == y + height - 1)
+            
+            if (x >= 0 && x < Width && y + height - 1 >= 0 && y + height - 1 < Height)
                 DrawChar(x, y + height - 1, borderChars.Value.BottomLeft, colors);
-            if (x2 == x + width - 1 && y2 == y + height - 1)
+            
+            if (x + width - 1 >= 0 && x + width - 1 < Width && y + height - 1 >= 0 && y + height - 1 < Height)
                 DrawChar(x + width - 1, y + height - 1, borderChars.Value.BottomRight, colors);
 
-            // Draw horizontal borders
-            if (visibleWidth > 2)
+            // Draw horizontal borders with boundary checking
+            if (width > 2)
             {
-                for (int i = x1 + 1; i < x2; i++)
+                for (int i = x + 1; i < x + width - 1; i++)
                 {
-                    if (i >= x && i <= x + width - 1)
+                    if (i >= 0 && i < Width)
                     {
                         // Top border
-                        if (y1 == y && y >= 0 && y < Height)
+                        if (y >= 0 && y < Height)
                             DrawChar(i, y, borderChars.Value.Horizontal, colors);
                         
                         // Bottom border
-                        if (y2 == y + height - 1 && y + height - 1 >= 0 && y + height - 1 < Height)
+                        if (y + height - 1 >= 0 && y + height - 1 < Height)
                             DrawChar(i, y + height - 1, borderChars.Value.Horizontal, colors);
                     }
                 }
             }
 
-            // Draw vertical borders
-            if (visibleHeight > 2)
+            // Draw vertical borders with boundary checking
+            if (height > 2)
             {
-                for (int i = y1 + 1; i < y2; i++)
+                for (int i = y + 1; i < y + height - 1; i++)
                 {
-                    if (i >= y && i <= y + height - 1)
+                    if (i >= 0 && i < Height)
                     {
                         // Left border
-                        if (x1 == x && x >= 0 && x < Width)
+                        if (x >= 0 && x < Width)
                             DrawChar(x, i, borderChars.Value.Vertical, colors);
                         
                         // Right border
-                        if (x2 == x + width - 1 && x + width - 1 >= 0 && x + width - 1 < Width)
+                        if (x + width - 1 >= 0 && x + width - 1 < Width)
                             DrawChar(x + width - 1, i, borderChars.Value.Vertical, colors);
                     }
                 }
@@ -176,7 +188,7 @@ namespace WaffleCLI.Core.TUI.Rendering
         }
 
         /// <summary>
-        /// Draws a line
+        /// Draws a line with boundary checking
         /// </summary>
         public void DrawLine(int x1, int y1, int x2, int y2, char lineChar, ColorScheme colors)
         {
@@ -190,6 +202,7 @@ namespace WaffleCLI.Core.TUI.Rendering
 
             while (true)
             {
+                // Draw only if within buffer bounds
                 if (x1 >= 0 && x1 < Width && y1 >= 0 && y1 < Height)
                 {
                     DrawChar(x1, y1, lineChar, colors);
@@ -204,12 +217,13 @@ namespace WaffleCLI.Core.TUI.Rendering
         }
 
         /// <summary>
-        /// Fills a rectangle
+        /// Fills a rectangle with boundary checking
         /// </summary>
         public void FillRectangle(int x, int y, int width, int height, char fillChar, ColorScheme colors)
         {
             if (!_initialized || _buffer == null) return;
 
+            // Clamp to buffer bounds
             int startX = Math.Max(0, x);
             int startY = Math.Max(0, y);
             int endX = Math.Min(Width, x + width);
@@ -299,53 +313,53 @@ namespace WaffleCLI.Core.TUI.Rendering
             }
         }
     }
+}
+
+/// <summary>
+/// Border characters for different border styles
+/// </summary>
+internal struct BorderChars
+{
+    /// <summary>
+    /// Top left corner
+    /// </summary>
+    public char TopLeft { get; }
 
     /// <summary>
-    /// Border characters for different border styles
+    /// Top right corner
     /// </summary>
-    internal struct BorderChars
-    {
-        /// <summary>
-        /// Top left corner
-        /// </summary>
-        public char TopLeft { get; }
-        
-        /// <summary>
-        /// Top right corner
-        /// </summary>
-        public char TopRight { get; }
-        
-        /// <summary>
-        /// Bottom left corner
-        /// </summary>
-        public char BottomLeft { get; }
-        
-        /// <summary>
-        /// Bottom right corner
-        /// </summary>
-        public char BottomRight { get; }
-        
-        /// <summary>
-        /// Horizontal line
-        /// </summary>
-        public char Horizontal { get; }
-        
-        /// <summary>
-        /// Vertical line
-        /// </summary>
-        public char Vertical { get; }
+    public char TopRight { get; }
 
-        /// <summary>
-        /// Initializes border characters
-        /// </summary>
-        public BorderChars(char topLeft, char topRight, char bottomLeft, char bottomRight, char horizontal, char vertical)
-        {
-            TopLeft = topLeft;
-            TopRight = topRight;
-            BottomLeft = bottomLeft;
-            BottomRight = bottomRight;
-            Horizontal = horizontal;
-            Vertical = vertical;
-        }
+    /// <summary>
+    /// Bottom left corner
+    /// </summary>
+    public char BottomLeft { get; }
+
+    /// <summary>
+    /// Bottom right corner
+    /// </summary>
+    public char BottomRight { get; }
+
+    /// <summary>
+    /// Horizontal line
+    /// </summary>
+    public char Horizontal { get; }
+
+    /// <summary>
+    /// Vertical line
+    /// </summary>
+    public char Vertical { get; }
+
+    /// <summary>
+    /// Initializes border characters
+    /// </summary>
+    public BorderChars(char topLeft, char topRight, char bottomLeft, char bottomRight, char horizontal, char vertical)
+    {
+        TopLeft = topLeft;
+        TopRight = topRight;
+        BottomLeft = bottomLeft;
+        BottomRight = bottomRight;
+        Horizontal = horizontal;
+        Vertical = vertical;
     }
 }

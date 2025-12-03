@@ -7,7 +7,7 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 namespace WaffleCLI.Core.TUI.Components.Primitive
 {
     /// <summary>
-    /// Improved Label component with multi-line text support and text caching
+    /// Improved Label component with boundary-aware text rendering
     /// </summary>
     public class ImprovedLabel : ComponentBase, ILabel
     {
@@ -61,14 +61,24 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             for (int i = 0; i < linesToDraw; i++)
             {
                 string line = _cachedLines[i];
+                int textY = absY + i;
+                
+                // Skip if Y coordinate is out of bounds
+                if (textY < absY || textY >= absY + Height) continue;
                 
                 // Calculate X position based on alignment
                 int textX = CalculateTextX(line, absX);
-                int textY = absY + i;
                 
-                // Verify line fits within bounds
-                if (textX >= absX && textX + line.Length <= absX + Width && 
-                    textY >= absY && textY < absY + Height)
+                // Ensure text doesn't exceed component bounds
+                if (textX < absX) textX = absX;
+                if (textX + line.Length > absX + Width)
+                {
+                    // Trim line if it's too long
+                    line = line.Substring(0, Math.Max(0, (absX + Width) - textX));
+                }
+                
+                // Draw the line if it's not empty
+                if (line.Length > 0)
                 {
                     renderEngine.DrawString(textX, textY, line, Colors);
                 }
@@ -92,7 +102,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             {
                 if (line.Length > Width)
                 {
-                    // Split too long lines
+                    // Split too long lines into multiple lines
                     for (int i = 0; i < line.Length; i += Width)
                     {
                         string chunk = line.Substring(i, Math.Min(Width, line.Length - i));

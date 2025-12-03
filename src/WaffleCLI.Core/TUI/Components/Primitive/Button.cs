@@ -7,7 +7,7 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 namespace WaffleCLI.Core.TUI.Components.Primitive
 {
     /// <summary>
-    /// Button component
+    /// Button component with improved text rendering
     /// </summary>
     public class Button : FocusableComponentBase, IButton
     {
@@ -23,7 +23,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             set
             {
                 _text = value ?? string.Empty;
-                // Text will be trimmed during rendering based on available space
             }
         }
 
@@ -62,7 +61,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         }
 
         /// <summary>
-        /// Renders the button
+        /// Renders the button with boundary-aware text positioning
         /// </summary>
         public override void Render(IRenderEngine renderEngine)
         {
@@ -82,7 +81,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             // Draw text if available and there's enough space
             if (!string.IsNullOrEmpty(Text) && Width > 2 && Height > 0)
             {
-                // Maximum text width (minus left and right borders)
+                // Calculate maximum text width (inside borders)
                 int maxTextWidth = Math.Max(0, Width - 2);
                 string displayText = Text;
                 
@@ -92,19 +91,31 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     displayText = displayText.Substring(0, maxTextWidth);
                 }
                 
-                // Calculate text position centered
-                int textX = absX + 1; // Offset from left border
-                int textY = absY + Height / 2; // Vertically centered
+                // Calculate Y position (vertically centered)
+                int textY = absY + Height / 2;
+                if (textY < absY || textY >= absY + Height)
+                    return; // Y position out of bounds
                 
-                // Center alignment within available space
-                if (displayText.Length < maxTextWidth)
+                // Calculate X position (horizontally centered within available space)
+                int availableSpace = maxTextWidth;
+                int textX = absX + 1; // Start after left border
+                
+                if (displayText.Length < availableSpace)
                 {
-                    textX += (maxTextWidth - displayText.Length) / 2;
+                    // Center the text within available space
+                    int padding = (availableSpace - displayText.Length) / 2;
+                    textX += padding;
                 }
                 
-                // Verify text fits within bounds
-                if (textX >= absX && textX + displayText.Length <= absX + Width &&
-                    textY >= absY && textY < absY + Height)
+                // Ensure text doesn't exceed button bounds
+                if (textX < absX + 1)
+                    textX = absX + 1;
+                
+                if (textX + displayText.Length > absX + Width - 1)
+                    displayText = displayText.Substring(0, (absX + Width - 1) - textX);
+                
+                // Draw the text if it fits
+                if (displayText.Length > 0)
                 {
                     renderEngine.DrawString(textX, textY, displayText, colors);
                 }
