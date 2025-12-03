@@ -66,20 +66,21 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             if (!IsVisible) return;
 
+            int absoluteX = AbsoluteX;
+            int absoluteY = AbsoluteY;
+            
             var colors = HasFocus ? FocusColors : NormalColors;
             var borderStyle = HasFocus ? BorderStyle.Double : BorderStyle.Single;
             
-            // Draw border
-            renderEngine.DrawBox(X, Y, Width, Height, borderStyle, colors);
+            renderEngine.DrawBox(absoluteX, absoluteY, Width, Height, borderStyle, colors);
 
-            // Draw items
             int visibleItems = Math.Max(0, Height - 2);
             for (int i = 0; i < visibleItems; i++)
             {
                 int itemIndex = _scrollOffset + i;
                 if (itemIndex >= 0 && itemIndex < _items.Count)
                 {
-                    int itemY = Y + 1 + i;
+                    int itemY = absoluteY + 1 + i;
                     bool isSelected = itemIndex == _selectedIndex;
                     var itemColors = isSelected 
                         ? (HasFocus ? SelectedFocusColors : SelectedColors)
@@ -87,32 +88,47 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     
                     string displayText = _items[itemIndex]?.ToString() ?? string.Empty;
                     
-                    // Truncate text if too long
-                    if (displayText.Length > Width - 3) // -3 for border and selection indicator
+                    if (displayText.Length > Width - 3)
                     {
                         displayText = displayText.Substring(0, Width - 3) + "...";
                     }
 
-                    // Draw selection indicator
                     if (isSelected && HasFocus)
                     {
-                        renderEngine.DrawChar(X + 1, itemY, '►', itemColors);
-                        renderEngine.DrawString(X + 2, itemY, displayText, itemColors);
+                        renderEngine.DrawChar(absoluteX + 1, itemY, '►', itemColors);
+                        renderEngine.DrawString(absoluteX + 2, itemY, displayText, itemColors);
                     }
                     else
                     {
-                        renderEngine.DrawString(X + 1, itemY, displayText, itemColors);
+                        renderEngine.DrawString(absoluteX + 1, itemY, displayText, itemColors);
                     }
                 }
             }
 
-            // Draw scrollbar if needed
             if (_items.Count > visibleItems)
             {
-                DrawScrollbar(renderEngine, colors);
+                DrawScrollbar(renderEngine, colors, absoluteX, absoluteY);
             }
 
             base.Render(renderEngine);
+        }
+
+        private void DrawScrollbar(IRenderEngine renderEngine, ColorScheme colors, int baseX, int baseY)
+        {
+            int scrollbarHeight = Math.Max(0, Height - 2);
+            int scrollbarX = baseX + Width - 1;
+            
+            if (_items.Count == 0) return;
+
+            double visibleRatio = (double)scrollbarHeight / _items.Count;
+            int thumbHeight = Math.Max(1, (int)(scrollbarHeight * visibleRatio));
+            int thumbPosition = (int)(_scrollOffset * visibleRatio);
+
+            for (int i = 0; i < scrollbarHeight; i++)
+            {
+                char scrollChar = (i >= thumbPosition && i < thumbPosition + thumbHeight) ? '█' : '│';
+                renderEngine.DrawChar(scrollbarX, baseY + 1 + i, scrollChar, colors);
+            }
         }
 
         public override bool HandleInput(InputEvent inputEvent)
@@ -236,22 +252,22 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             }
         }
 
-        private void DrawScrollbar(IRenderEngine renderEngine, ColorScheme colors)
-        {
-            int scrollbarHeight = Math.Max(0, Height - 2);
-            int scrollbarX = X + Width - 1;
-            
-            if (_items.Count == 0) return;
-
-            double visibleRatio = (double)scrollbarHeight / _items.Count;
-            int thumbHeight = Math.Max(1, (int)(scrollbarHeight * visibleRatio));
-            int thumbPosition = (int)(_scrollOffset * visibleRatio);
-
-            for (int i = 0; i < scrollbarHeight; i++)
-            {
-                char scrollChar = (i >= thumbPosition && i < thumbPosition + thumbHeight) ? '█' : '│';
-                renderEngine.DrawChar(scrollbarX, Y + 1 + i, scrollChar, colors);
-            }
-        }
+        // private void DrawScrollbar(IRenderEngine renderEngine, ColorScheme colors)
+        // {
+        //     int scrollbarHeight = Math.Max(0, Height - 2);
+        //     int scrollbarX = X + Width - 1;
+        //     
+        //     if (_items.Count == 0) return;
+        //
+        //     double visibleRatio = (double)scrollbarHeight / _items.Count;
+        //     int thumbHeight = Math.Max(1, (int)(scrollbarHeight * visibleRatio));
+        //     int thumbPosition = (int)(_scrollOffset * visibleRatio);
+        //
+        //     for (int i = 0; i < scrollbarHeight; i++)
+        //     {
+        //         char scrollChar = (i >= thumbPosition && i < thumbPosition + thumbHeight) ? '█' : '│';
+        //         renderEngine.DrawChar(scrollbarX, Y + 1 + i, scrollChar, colors);
+        //     }
+        // }
     }
 }

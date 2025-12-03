@@ -119,43 +119,66 @@ namespace WaffleCLI.Core.TUI.Configuration
 
         private TuiSettings CreateDefaultSettings()
         {
-            return new TuiSettings
+            try
             {
-                Theme = "default",
-                FrameRate = 60,
-                EnableDoubleBuffering = true,
-                EnableInputLogging = false,
-                Components = new ComponentSettings
+                int defaultWidth = 120;
+                int defaultHeight = 35;
+                
+                try
                 {
-                    Button = new ButtonSettings
-                    {
-                        DefaultWidth = 12,
-                        DefaultHeight = 3,
-                        NormalColors = "primary",
-                        FocusColors = "focus"
-                    },
-                    TextBox = new TextBoxSettings
-                    {
-                        DefaultWidth = 20,
-                        DefaultHeight = 1,
-                        MaxLength = 256
-                    },
-                    ListBox = new ListBoxSettings
-                    {
-                        DefaultWidth = 30,
-                        DefaultHeight = 10
-                    }
-                },
-                Colors = new ColorSettings
-                {
-                    Primary = "White:DarkBlue",
-                    Secondary = "Gray:Black",
-                    Focus = "Black:White",
-                    Success = "Green:Black",
-                    Warning = "Yellow:Black",
-                    Error = "Red:Black"
+                    defaultWidth = Math.Max(80, Console.WindowWidth);
+                    defaultHeight = Math.Max(25, Console.WindowHeight);
                 }
-            };
+                catch
+                {
+                    // ignore
+                }
+
+                return new TuiSettings
+                {
+                    Theme = "default",
+                    FrameRate = 60,
+                    EnableDoubleBuffering = true,
+                    EnableInputLogging = false,
+                    WindowWidth = defaultWidth,
+                    WindowHeight = defaultHeight,
+                    Components = new ComponentSettings
+                    {
+                        Button = new ButtonSettings
+                        {
+                            DefaultWidth = 12,
+                            DefaultHeight = 3,
+                            NormalColors = "primary",
+                            FocusColors = "focus"
+                        },
+                        TextBox = new TextBoxSettings
+                        {
+                            DefaultWidth = 20,
+                            DefaultHeight = 1,
+                            MaxLength = 256
+                        },
+                        ListBox = new ListBoxSettings
+                        {
+                            DefaultWidth = 30,
+                            DefaultHeight = 10
+                        }
+                    },
+                    Colors = new ColorSettings
+                    {
+                        Primary = "White:DarkBlue",
+                        Secondary = "Gray:Black",
+                        Focus = "Black:White",
+                        Success = "Green:Black",
+                        Warning = "Yellow:Black",
+                        Error = "Red:Black"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                TuiLogger.LogError("Failed to create default settings", ex);
+                return new TuiSettings();
+            }
         }
 
         public bool CreateDefaultSettingsFile()

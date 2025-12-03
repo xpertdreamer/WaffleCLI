@@ -9,9 +9,6 @@ using WaffleCLI.Core.TUI.Processes;
 
 namespace WaffleCLI.Core.TUI.Components.Primitive
 {
-    /// <summary>
-    /// Console panel component for displaying and interacting with external processes
-    /// </summary>
     public class ConsolePanel : FocusableComponentBase, IDisposable
     {
         private readonly List<string> _outputLines = new List<string>();
@@ -35,10 +32,9 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
         public ConsolePanel(string id) : base(id)
         {
-            Width = 60;
+            Width = 50;
             Height = 20;
             
-            // Add welcome message
             _outputLines.Add("Console Panel Ready");
             _outputLines.Add("Use 'start <command>' to launch a process");
             _outputLines.Add("Type 'exit' to close process, 'clear' to clear console");
@@ -194,17 +190,18 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             }
         }
 
-        public override void Render(IRenderEngine renderEngine)
+         public override void Render(IRenderEngine renderEngine)
         {
             if (!IsVisible) return;
 
+            int absoluteX = AbsoluteX;
+            int absoluteY = AbsoluteY;
+            
             var colors = HasFocus ? FocusColors : NormalColors;
             var borderStyle = HasFocus ? BorderStyle.Double : BorderStyle.Single;
             
-            // Draw border
-            renderEngine.DrawBox(X, Y, Width, Height, borderStyle, colors);
+            renderEngine.DrawBox(absoluteX, absoluteY, Width, Height, borderStyle, colors);
 
-            // Draw output lines
             int visibleLines = Math.Max(0, Height - 2);
             lock (_outputLock)
             {
@@ -213,50 +210,43 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     int lineIndex = _scrollOffset + i;
                     if (lineIndex >= 0 && lineIndex < _outputLines.Count)
                     {
-                        int lineY = Y + 1 + i;
+                        int lineY = absoluteY + 1 + i;
                         string line = _outputLines[lineIndex];
                         
-                        // Truncate line if too long
                         if (line.Length > Width - 2)
                         {
                             line = line.Substring(0, Width - 2);
                         }
                         
-                        renderEngine.DrawString(X + 1, lineY, line, colors);
+                        renderEngine.DrawString(absoluteX + 1, lineY, line, colors);
                     }
                 }
             }
 
-            // Draw input line if focused
             if (HasFocus)
             {
-                DrawInputLine(renderEngine);
+                DrawInputLine(renderEngine, absoluteX, absoluteY);
             }
         }
 
-        private void DrawInputLine(IRenderEngine renderEngine)
+        private void DrawInputLine(IRenderEngine renderEngine, int panelX, int panelY)
         {
-            int inputY = Y + Height - 1;
+            int inputY = panelY + Height - 1;
             string inputDisplay = ShowPrompt ? Prompt : "";
             inputDisplay += _currentInput.ToString();
             
-            // Truncate if too long
             if (inputDisplay.Length > Width - 2)
             {
                 inputDisplay = inputDisplay.Substring(inputDisplay.Length - (Width - 2));
             }
             
-            // Draw input background
-            renderEngine.FillRectangle(X + 1, inputY, Width - 2, 1, ' ', InputColors);
+            renderEngine.FillRectangle(panelX + 1, inputY, Width - 2, 1, ' ', InputColors);
+            renderEngine.DrawString(panelX + 1, inputY, inputDisplay, InputColors);
             
-            // Draw input text
-            renderEngine.DrawString(X + 1, inputY, inputDisplay, InputColors);
-            
-            // Draw cursor
             if (_cursorVisible && HasFocus)
             {
-                int cursorX = X + 1 + (ShowPrompt ? Prompt.Length : 0) + _cursorPosition;
-                if (cursorX < X + Width - 1)
+                int cursorX = panelX + 1 + (ShowPrompt ? Prompt.Length : 0) + _cursorPosition;
+                if (cursorX < panelX + Width - 1)
                 {
                     renderEngine.DrawChar(cursorX, inputY, '_', 
                         new ColorScheme(InputColors.Background, InputColors.Foreground));

@@ -16,6 +16,8 @@ namespace WaffleCLI.Abstractions.TUI.Components
         bool IsEnabled { get; set; }
         IComponent? Parent { get; }
         IReadOnlyList<IComponent> Children { get; }
+        int AbsoluteX { get; }
+        int AbsoluteY { get; }
         
         void Render(IRenderEngine renderEngine);
         void Update();

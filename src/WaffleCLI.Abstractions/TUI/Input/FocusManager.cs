@@ -87,8 +87,31 @@ namespace WaffleCLI.Abstractions.TUI.Input
 
         public bool MoveFocus(Direction direction)
         {
-            // For now, just move forward - could implement spatial navigation later
-            return MoveFocusForward();
+            if (!_isEnabled || _focusableComponents.Count == 0) return false;
+            
+            // Actual implementation for directional movement
+            // Note: This is a simple implementation. For complex layouts,
+            // you would need spatial awareness of component positions.
+            switch (direction)
+            {
+                case Direction.Up:
+                    // In a real implementation, you would find the component above
+                    // For now, fall back to forward movement
+                    return MoveFocusForward();
+                    
+                case Direction.Down:
+                    // In a real implementation, you would find the component below
+                    return MoveFocusForward();
+                    
+                case Direction.Left:
+                    return MoveFocusBackward();
+                    
+                case Direction.Right:
+                    return MoveFocusForward();
+                    
+                default:
+                    return MoveFocusForward();
+            }
         }
 
         public bool SetFocus(IFocusable component)

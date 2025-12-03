@@ -48,16 +48,15 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             if (!IsVisible) return;
 
+            int absoluteX = AbsoluteX;
+            int absoluteY = AbsoluteY;
+            
             var colors = HasFocus ? FocusColors : NormalColors;
             var borderStyle = HasFocus ? BorderStyle.Double : BorderStyle.Single;
             
-            // Draw background
-            renderEngine.FillRectangle(X, Y, Width, Height, ' ', colors);
-            
-            // Draw border
-            renderEngine.DrawBox(X, Y, Width, Height, borderStyle, colors);
+            renderEngine.FillRectangle(absoluteX, absoluteY, Width, Height, ' ', colors);
+            renderEngine.DrawBox(absoluteX, absoluteY, Width, Height, borderStyle, colors);
 
-            // Calculate available space for text
             int maxDisplayLength = Math.Max(0, Width - 2);
             if (maxDisplayLength <= 0)
             {
@@ -65,38 +64,31 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                 return;
             }
 
-            // Prepare display text
             string displayText = string.IsNullOrEmpty(Text) ? Placeholder : Text;
             var displayColors = string.IsNullOrEmpty(Text) ? PlaceholderColors : colors;
 
-            // Handle text scrolling for long content
             int displayStart = 0;
             if (displayText.Length > maxDisplayLength)
             {
                 if (HasFocus)
                 {
-                    // Scroll to show cursor position
                     displayStart = Math.Max(0, _cursorPosition - maxDisplayLength + 1);
                     displayStart = Math.Min(displayStart, displayText.Length - maxDisplayLength);
                 }
                 else
                 {
-                    // Show beginning of text when not focused
                     displayStart = 0;
                 }
                 displayText = displayText.Substring(displayStart, Math.Min(maxDisplayLength, displayText.Length - displayStart));
             }
 
-            // Draw text
             if (!string.IsNullOrEmpty(displayText))
             {
-                renderEngine.DrawString(X + 1, Y, displayText, displayColors);
+                renderEngine.DrawString(absoluteX + 1, absoluteY, displayText, displayColors);
             }
 
-            // Draw cursor if focused and enabled
             if (HasFocus && IsEnabled)
             {
-                // Blink cursor (toggle every 500ms)
                 if ((DateTime.Now - _lastCursorBlink).TotalMilliseconds > 500)
                 {
                     _cursorVisible = !_cursorVisible;
@@ -108,11 +100,10 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     int cursorDisplayPos = _cursorPosition - displayStart;
                     if (cursorDisplayPos >= 0 && cursorDisplayPos < maxDisplayLength)
                     {
-                        int cursorX = X + 1 + cursorDisplayPos;
-                        // Invert colors for cursor
+                        int cursorX = absoluteX + 1 + cursorDisplayPos;
                         var cursorColors = new ColorScheme(colors.Background, colors.Foreground);
                         char cursorChar = cursorDisplayPos < displayText.Length ? displayText[cursorDisplayPos] : ' ';
-                        renderEngine.DrawChar(cursorX, Y, cursorChar, cursorColors);
+                        renderEngine.DrawChar(cursorX, absoluteY, cursorChar, cursorColors);
                     }
                 }
             }

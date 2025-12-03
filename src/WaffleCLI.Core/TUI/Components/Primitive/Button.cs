@@ -41,24 +41,45 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             if (!IsVisible) return;
 
+            // Use absolute coordinates for rendering
+            int absX = AbsoluteX;
+            int absY = AbsoluteY;
+    
             var colors = GetCurrentColors();
             var borderStyle = GetBorderStyle();
-            
-            // Draw button background
-            renderEngine.FillRectangle(X, Y, Width, Height, ' ', colors);
-            
-            // Draw button border
-            renderEngine.DrawBox(X, Y, Width, Height, borderStyle, colors);
-            
-            // Draw text centered
-            if (!string.IsNullOrEmpty(Text) && Width >= 4 && Height >= 1)
+    
+            // Draw background and border
+            renderEngine.FillRectangle(absX, absY, Width, Height, ' ', colors);
+            renderEngine.DrawBox(absX, absY, Width, Height, borderStyle, colors);
+    
+            // Draw text if available and there's enough space
+            if (!string.IsNullOrEmpty(Text) && Width > 2 && Height > 0)
             {
-                int textX = X + Math.Max(1, (Width - Text.Length) / 2);
-                int textY = Y + Math.Max(0, Height / 2);
-                
-                if (textX >= X && textX + Text.Length <= X + Width && textY >= Y && textY < Y + Height)
+                // Maximum text width (minus border)
+                int maxTextWidth = Math.Max(0, Width - 2);
+                string displayText = Text;
+        
+                // Trim text if it's too long
+                if (displayText.Length > maxTextWidth)
                 {
-                    renderEngine.DrawString(textX, textY, Text, colors);
+                    displayText = displayText.Substring(0, maxTextWidth);
+                }
+        
+                // Calculate text position centered
+                int textX = absX + 1; // Offset from left border
+                int textY = absY + Height / 2; // Vertically centered
+        
+                // Center alignment
+                if (displayText.Length < maxTextWidth)
+                {
+                    textX += (maxTextWidth - displayText.Length) / 2;
+                }
+        
+                // Verify text fits within bounds
+                if (textX >= absX && textX + displayText.Length <= absX + Width &&
+                    textY >= absY && textY < absY + Height)
+                {
+                    renderEngine.DrawString(textX, textY, displayText, colors);
                 }
             }
 

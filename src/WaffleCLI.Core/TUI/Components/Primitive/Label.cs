@@ -5,9 +5,6 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 
 namespace WaffleCLI.Core.TUI.Components.Primitive
 {
-    /// <summary>
-    /// Label component for displaying text
-    /// </summary>
     public class Label : ComponentBase, ILabel
     {
         private string _text = string.Empty;
@@ -18,7 +15,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             set
             {
                 _text = value ?? string.Empty;
-                // Auto-size if width is 0
                 if (Width == 0)
                 {
                     Width = _text.Length;
@@ -38,25 +34,29 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             if (!IsVisible || string.IsNullOrEmpty(Text)) return;
 
+            // Use absolute coordinates for rendering
+            int absX = AbsoluteX;
+            int absY = AbsoluteY;
+            
             string displayText = Text;
             if (displayText.Length > Width)
             {
                 displayText = displayText.Substring(0, Width);
             }
 
-            int textX = CalculateTextX(displayText);
-            renderEngine.DrawString(textX, Y, displayText, Colors);
+            int textX = CalculateTextX(displayText, absX);
+            renderEngine.DrawString(textX, absY, displayText, Colors);
 
             base.Render(renderEngine);
         }
 
-        private int CalculateTextX(string text)
+        private int CalculateTextX(string text, int baseX)
         {
             return TextAlignment switch
             {
-                TextAlignment.Center => X + (Width - text.Length) / 2,
-                TextAlignment.Right => X + Width - text.Length,
-                _ => X // Left
+                TextAlignment.Center => baseX + (Width - text.Length) / 2,
+                TextAlignment.Right => baseX + Width - text.Length,
+                _ => baseX // Left
             };
         }
     }

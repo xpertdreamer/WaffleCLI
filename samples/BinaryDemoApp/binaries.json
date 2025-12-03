@@ -26,8 +26,8 @@
       "category": "C++ Examples",
       "icon": "👋",
       "enabled": true,
-      "requiresInput": false,
-      "inputPrompt": "",
+      "requiresInput": true,
+      "inputPrompt": ">",
       "tags": ["cpp", "hello", "world", "hello_world"]
     }
   ],

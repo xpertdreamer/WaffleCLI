@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace WaffleCLI.Core.TUI.Configuration
 {
     /// <summary>
-    /// JSON-serializable settings for TUI framework
+    /// Main TUI settings configuration
     /// </summary>
     public class TuiSettings
     {
@@ -19,6 +19,12 @@ namespace WaffleCLI.Core.TUI.Configuration
         [JsonPropertyName("enableInputLogging")]
         public bool EnableInputLogging { get; set; } = false;
 
+        [JsonPropertyName("windowWidth")]
+        public int WindowWidth { get; set; } = 120;
+
+        [JsonPropertyName("windowHeight")]
+        public int WindowHeight { get; set; } = 35;
+
         [JsonPropertyName("components")]
         public ComponentSettings Components { get; set; } = new();
 
@@ -26,6 +32,9 @@ namespace WaffleCLI.Core.TUI.Configuration
         public ColorSettings Colors { get; set; } = new();
     }
 
+    /// <summary>
+    /// Component-specific settings
+    /// </summary>
     public class ComponentSettings
     {
         [JsonPropertyName("button")]
@@ -38,6 +47,9 @@ namespace WaffleCLI.Core.TUI.Configuration
         public ListBoxSettings ListBox { get; set; } = new();
     }
 
+    /// <summary>
+    /// Button component settings
+    /// </summary>
     public class ButtonSettings
     {
         [JsonPropertyName("defaultWidth")]
@@ -53,6 +65,9 @@ namespace WaffleCLI.Core.TUI.Configuration
         public string FocusColors { get; set; } = "focus";
     }
 
+    /// <summary>
+    /// TextBox component settings
+    /// </summary>
     public class TextBoxSettings
     {
         [JsonPropertyName("defaultWidth")]
@@ -65,6 +80,9 @@ namespace WaffleCLI.Core.TUI.Configuration
         public int MaxLength { get; set; } = 256;
     }
 
+    /// <summary>
+    /// ListBox component settings
+    /// </summary>
     public class ListBoxSettings
     {
         [JsonPropertyName("defaultWidth")]
@@ -74,6 +92,9 @@ namespace WaffleCLI.Core.TUI.Configuration
         public int DefaultHeight { get; set; } = 10;
     }
 
+    /// <summary>
+    /// Color scheme settings
+    /// </summary>
     public class ColorSettings
     {
         [JsonPropertyName("primary")]

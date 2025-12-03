@@ -6,7 +6,7 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 namespace WaffleCLI.Core.TUI.Components.Primitive
 {
     /// <summary>
-    /// Panel container component with resize support
+    /// Panel container with border and background
     /// </summary>
     public class Panel : ContainerBase
     {
@@ -22,16 +22,19 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             if (!IsVisible) return;
 
+            int absX = AbsoluteX;
+            int absY = AbsoluteY;
+            
             // Draw background
             if (!BackgroundColors.Equals(ColorScheme.Default))
             {
-                renderEngine.FillRectangle(X, Y, Width, Height, ' ', BackgroundColors);
+                renderEngine.FillRectangle(absX, absY, Width, Height, ' ', BackgroundColors);
             }
 
             // Draw border
             if (Border != BorderStyle.None)
             {
-                renderEngine.DrawBox(X, Y, Width, Height, Border, BorderColors);
+                renderEngine.DrawBox(absX, absY, Width, Height, Border, BorderColors);
             }
 
             base.Render(renderEngine);
@@ -39,27 +42,18 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
         public override void DoLayout()
         {
-            // Basic layout - children keep their positions
-            // This can be enhanced with layout managers
-            foreach (var child in Children)
+            // Ensure children fit within panel
+            FitChildrenToContainer();
+            
+            // Validate all children bounds
+            foreach (var child in Children.OfType<ComponentBase>())
             {
-                // Ensure children don't exceed panel bounds
-                if (child.X + child.Width > Width)
+                if (!child.ValidateBounds())
                 {
-                    child.Width = Math.Max(1, Width - child.X);
-                }
-                if (child.Y + child.Height > Height)
-                {
-                    child.Height = Math.Max(1, Height - child.Y);
+                    Infrastructure.Logging.TuiLogger.LogWarning(
+                        $"Child {child.Id} exceeds panel {Id} bounds");
                 }
             }
-        }
-
-        public override void Update()
-        {
-            // Update layout when dimensions change
-            DoLayout();
-            base.Update();
         }
     }
 }
