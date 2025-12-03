@@ -170,13 +170,11 @@ namespace WaffleCLI.Core.TUI.Rendering
             ConsoleColor currentFg = _frontForeground[lineStart];
             ConsoleColor currentBg = _frontBackground[lineStart];
             
-            Console.ForegroundColor = currentFg;
-            Console.BackgroundColor = currentBg;
-
-            // Build and render the entire line at once
-            var lineBuilder = new System.Text.StringBuilder(_width);
+            // Build and render the entire line at once with proper color spans
             var spans = new List<(string text, ConsoleColor fg, ConsoleColor bg)>();
             string currentSpan = "";
+            ConsoleColor spanFg = currentFg;
+            ConsoleColor spanBg = currentBg;
             
             for (int x = 0; x < _width; x++)
             {
@@ -185,15 +183,15 @@ namespace WaffleCLI.Core.TUI.Rendering
                 var cellBg = _frontBackground[index];
                 
                 // Check if we need to start a new color span
-                if (cellFg != currentFg || cellBg != currentBg)
+                if (cellFg != spanFg || cellBg != spanBg)
                 {
                     if (!string.IsNullOrEmpty(currentSpan))
                     {
-                        spans.Add((currentSpan, currentFg, currentBg));
+                        spans.Add((currentSpan, spanFg, spanBg));
                     }
                     
-                    currentFg = cellFg;
-                    currentBg = cellBg;
+                    spanFg = cellFg;
+                    spanBg = cellBg;
                     currentSpan = _frontBuffer[index].ToString();
                 }
                 else
@@ -205,7 +203,7 @@ namespace WaffleCLI.Core.TUI.Rendering
             // Add the last span
             if (!string.IsNullOrEmpty(currentSpan))
             {
-                spans.Add((currentSpan, currentFg, currentBg));
+                spans.Add((currentSpan, spanFg, spanBg));
             }
             
             // Render all spans

@@ -4,15 +4,14 @@ using WaffleCLI.Abstractions.TUI.Components;
 using WaffleCLI.Abstractions.TUI.Rendering;
 using WaffleCLI.Abstractions.TUI.Input;
 using WaffleCLI.Abstractions.TUI.Exceptions;
-using WaffleCLI.Core.TUI.Input;
 using WaffleCLI.Abstractions.TUI.Configuration;
+using WaffleCLI.Core.TUI.Input;
 using WaffleCLI.Core.TUI.Configuration;
-using WaffleCLI.Core.TUI.Infrastructure.Logging;
 
 namespace WaffleCLI.Core.TUI.Application
 {
     /// <summary>
-    /// Optimized TUI application with minimal overhead
+    /// Main TUI application implementation
     /// </summary>
     public class TuiApplication : ITuiApplication
     {
@@ -27,11 +26,21 @@ namespace WaffleCLI.Core.TUI.Application
         private readonly int _targetFrameTimeMs;
         private int _lastWidth, _lastHeight;
         private int _framesSinceLastRender = 0;
-        private const int FORCE_RENDER_INTERVAL = 2; // Force render every 3rd frame
+        private const int FORCE_RENDER_INTERVAL = 2;
 
+        /// <summary>
+        /// Gets the root component
+        /// </summary>
         public IComponent RootComponent { get; }
+        
+        /// <summary>
+        /// Gets whether the application is running
+        /// </summary>
         public bool IsRunning => _isRunning;
 
+        /// <summary>
+        /// Initializes a new instance of TuiApplication
+        /// </summary>
         public TuiApplication(IServiceProvider serviceProvider, IComponent rootComponent, int targetFps = 60)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
@@ -42,11 +51,17 @@ namespace WaffleCLI.Core.TUI.Application
             _configuration = serviceProvider.GetService<ITuiConfiguration>() ?? new TuiConfiguration();
             RootComponent = rootComponent ?? throw new ArgumentNullException(nameof(rootComponent));
             
-            // Get window dimensions from settings if available
+            // Get current console dimensions
+            _lastWidth = Math.Max(40, Console.WindowWidth);
+            _lastHeight = Math.Max(20, Console.WindowHeight);
+            
+            // Get window dimensions from settings if available (but don't resize console)
             var settingsManager = serviceProvider.GetService<SettingsManager>();
             if (settingsManager != null)
             {
-                ApplyInitialWindowDimensions(settingsManager.Settings);
+                // Store settings but don't apply them to console
+                var settings = settingsManager.Settings;
+                Infrastructure.Logging.TuiLogger.LogInfo($"Settings dimensions: {settings.WindowWidth}x{settings.WindowHeight}");
             }
             
             _frameTimer = new System.Diagnostics.Stopwatch();
@@ -55,54 +70,10 @@ namespace WaffleCLI.Core.TUI.Application
             RegisterFocusableComponents(rootComponent);
             _focusManager.FocusChanged += OnFocusChanged;
         }
-        
-        private void ApplyInitialWindowDimensions(TuiSettings settings)
-        {
-            try
-            {
-                if (settings == null) return;
-                
-                // Store initial dimensions from config
-                _lastWidth = Math.Max(40, settings.WindowWidth);
-                _lastHeight = Math.Max(20, settings.WindowHeight);
-                
-                // Try to resize console window if on Windows
-                if (OperatingSystem.IsWindows())
-                {
-                    try
-                    {
-                        // Ensure dimensions don't exceed maximum
-                        int maxWidth = Math.Min(_lastWidth, Console.LargestWindowWidth);
-                        int maxHeight = Math.Min(_lastHeight, Console.LargestWindowHeight);
-                        
-                        if (maxWidth > Console.WindowWidth || maxHeight > Console.WindowHeight)
-                        {
-                            Console.WindowWidth = maxWidth;
-                            Console.WindowHeight = maxHeight;
-                            Console.BufferWidth = maxWidth;
-                            Console.BufferHeight = maxHeight;
-                            
-                            Infrastructure.Logging.TuiLogger.LogInfo($"Console resized to: {maxWidth}x{maxHeight} from config");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // If we can't resize, use current console dimensions
-                        _lastWidth = Console.WindowWidth;
-                        _lastHeight = Console.WindowHeight - 1;
-                        Infrastructure.Logging.TuiLogger.LogWarning($"Could not resize console: {ex.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Infrastructure.Logging.TuiLogger.LogError("Failed to apply window dimensions from settings", ex);
-                // Fallback to current console dimensions
-                _lastWidth = Math.Max(40, Console.WindowWidth);
-                _lastHeight = Math.Max(20, Console.WindowHeight - 1);
-            }
-        }
 
+        /// <summary>
+        /// Starts the application main loop
+        /// </summary>
         public void Run()
         {
             if (_isRunning) return;
@@ -119,7 +90,6 @@ namespace WaffleCLI.Core.TUI.Application
                     ProcessInput();
                     Update();
                     
-                    // Smart rendering: only render when necessary
                     bool shouldRender = _framesSinceLastRender >= FORCE_RENDER_INTERVAL || 
                                        Console.KeyAvailable || 
                                        CheckConsoleResize();
@@ -134,13 +104,11 @@ namespace WaffleCLI.Core.TUI.Application
                         _framesSinceLastRender++;
                     }
                     
-                    // Efficient frame rate limiting
                     int elapsed = (int)_frameTimer.ElapsedMilliseconds;
                     int sleepTime = _targetFrameTimeMs - elapsed;
                     
                     if (sleepTime > 0)
                     {
-                        // Use precise sleep for small intervals, Thread.Sleep for larger
                         if (sleepTime < 15)
                         {
                             PreciseSleep(sleepTime);
@@ -162,11 +130,17 @@ namespace WaffleCLI.Core.TUI.Application
             }
         }
 
+        /// <summary>
+        /// Stops the application
+        /// </summary>
         public void Stop()
         {
             _isRunning = false;
         }
 
+        /// <summary>
+        /// Forces a refresh of the display
+        /// </summary>
         public void Refresh()
         {
             Render();
@@ -179,33 +153,29 @@ namespace WaffleCLI.Core.TUI.Application
                 Console.CursorVisible = false;
                 Console.ResetColor();
                 Console.Clear();
-        
-                // Get dimensions with minimum value checks
-                _lastWidth = Math.Max(40, Console.WindowWidth);
-                _lastHeight = Math.Max(20, Console.WindowHeight);
-        
-                // Initialize render engine with correct dimensions
+                
+                // Initialize render engine with current console dimensions
                 _renderEngine.Initialize(_lastWidth, _lastHeight);
-        
+                
                 // Set root component dimensions
                 RootComponent.Width = _lastWidth;
                 RootComponent.Height = _lastHeight;
-        
+                
                 // Call DoLayout for root component if it's a container
                 if (RootComponent is IContainer container)
                 {
                     container.DoLayout();
                 }
-        
+                
                 // Perform initial render
                 _renderEngine.BeginFrame();
                 RootComponent.Render(_renderEngine);
                 _renderEngine.EndFrame();
-        
+                
                 // Register global hotkeys
                 _keyBindingManager.RegisterGlobalHotkey(ConsoleKey.Escape, KeyModifiers.None, Stop);
-        
-                TuiLogger.LogInfo($"Application initialized with size: {_lastWidth}x{_lastHeight}");
+                
+                Infrastructure.Logging.TuiLogger.LogInfo($"Application initialized with size: {_lastWidth}x{_lastHeight}");
             }
             catch (Exception ex)
             {
@@ -256,15 +226,15 @@ namespace WaffleCLI.Core.TUI.Application
             try
             {
                 int currentWidth = Console.WindowWidth;
-                int currentHeight = Console.WindowHeight - 1;
-            
+                int currentHeight = Console.WindowHeight;
+                
                 if (currentWidth != _lastWidth || currentHeight != _lastHeight)
                 {
                     _lastWidth = currentWidth;
                     _lastHeight = currentHeight;
-                
+                    
                     _renderEngine.Initialize(currentWidth, currentHeight);
-                
+                    
                     // Handle resize for any IContainer root component
                     if (RootComponent is IContainer container)
                     {
@@ -278,7 +248,7 @@ namespace WaffleCLI.Core.TUI.Application
                         RootComponent.Width = currentWidth;
                         RootComponent.Height = currentHeight;
                     }
-                
+                    
                     return true;
                 }
             }
@@ -286,13 +256,12 @@ namespace WaffleCLI.Core.TUI.Application
             {
                 // Ignore resize errors
             }
-        
+            
             return false;
         }
 
         private void OnFocusChanged(IFocusable? focusedComponent)
         {
-            // Force render on focus change for immediate visual feedback
             _framesSinceLastRender = FORCE_RENDER_INTERVAL;
         }
 
@@ -334,6 +303,9 @@ namespace WaffleCLI.Core.TUI.Application
             }
         }
 
+        /// <summary>
+        /// Disposes the application
+        /// </summary>
         public void Dispose()
         {
             _focusManager.FocusChanged -= OnFocusChanged;

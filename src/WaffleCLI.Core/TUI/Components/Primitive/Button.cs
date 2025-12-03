@@ -7,36 +7,63 @@ using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 namespace WaffleCLI.Core.TUI.Components.Primitive
 {
     /// <summary>
-    /// Fixed Button component with proper input handling
+    /// Button component
     /// </summary>
     public class Button : FocusableComponentBase, IButton
     {
         private string _text = string.Empty;
         private bool _isPressed = false;
 
+        /// <summary>
+        /// Gets or sets the button text
+        /// </summary>
         public string Text 
         { 
             get => _text;
             set
             {
                 _text = value ?? string.Empty;
-                if (_text.Length > Width - 4)
-                    _text = _text.Substring(0, Width - 4);
+                // Text will be trimmed during rendering based on available space
             }
         }
 
+        /// <summary>
+        /// Gets or sets the click action
+        /// </summary>
         public Action? OnClick { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the normal color scheme
+        /// </summary>
         public ColorScheme NormalColors { get; set; } = ColorScheme.Primary;
+        
+        /// <summary>
+        /// Gets or sets the focus color scheme
+        /// </summary>
         public ColorScheme FocusColors { get; set; } = new ColorScheme(ConsoleColor.Black, ConsoleColor.White);
+        
+        /// <summary>
+        /// Gets or sets the pressed color scheme
+        /// </summary>
         public ColorScheme PressedColors { get; set; } = new ColorScheme(ConsoleColor.White, ConsoleColor.DarkRed);
+        
+        /// <summary>
+        /// Gets or sets the disabled color scheme
+        /// </summary>
         public ColorScheme DisabledColors { get; set; } = new ColorScheme(ConsoleColor.DarkGray, ConsoleColor.Black);
 
+        /// <summary>
+        /// Initializes a new Button
+        /// </summary>
         public Button(string id) : base(id)
         {
             Width = 12;
             Height = 3;
         }
 
+        /// <summary>
+        /// Renders the button
+        /// </summary>
         public override void Render(IRenderEngine renderEngine)
         {
             if (!IsVisible) return;
@@ -44,37 +71,37 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             // Use absolute coordinates for rendering
             int absX = AbsoluteX;
             int absY = AbsoluteY;
-    
+            
             var colors = GetCurrentColors();
             var borderStyle = GetBorderStyle();
-    
+            
             // Draw background and border
             renderEngine.FillRectangle(absX, absY, Width, Height, ' ', colors);
             renderEngine.DrawBox(absX, absY, Width, Height, borderStyle, colors);
-    
+            
             // Draw text if available and there's enough space
             if (!string.IsNullOrEmpty(Text) && Width > 2 && Height > 0)
             {
-                // Maximum text width (minus border)
+                // Maximum text width (minus left and right borders)
                 int maxTextWidth = Math.Max(0, Width - 2);
                 string displayText = Text;
-        
+                
                 // Trim text if it's too long
                 if (displayText.Length > maxTextWidth)
                 {
                     displayText = displayText.Substring(0, maxTextWidth);
                 }
-        
+                
                 // Calculate text position centered
                 int textX = absX + 1; // Offset from left border
                 int textY = absY + Height / 2; // Vertically centered
-        
-                // Center alignment
+                
+                // Center alignment within available space
                 if (displayText.Length < maxTextWidth)
                 {
                     textX += (maxTextWidth - displayText.Length) / 2;
                 }
-        
+                
                 // Verify text fits within bounds
                 if (textX >= absX && textX + displayText.Length <= absX + Width &&
                     textY >= absY && textY < absY + Height)
@@ -86,6 +113,9 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             base.Render(renderEngine);
         }
 
+        /// <summary>
+        /// Handles input events
+        /// </summary>
         public override bool HandleInput(InputEvent inputEvent)
         {
             if (!IsEnabled) 
@@ -96,14 +126,12 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
             Infrastructure.Logging.TuiLogger.LogDebug($"Button {Id} received input: {inputEvent.Key}");
 
-            // First try common navigation (Tab, Enter, Escape)
             if (HandleCommonNavigation(inputEvent))
             {
                 Infrastructure.Logging.TuiLogger.LogDebug($"Button {Id} handled common navigation");
                 return true;
             }
 
-            // Handle button-specific input
             switch (inputEvent.Key)
             {
                 case ConsoleKey.Spacebar:
@@ -123,31 +151,31 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         private void PressButton()
         {
             _isPressed = true;
-    
-            // Force immediate visual feedback
             RequestVisualUpdate();
-            
             Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} invoking OnClick action");
             OnClick?.Invoke();
-    
             _isPressed = false;
-    
-            // Force another update after click completes
             RequestVisualUpdate();
         }
 
+        /// <summary>
+        /// Called when button receives focus
+        /// </summary>
         public override void OnFocus()
         {
             base.OnFocus();
-            RequestVisualUpdate(); // Force visual update on focus
+            RequestVisualUpdate();
             Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} received focus");
         }
 
+        /// <summary>
+        /// Called when button loses focus
+        /// </summary>
         public override void OnBlur()
         {
             base.OnBlur();
             _isPressed = false;
-            RequestVisualUpdate(); // Force visual update on blur
+            RequestVisualUpdate();
             Infrastructure.Logging.TuiLogger.LogInfo($"Button {Id} lost focus");
         }
 
@@ -163,6 +191,9 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             return HasFocus ? BorderStyle.Double : BorderStyle.Single;
         }
         
+        /// <summary>
+        /// Handles confirm action
+        /// </summary>
         protected override bool HandleConfirm()
         {
             if (IsEnabled && OnClick != null)
