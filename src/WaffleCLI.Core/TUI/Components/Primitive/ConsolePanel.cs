@@ -32,7 +32,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
         public ConsolePanel(string id) : base(id)
         {
-            Width = 100;
+            Width = 70;
             Height = 20;
             
             _outputLines.Add("Console Panel Ready");

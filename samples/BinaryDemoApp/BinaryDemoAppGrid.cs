@@ -87,7 +87,8 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             {
                 Prompt = "> ",
                 ShowPrompt = true,
-                NormalColors = new ColorScheme(ConsoleColor.White, ConsoleColor.Black)
+                NormalColors = new ColorScheme(ConsoleColor.White, ConsoleColor.Black),
+                Width = 70
             };
             
             // Create BinaryLauncher
@@ -133,10 +134,10 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             SetChildPosition(_header, 0, 0, 12, 1);
             
             AddChild(_binaryLauncher);
-            SetChildPosition(_binaryLauncher, 0, 1, 8, 1);
+            SetChildPosition(_binaryLauncher, 0, 1, 5, 1);
             
             AddChild(_consolePanel);
-            SetChildPosition(_consolePanel, 8, 1, 4, 1);
+            SetChildPosition(_consolePanel, 5, 1, 12, 1);
             
             AddChild(_importButton);
             SetChildPosition(_importButton, 0, 2, 2, 1);

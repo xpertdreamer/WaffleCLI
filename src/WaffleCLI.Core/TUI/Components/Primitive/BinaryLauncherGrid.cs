@@ -142,7 +142,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             SetChildPosition(_detailsLabel, 0, 3, 12, 1);
             
             AddChild(_launchButton);
-            SetChildPosition(_launchButton, 6, 4, 4, 1); // Centered
+            SetChildPosition(_launchButton, 4, 4, 4, 1); // Centered
             
             // Load initial data
             RefreshBinaries();
