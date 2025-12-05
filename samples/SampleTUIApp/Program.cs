@@ -2,6 +2,7 @@
 using WaffleCLI.Abstractions.TUI.Configuration;
 using WaffleCLI.Abstractions.TUI.Rendering.Enums;
 using WaffleCLI.Core.TUI.Application;
+using WaffleCLI.Core.TUI.Components;
 using WaffleCLI.Core.TUI.Components.Primitive;
 using WaffleCLI.Core.TUI.Configuration;
 using WaffleCLI.Core.TUI.Infrastructure.Logging;
@@ -52,7 +53,7 @@ try
                 EnableInputLogging = false // Disable input logging to reduce spam
             });
         })
-        .UseRootComponent<DemoApp>()
+        .UseRootComponent<TestGridApp>()
         .Build();
 
     Console.WriteLine("✅ Application built successfully!");
@@ -90,187 +91,246 @@ catch (Exception ex)
     Console.ReadKey();
 }
 
+public class TestGridApp : Panel
+{
+    public TestGridApp() : base("testApp")
+    {
+        Width = 100;
+        Height = 30;
+        
+        // Create a simple test grid
+        var testGrid = ComponentFactory.CreateTestGrid("testGrid", 4);
+        
+        // Create a more complex grid
+        var complexGrid = ComponentFactory.CreateGrid("complexGrid", 3, 3)
+            .WithSize(60, 20)
+            .WithSpacing(2, 1)
+            .WithPadding(2)
+            .WithColors(new ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue));
+        
+        // Add various components to complex grid
+        complexGrid.AddToGrid(
+            ComponentFactory.CreateLabel("title", "Grid Test")
+                .WithColors(new ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue)),
+            0, 0, 3, 1); // Span 3 columns
+        
+        complexGrid.AddToGrid(
+            ComponentFactory.CreateButton("btn1", "Button 1"),
+            0, 1);
+            
+        complexGrid.AddToGrid(
+            ComponentFactory.CreateTextBox("txt1", "Type here..."),
+            1, 1);
+            
+        complexGrid.AddToGrid(
+            ComponentFactory.CreateListBox("list1", 
+                new[] { "Item A", "Item B", "Item C", "Item D" }),
+            2, 1);
+            
+        complexGrid.AddToGrid(
+            ComponentFactory.CreateButton("btn2", "Button 2"),
+            0, 2, 3, 1); // Span 3 columns
+        
+        // Add both grids to the panel
+        AddChild(testGrid);
+        
+        // Position complex grid next to test grid
+        complexGrid.X = 65;
+        complexGrid.Y = 5;
+        AddChild(complexGrid);
+        
+        // Add status label
+        var status = ComponentFactory.CreateLabel("status", 
+            "Grid layout test - All cells should be visible with different colors")
+            .WithPosition(2, 25)
+            .WithSize(96, 2)
+            .WithColors(new ColorScheme(ConsoleColor.Green, ConsoleColor.Black));
+            
+        AddChild(status);
+    }
+}
+
 public class DemoApp : Panel
 {
-    private readonly Button _button;
-    private readonly TextBox _textBox;
-    private readonly ListBox _listBox;
-    private readonly Label _statusLabel;
-    private readonly Label _header;
-    private readonly Label _instructions;
-    private readonly Label _debugLabel;
-    private int _clickCount = 0;
-    private string _lastAction = "App started";
+    // private readonly Button _button;
+    // private readonly TextBox _textBox;
+    // private readonly ListBox _listBox;
+    // private readonly Label _statusLabel;
+    // private readonly Label _header;
+    // private readonly Label _instructions;
+    // private readonly Label _debugLabel;
+    // private int _clickCount = 0;
+    // private string _lastAction = "App started";
 
     public DemoApp() : base("mainApp")
     {
         TuiLogger.LogInfo("DemoApp constructor started");
-        
-        // Safe console dimensions with fallback and validation
-        try
-        {
-            Width = Math.Max(40, Console.WindowWidth);
-            Height = Math.Max(20, Console.WindowHeight);
-            TuiLogger.LogInfo($"DemoApp dimensions: {Width}x{Height}");
-        }
-        catch (Exception ex)
-        {
-            TuiLogger.LogError("Failed to get console dimensions, using defaults", ex);
-            Width = 80;
-            Height = 24;
-        }
-
-        BackgroundColors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Black, ConsoleColor.DarkBlue);
-        Border = WaffleCLI.Abstractions.TUI.Rendering.Enums.BorderStyle.Double;
-        BorderColors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue);
-
-        TuiLogger.LogInfo("Creating UI components");
-
-        // Create header with safe positioning
-        _header = new Label("header")
-        {
-            X = 2,
-            Y = 1,
-            Width = Math.Max(10, Width - 4),
-            Height = 1,
-            Text = "🐹 WaffleCLI TUI Framework Demo 🐹",
-            Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue)
-        };
-
-        // Create demo button
-        _button = new Button("demoButton")
-        {
-            X = 2,
-            Y = 3,
-            Width = 20,
-            Height = 3,
-            Text = "Click me!",
-            OnClick = HandleButtonClick,
-            NormalColors = new ColorScheme(ConsoleColor.Black, ConsoleColor.DarkYellow)
-        };
-
-        // Create text box
-        _textBox = new TextBox("demoTextBox")
-        {
-            X = 2,
-            Y = 7,
-            Width = 30,
-            Height = 1,
-            Placeholder = "Enter text here...",
-            MaxLength = 50
-        };
-
-        // Create list box
-        _listBox = new ListBox("demoListBox")
-        {
-            X = 2,
-            Y = 9,
-            Width = 30,
-            Height = 8,
-            OnSelectionChanged = HandleListSelection
-        };
-
-        // Populate list with sample items
-        for (int i = 1; i <= 15; i++)
-        {
-            _listBox.Items.Add($"Sample Item {i}");
-        }
-
-        // Debug label to show current focus
-        _debugLabel = new Label("debugLabel")
-        {
-            X = 35,
-            Y = 3,
-            Width = 40,
-            Height = 1,
-            Text = "Debug: No focus",
-            Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Cyan, ConsoleColor.DarkBlue)
-        };
-
-        // Status label
-        _statusLabel = new Label("statusLabel")
-        {
-            X = 2,
-            Y = 18,
-            Width = Math.Max(10, Width - 6),
-            Height = 1,
-            Text = "✅ Framework initialized! Use Tab to navigate, Esc to exit.",
-            Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue)
-        };
-
-        // Instructions
-        _instructions = new Label("instructions")
-        {
-            X = 2,
-            Y = 20,
-            Width = Math.Max(10, Width - 4),
-            Height = 3,
-            Text = "Controls: Tab=Navigate, Arrows=Lists, Enter=Buttons, Type=Text, Esc=Exit",
-            Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue)
-        };
-
-        TuiLogger.LogInfo("Adding components to panel");
-
-        // Add all components to the panel
-        AddChild(_header);
-        AddChild(_button);
-        AddChild(_textBox);
-        AddChild(_listBox);
-        AddChild(_debugLabel);
-        AddChild(_statusLabel);
-        AddChild(_instructions);
-
-        TuiLogger.LogInfo("DemoApp constructor completed");
+        //
+        // // Safe console dimensions with fallback and validation
+        // try
+        // {
+        //     Width = Math.Max(40, Console.WindowWidth);
+        //     Height = Math.Max(20, Console.WindowHeight);
+        //     TuiLogger.LogInfo($"DemoApp dimensions: {Width}x{Height}");
+        // }
+        // catch (Exception ex)
+        // {
+        //     TuiLogger.LogError("Failed to get console dimensions, using defaults", ex);
+        //     Width = 80;
+        //     Height = 24;
+        // }
+        //
+        // BackgroundColors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Black, ConsoleColor.DarkBlue);
+        // Border = WaffleCLI.Abstractions.TUI.Rendering.Enums.BorderStyle.Double;
+        // BorderColors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue);
+        //
+        // TuiLogger.LogInfo("Creating UI components");
+        //
+        // // Create header with safe positioning
+        // _header = new Label("header")
+        // {
+        //     X = 2,
+        //     Y = 1,
+        //     Width = Math.Max(10, Width - 4),
+        //     Height = 1,
+        //     Text = "🐹 WaffleCLI TUI Framework Demo 🐹",
+        //     Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue)
+        // };
+        //
+        // // Create demo button
+        // _button = new Button("demoButton")
+        // {
+        //     X = 2,
+        //     Y = 3,
+        //     Width = 20,
+        //     Height = 3,
+        //     Text = "Click me!",
+        //     OnClick = HandleButtonClick,
+        //     NormalColors = new ColorScheme(ConsoleColor.Black, ConsoleColor.DarkYellow)
+        // };
+        //
+        // // Create text box
+        // _textBox = new TextBox("demoTextBox")
+        // {
+        //     X = 2,
+        //     Y = 7,
+        //     Width = 30,
+        //     Height = 1,
+        //     Placeholder = "Enter text here...",
+        //     MaxLength = 50
+        // };
+        //
+        // // Create list box
+        // _listBox = new ListBox("demoListBox")
+        // {
+        //     X = 2,
+        //     Y = 9,
+        //     Width = 30,
+        //     Height = 8,
+        //     OnSelectionChanged = HandleListSelection
+        // };
+        //
+        // // Populate list with sample items
+        // for (int i = 1; i <= 15; i++)
+        // {
+        //     _listBox.Items.Add($"Sample Item {i}");
+        // }
+        //
+        // // Debug label to show current focus
+        // _debugLabel = new Label("debugLabel")
+        // {
+        //     X = 35,
+        //     Y = 3,
+        //     Width = 40,
+        //     Height = 1,
+        //     Text = "Debug: No focus",
+        //     Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Cyan, ConsoleColor.DarkBlue)
+        // };
+        //
+        // // Status label
+        // _statusLabel = new Label("statusLabel")
+        // {
+        //     X = 2,
+        //     Y = 18,
+        //     Width = Math.Max(10, Width - 6),
+        //     Height = 1,
+        //     Text = "✅ Framework initialized! Use Tab to navigate, Esc to exit.",
+        //     Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue)
+        // };
+        //
+        // // Instructions
+        // _instructions = new Label("instructions")
+        // {
+        //     X = 2,
+        //     Y = 20,
+        //     Width = Math.Max(10, Width - 4),
+        //     Height = 3,
+        //     Text = "Controls: Tab=Navigate, Arrows=Lists, Enter=Buttons, Type=Text, Esc=Exit",
+        //     Colors = new WaffleCLI.Abstractions.TUI.Rendering.Enums.ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue)
+        // };
+        //
+        // TuiLogger.LogInfo("Adding components to panel");
+        //
+        // // Add all components to the panel
+        // AddChild(_header);
+        // AddChild(_button);
+        // AddChild(_textBox);
+        // AddChild(_listBox);
+        // AddChild(_debugLabel);
+        // AddChild(_statusLabel);
+        // AddChild(_instructions);
+        //
+        // TuiLogger.LogInfo("DemoApp constructor completed");
     }
 
-    private void HandleButtonClick()
-    {
-        _clickCount++;
-        var text = string.IsNullOrEmpty(_textBox.Text) ? "<empty>" : _textBox.Text;
-        _statusLabel.Text = $"🎉 Button clicked {_clickCount} times! Text: '{text}'";
-        _lastAction = $"Button clicked {_clickCount} times";
-        
-        TuiLogger.LogInfo($"Button clicked! Count: {_clickCount}, Text: '{text}'");
-
-        if (!string.IsNullOrEmpty(_textBox.Text))
-        {
-            _listBox.Items.Add($"📝 User entry: {_textBox.Text}");
-            _textBox.Text = string.Empty;
-        }
-    }
-
-    private void HandleListSelection(int index)
-    {
-        if (index >= 0 && index < _listBox.Items.Count)
-        {
-            var item = _listBox.Items[index];
-            _statusLabel.Text = $"🔍 Selected: {item} (index {index})";
-            _lastAction = $"Selected: {item}";
-            TuiLogger.LogInfo($"List selection: {item} at index {index}");
-        }
-    }
-
-    public override void Update()
-    {
-        // Update debug info
-        UpdateDebugInfo();
-        base.Update();
-    }
-
-    private void UpdateDebugInfo()
-    {
-        // This is a simplified way to track focus - in a real app you'd inject FocusManager
-        string focusInfo = "Focus: ";
-        
-        if (_button.HasFocus)
-            focusInfo = "Focus: Button";
-        else if (_textBox.HasFocus)
-            focusInfo = "Focus: TextBox";
-        else if (_listBox.HasFocus)
-            focusInfo = "Focus: ListBox";
-        else
-            focusInfo = "Focus: None";
-
-        _debugLabel.Text = $"{focusInfo} | Last: {_lastAction}";
-    }
+    // private void HandleButtonClick()
+    // {
+    //     _clickCount++;
+    //     var text = string.IsNullOrEmpty(_textBox.Text) ? "<empty>" : _textBox.Text;
+    //     _statusLabel.Text = $"🎉 Button clicked {_clickCount} times! Text: '{text}'";
+    //     _lastAction = $"Button clicked {_clickCount} times";
+    //     
+    //     TuiLogger.LogInfo($"Button clicked! Count: {_clickCount}, Text: '{text}'");
+    //
+    //     if (!string.IsNullOrEmpty(_textBox.Text))
+    //     {
+    //         _listBox.Items.Add($"📝 User entry: {_textBox.Text}");
+    //         _textBox.Text = string.Empty;
+    //     }
+    // }
+    //
+    // private void HandleListSelection(int index)
+    // {
+    //     if (index >= 0 && index < _listBox.Items.Count)
+    //     {
+    //         var item = _listBox.Items[index];
+    //         _statusLabel.Text = $"🔍 Selected: {item} (index {index})";
+    //         _lastAction = $"Selected: {item}";
+    //         TuiLogger.LogInfo($"List selection: {item} at index {index}");
+    //     }
+    // }
+    //
+    // public override void Update()
+    // {
+    //     // Update debug info
+    //     UpdateDebugInfo();
+    //     base.Update();
+    // }
+    //
+    // private void UpdateDebugInfo()
+    // {
+    //     // This is a simplified way to track focus - in a real app you'd inject FocusManager
+    //     string focusInfo = "Focus: ";
+    //     
+    //     if (_button.HasFocus)
+    //         focusInfo = "Focus: Button";
+    //     else if (_textBox.HasFocus)
+    //         focusInfo = "Focus: TextBox";
+    //     else if (_listBox.HasFocus)
+    //         focusInfo = "Focus: ListBox";
+    //     else
+    //         focusInfo = "Focus: None";
+    //
+    //     _debugLabel.Text = $"{focusInfo} | Last: {_lastAction}";
+    // }
 }

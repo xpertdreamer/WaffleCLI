@@ -1,0 +1,127 @@
+# WaffleCLI TUI Framework - Public API
+# Version 1.0.0
+# 
+# This file lists all public types and members available for external use.
+# Do not use types not listed here as they may change without notice.
+
+## Abstractions Layer (WaffleCLI.Abstractions.TUI)
+
+### Application
+ITuiApplication
+ITuiApplicationBuilder
+
+### Components
+IComponent
+IContainer
+IFocusable
+
+### Components.Interfaces
+IButton
+ILabel
+IListBox
+ITextBox
+
+### Configuration
+ITuiConfiguration
+ComponentConfiguration
+ThemeConfiguration
+
+### Input
+InputEvent
+KeyModifiers
+Direction
+FocusManager
+IInputHandler
+KeyBindings
+
+### Processes
+IProcessRunner
+ProcessOutputEventArgs
+ProcessExitedEventArgs
+
+### Rendering
+IBuffer
+IRenderEngine
+RenderContext
+
+### Rendering.Enums
+BorderStyle
+ColorScheme
+TextAlignment
+
+### Exceptions
+TuiException
+ComponentException
+
+## Core Implementation Layer (WaffleCLI.Core.TUI)
+
+### Application
+TuiApplication
+TuiApplicationBuilder
+
+### Components.Base
+ComponentBase
+ContainerBase
+FocusableComponentBase
+
+### Components.Layout
+SimpleGridLayout (new)
+StackLayout
+Orientation
+
+### Components.Primitive
+Button
+ImprovedLabel
+TextBox
+ListBox
+Panel
+ConsolePanel
+
+### Components
+ComponentFactory (new)
+
+### Configuration
+BinariesManager
+BinaryConfiguration
+BinariesConfiguration
+SettingsManager
+TuiSettings
+ThemeManager
+TuiConfiguration
+
+### Input
+EnhancedFocusManager
+InputHandler
+KeyBindingManager
+
+### Processes
+ProcessRunner
+
+### Rendering
+RenderEngine
+DoubleBuffer
+
+### Infrastructure.Logging
+TuiLogger
+
+## Usage Guidelines
+
+1. For application setup: Use TuiApplicationBuilder
+2. For component creation: Use ComponentFactory
+3. For layout: Use SimpleGridLayout or StackLayout
+4. For configuration: Use BinariesManager and SettingsManager
+5. For logging: Use TuiLogger (static class)
+
+## Example Usage
+
+var app = new TuiApplicationBuilder()
+    .UseRootComponent<MyApp>()
+    .Build();
+
+var button = ComponentFactory.CreateButton("btn1", "Click me!")
+    .WithPosition(10, 5)
+    .WithSize(20, 3);
+
+var grid = ComponentFactory.CreateGrid("mainGrid", 2, 2)
+    .WithSize(100, 30)
+    .AddToGrid(button, 0, 0);

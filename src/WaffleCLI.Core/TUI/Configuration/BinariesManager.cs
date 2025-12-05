@@ -187,33 +187,34 @@ namespace WaffleCLI.Core.TUI.Configuration
         {
             return _configuration.Binaries?.FirstOrDefault(b => b.Id == binaryId);
         }
-
+        
         /// <summary>
-        /// Gets all enabled binaries
+        /// Gets enabled binaries with null safety
         /// </summary>
         public List<BinaryConfiguration> GetEnabledBinaries()
         {
-            return _configuration.Binaries?
-                .Where(b => b.Enabled)
+            return _configuration?.Binaries?
+                .Where(b => b?.Enabled == true)
                 .ToList() ?? new List<BinaryConfiguration>();
         }
 
         /// <summary>
-        /// Gets binaries grouped by category
+        /// Gets binaries grouped by category with null safety
         /// </summary>
         public Dictionary<string, List<BinaryConfiguration>> GetBinariesByCategory()
         {
             var enabled = GetEnabledBinaries();
             if (enabled.Count == 0)
                 return new Dictionary<string, List<BinaryConfiguration>>();
-                
+        
             return enabled
-                .GroupBy(b => b.Category)
+                .Where(b => b != null && !string.IsNullOrEmpty(b.Category))
+                .GroupBy(b => b!.Category)
                 .ToDictionary(g => g.Key, g => g.ToList());
         }
 
         /// <summary>
-        /// Searches binaries by name, description, or tags
+        /// Searches binaries by term with null safety
         /// </summary>
         public List<BinaryConfiguration> SearchBinaries(string searchTerm)
         {
@@ -226,11 +227,11 @@ namespace WaffleCLI.Core.TUI.Configuration
 
             var term = searchTerm.ToLowerInvariant();
             return enabled
-                .Where(b => 
-                    (b.Name?.ToLowerInvariant().Contains(term) ?? false) ||
-                    (b.Description?.ToLowerInvariant().Contains(term) ?? false) ||
-                    (b.ExecutablePath?.ToLowerInvariant().Contains(term) ?? false) ||
-                    (b.Tags?.Any(t => t.ToLowerInvariant().Contains(term)) ?? false))
+                .Where(b => b != null &&
+                            ((b.Name?.ToLowerInvariant().Contains(term) ?? false) ||
+                             (b.Description?.ToLowerInvariant().Contains(term) ?? false) ||
+                             (b.ExecutablePath?.ToLowerInvariant().Contains(term) ?? false) ||
+                             (b.Tags?.Any(t => t?.ToLowerInvariant().Contains(term) == true) ?? false)))
                 .ToList();
         }
 
@@ -309,33 +310,65 @@ namespace WaffleCLI.Core.TUI.Configuration
             return importedCount;
         }
 
-        private bool IsExecutableFile(string filePath)
+        private static bool IsExecutableFile(string filePath)
         {
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
-            
+    
+            // Platform-agnostic check for common executable extensions
+            var executableExtensions = new HashSet<string> 
+            { 
+                ".exe", ".bat", ".cmd", ".com", ".sh", ".bash", 
+                ".run", ".bin", ".out", ".app", ".py", ".pl", 
+                ".rb", ".js", ".vbs", ".ps1"
+            };
+    
+            if (executableExtensions.Contains(extension))
+            {
+                return true;
+            }
+    
+            // Check if file exists
+            if (!File.Exists(filePath))
+            {
+                return false;
+            }
+    
+            // Platform-specific checks
             if (OperatingSystem.IsWindows())
             {
-                return extension == ".exe" || extension == ".bat" || extension == ".cmd" || extension == ".com";
+                // Windows: check file attributes or extension
+                return extension == ".exe" || extension == ".bat" || 
+                       extension == ".cmd" || extension == ".com";
             }
             else if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {
-                // Check if file has execute permission
                 try
                 {
-                    var permissions = File.GetUnixFileMode(filePath);
-                    return (permissions & UnixFileMode.UserExecute) != 0 ||
-                           (permissions & UnixFileMode.GroupExecute) != 0 ||
-                           (permissions & UnixFileMode.OtherExecute) != 0;
+                    // Check if file has execute permissions
+                    var fileInfo = new FileInfo(filePath);
+                    var mode = fileInfo.UnixFileMode;
+            
+                    return (mode & UnixFileMode.UserExecute) != 0 ||
+                           (mode & UnixFileMode.GroupExecute) != 0 ||
+                           (mode & UnixFileMode.OtherExecute) != 0;
                 }
-                catch
+                catch (PlatformNotSupportedException)
                 {
-                    // Fallback: check extension
+                    // Fallback for systems without UnixFileMode support
+                    // Check for common executable patterns
                     return string.IsNullOrEmpty(extension) || 
                            extension == ".sh" || extension == ".bin" || 
-                           extension == ".run" || extension == ".out";
+                           extension == ".run" || extension == ".out" ||
+                           !extension.Contains('.');
+                }
+                catch (Exception ex)
+                {
+                    Infrastructure.Logging.TuiLogger.LogError($"Failed to check file permissions for {filePath}", ex);
+                    return false;
                 }
             }
-            
+    
+            // Unknown platform - use extension check only
             return false;
         }
 

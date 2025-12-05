@@ -284,7 +284,18 @@ namespace WaffleCLI.Core.TUI.Rendering
             try
             {
                 Console.CursorVisible = false;
-                Console.OutputEncoding = System.Text.Encoding.UTF8;
+        
+                // Try to set UTF8 encoding, but fallback if not supported
+                try
+                {
+                    Console.OutputEncoding = System.Text.Encoding.UTF8;
+                }
+                catch (Exception ex)
+                {
+                    Infrastructure.Logging.TuiLogger.LogWarning($"UTF8 encoding not supported, using default: {ex.Message}");
+                    // Continue with default encoding
+                }
+        
                 Console.Clear();
                 Console.SetCursorPosition(0, 0);
             }

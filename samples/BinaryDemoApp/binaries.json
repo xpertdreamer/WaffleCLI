@@ -29,6 +29,20 @@
       "requiresInput": true,
       "inputPrompt": ">",
       "tags": ["cpp", "hello", "world", "hello_world"]
+    },
+    {
+      "id": "maze",
+      "name": "Maze",
+      "description": "Test course",
+      "executablePath": "../../Maze.exe",
+      "arguments": "",
+      "workingDirectory": "./",
+      "category": "C++ Examples",
+      "icon": "🌽",
+      "enabled": true,
+      "requiresInput": true,
+      "inputPrompt": ">",
+      "tags": ["cpp", "maze", "course", "interactive"]
     }
   ],
   "categories": ["C++ Examples"]
