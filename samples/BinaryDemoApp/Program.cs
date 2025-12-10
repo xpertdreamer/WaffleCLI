@@ -60,6 +60,10 @@ try
     Console.WriteLine("   • Ctrl+V           - Validate binaries");
     Console.WriteLine("   • Enter            - Launch selected binary");
     Console.WriteLine("   • Esc              - Exit application");
+    Console.WriteLine("\n🎮 NEW CONTROLS:");
+    Console.WriteLine("   • Alt+F               - Toggle console fullscreen");
+    Console.WriteLine("   • Ctrl+W              - Toggle word wrapping");
+    Console.WriteLine("   • Alt+A/D             - Horizontal scroll (no wrap)");
     Console.WriteLine("\n📦 FEATURES:");
     Console.WriteLine("   • Modern grid layout with visual guides");
     Console.WriteLine("   • Integrated console output");

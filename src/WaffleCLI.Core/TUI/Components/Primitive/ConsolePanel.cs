@@ -11,8 +11,8 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 {
     public class ConsolePanel : FocusableComponentBase, IDisposable
     {
-        private readonly List<string> _outputLines = new List<string>();
-        private readonly StringBuilder _currentInput = new StringBuilder();
+        private readonly List<string> _outputLines = [];
+        private readonly StringBuilder _currentInput = new();
         private int _scrollOffset = 0;
         private IProcessRunner _processRunner;
         private bool _processRunning = false;
@@ -20,11 +20,39 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         private DateTime _lastBlink = DateTime.Now;
         private bool _cursorVisible = true;
         private int _cursorPosition = 0;
+        private int _horizontalScroll = 0;
+        private bool _wordWrap = true;
+        private bool _isFullscreen = false;
+        private readonly List<List<string>> _wrappedLines = [];
 
         public ColorScheme NormalColors { get; set; } = new ColorScheme(ConsoleColor.White, ConsoleColor.Black);
         public ColorScheme FocusColors { get; set; } = new ColorScheme(ConsoleColor.Black, ConsoleColor.White);
         public ColorScheme ErrorColors { get; set; } = new ColorScheme(ConsoleColor.Red, ConsoleColor.Black);
         public ColorScheme InputColors { get; set; } = new ColorScheme(ConsoleColor.Green, ConsoleColor.Black);
+        
+        public bool IsFullscreen => _isFullscreen;
+
+        public bool WordWrap
+        {
+            get => _wordWrap;
+            set
+            {
+                if (_wordWrap != value)
+                {
+                    _wordWrap = value;
+                    lock (_outputLock)
+                    {
+                        _wrappedLines.Clear();
+                    }
+                }
+            }
+        }
+
+        public int HorizontalScroll
+        {
+            get => _horizontalScroll;
+            set => _horizontalScroll = Math.Max(0, value);
+        }
         
         public string Prompt { get; set; } = "> ";
         public int MaxHistoryLines { get; set; } = 1000;
@@ -34,10 +62,12 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             Width = 70;
             Height = 20;
-            
+    
             _outputLines.Add("Console Panel Ready");
             _outputLines.Add("Use 'start <command>' to launch a process");
             _outputLines.Add("Type 'exit' to close process, 'clear' to clear console");
+            _outputLines.Add("Press F11 to toggle fullscreen mode");
+            _outputLines.Add("Press Ctrl+Left/Right to scroll horizontally when word wrap is disabled");
         }
 
         /// <summary>
@@ -119,9 +149,51 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             if (parts.Length == 0) return;
 
             var cmd = parts[0].ToLower();
-            
+
             switch (cmd)
             {
+                case "fullscreen":
+                case "fs":
+                    ToggleFullscreen();
+                    break;
+
+                case "wordwrap":
+                case "wrap":
+                    _wordWrap = !_wordWrap;
+                    _wrappedLines.Clear();
+                    AddOutputLine($"Word wrap: {(_wordWrap ? "ENABLED" : "DISABLED")}");
+                    AddOutputLine($"Use Ctrl+Left/Right to scroll horizontally when disabled");
+                    break;
+
+                case "scroll":
+                    if (parts.Length > 1 && int.TryParse(parts[1], out int scroll))
+                    {
+                        _horizontalScroll = Math.Max(0, scroll);
+                        AddOutputLine($"Horizontal scroll set to: {_horizontalScroll}");
+                    }
+                    else
+                    {
+                        AddOutputLine($"Current horizontal scroll: {_horizontalScroll}");
+                    }
+
+                    break;
+
+                case "help":
+                    AddOutputLine("Available commands:");
+                    AddOutputLine("  start <exe> [args] - Start a process");
+                    AddOutputLine("  clear              - Clear console");
+                    AddOutputLine("  exit               - Stop current process");
+                    AddOutputLine("  fullscreen / fs    - Toggle fullscreen mode");
+                    AddOutputLine("  wordwrap / wrap    - Toggle word wrapping");
+                    AddOutputLine("  scroll [num]       - Set horizontal scroll position");
+                    AddOutputLine("  help               - Show this help");
+                    AddOutputLine("");
+                    AddOutputLine("Hotkeys:");
+                    AddOutputLine("  F11                - Toggle fullscreen");
+                    AddOutputLine("  Ctrl+W             - Toggle word wrap");
+                    AddOutputLine("  Ctrl+Left/Right    - Scroll horizontally (no wrap)");
+                    AddOutputLine("  Ctrl+Home          - Reset horizontal scroll");
+                    break;
                 case "start":
                     if (parts.Length > 1)
                     {
@@ -134,24 +206,17 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         AddOutputLine("Usage: start <executable> [arguments]", isError: true);
                     }
+
                     break;
-                    
+
                 case "clear":
                     ClearOutput();
                     break;
-                    
+
                 case "exit":
                     StopProcess();
                     break;
-                    
-                case "help":
-                    AddOutputLine("Available commands:");
-                    AddOutputLine("  start <exe> [args] - Start a process");
-                    AddOutputLine("  clear              - Clear console");
-                    AddOutputLine("  exit               - Stop current process");
-                    AddOutputLine("  help               - Show this help");
-                    break;
-                    
+
                 default:
                     AddOutputLine($"Unknown command: {cmd}. Type 'help' for available commands.", isError: true);
                     break;
@@ -190,67 +255,201 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             }
         }
 
-         public override void Render(IRenderEngine renderEngine)
+        public override void Render(IRenderEngine renderEngine)
         {
             if (!IsVisible) return;
 
             int absoluteX = AbsoluteX;
             int absoluteY = AbsoluteY;
-            
+            int panelWidth = Width;
+            int panelHeight = Height;
+
+            // Adjust dimensions if in fullscreen mode
+            if (_isFullscreen && Parent is ComponentBase parent)
+            {
+                absoluteX = parent.AbsoluteX;
+                absoluteY = parent.AbsoluteY;
+                panelWidth = Math.Max(10, parent.Width);
+                panelHeight = Math.Max(10, parent.Height);
+            }
+
             var colors = HasFocus ? FocusColors : NormalColors;
             var borderStyle = HasFocus ? BorderStyle.Double : BorderStyle.Single;
-            
-            renderEngine.DrawBox(absoluteX, absoluteY, Width, Height, borderStyle, colors);
 
-            int visibleLines = Math.Max(0, Height - 2);
+            renderEngine.DrawBox(absoluteX, absoluteY, panelWidth, panelHeight, borderStyle, colors);
+
+            int visibleLines = Math.Max(0, panelHeight - 2);
             lock (_outputLock)
             {
+                // Update wrapped lines if needed
+                UpdateWrappedLines(panelWidth - 2);
+
                 for (int i = 0; i < visibleLines; i++)
                 {
                     int lineIndex = _scrollOffset + i;
-                    if (lineIndex >= 0 && lineIndex < _outputLines.Count)
+                    if (lineIndex >= 0 && lineIndex < _wrappedLines.Count)
                     {
                         int lineY = absoluteY + 1 + i;
-                        string line = _outputLines[lineIndex];
-                        
-                        if (line.Length > Width - 2)
+                        var wrappedLine = _wrappedLines[lineIndex];
+
+                        if (wrappedLine.Count > 0)
                         {
-                            line = line.Substring(0, Width - 2);
+                            int segmentIndex = Math.Min(_horizontalScroll, wrappedLine.Count - 1);
+                            string segment = wrappedLine[segmentIndex];
+
+                            // Add ellipsis if there are more segments
+                            if (wrappedLine.Count > 1 && segmentIndex < wrappedLine.Count - 1)
+                            {
+                                if (segment.Length > 0 && segment.Length >= 3)
+                                {
+                                    segment = "..." + segment.Substring(Math.Max(0, segment.Length - (panelWidth - 5)));
+                                }
+                            }
+
+                            // Ensure segment fits in available width
+                            if (segment.Length > panelWidth - 2)
+                            {
+                                segment = segment.Substring(0, panelWidth - 2);
+                            }
+
+                            renderEngine.DrawString(absoluteX + 1, lineY, segment, colors);
                         }
-                        
-                        renderEngine.DrawString(absoluteX + 1, lineY, line, colors);
                     }
                 }
             }
 
             if (HasFocus)
             {
-                DrawInputLine(renderEngine, absoluteX, absoluteY);
+                DrawInputLine(renderEngine, absoluteX, absoluteY, panelWidth, panelHeight);
+            }
+
+            // Draw fullscreen indicator
+            if (_isFullscreen)
+            {
+                string indicator = " [FULLSCREEN] ";
+                if (indicator.Length <= panelWidth - 2)
+                {
+                    renderEngine.DrawString(
+                        absoluteX + panelWidth - indicator.Length - 1,
+                        absoluteY,
+                        indicator,
+                        new ColorScheme(ConsoleColor.Yellow, colors.Background));
+                }
             }
         }
 
-        private void DrawInputLine(IRenderEngine renderEngine, int panelX, int panelY)
+        private void DrawInputLine(IRenderEngine renderEngine, int panelX, int panelY, int panelWidth, int panelHeight)
         {
-            int inputY = panelY + Height - 1;
+            int inputY = panelY + panelHeight - 1;
             string inputDisplay = ShowPrompt ? Prompt : "";
             inputDisplay += _currentInput.ToString();
-            
-            if (inputDisplay.Length > Width - 2)
+    
+            // Handle horizontal scrolling for input
+            int maxDisplayWidth = panelWidth - 2;
+            if (inputDisplay.Length > maxDisplayWidth)
             {
-                inputDisplay = inputDisplay.Substring(inputDisplay.Length - (Width - 2));
+                // Show the end of input when typing
+                int startIndex = Math.Max(0, inputDisplay.Length - maxDisplayWidth);
+                inputDisplay = inputDisplay.Substring(startIndex);
+        
+                // Add ellipsis if we're showing truncated text
+                if (startIndex > 0)
+                {
+                    inputDisplay = "..." + inputDisplay;
+                }
             }
-            
-            renderEngine.FillRectangle(panelX + 1, inputY, Width - 2, 1, ' ', InputColors);
+    
+            renderEngine.FillRectangle(panelX + 1, inputY, panelWidth - 2, 1, ' ', InputColors);
             renderEngine.DrawString(panelX + 1, inputY, inputDisplay, InputColors);
-            
+    
             if (_cursorVisible && HasFocus)
             {
                 int cursorX = panelX + 1 + (ShowPrompt ? Prompt.Length : 0) + _cursorPosition;
-                if (cursorX < panelX + Width - 1)
+                // Adjust cursor position for truncated display
+                if (inputDisplay.Length < _currentInput.Length + (ShowPrompt ? Prompt.Length : 0))
+                {
+                    cursorX = panelX + 1 + inputDisplay.Length - (_currentInput.Length - _cursorPosition);
+                }
+        
+                if (cursorX < panelX + panelWidth - 1)
                 {
                     renderEngine.DrawChar(cursorX, inputY, '_', 
                         new ColorScheme(InputColors.Background, InputColors.Foreground));
                 }
+            }
+        }
+        
+        private void UpdateWrappedLines(int maxWidth)
+        {
+            if (maxWidth <= 0) return;
+    
+            lock (_outputLock)
+            {
+                // Clear wrapped lines and rebuild if needed
+                if (_wrappedLines.Count != _outputLines.Count)
+                {
+                    _wrappedLines.Clear();
+                    foreach (var line in _outputLines)
+                    {
+                        if (_wordWrap && maxWidth > 0)
+                        {
+                            _wrappedLines.Add(WrapLine(line, maxWidth));
+                        }
+                        else
+                        {
+                            _wrappedLines.Add(new List<string> { line });
+                        }
+                    }
+                }
+            }
+        }
+
+        private List<string> WrapLine(string line, int maxWidth)
+        {
+            var result = new List<string>();
+    
+            if (string.IsNullOrEmpty(line) || maxWidth <= 0)
+            {
+                result.Add(line);
+                return result;
+            }
+    
+            // Handle ANSI escape codes or special characters
+            int currentPos = 0;
+            while (currentPos < line.Length)
+            {
+                int chunkLength = Math.Min(maxWidth, line.Length - currentPos);
+                string chunk = line.Substring(currentPos, chunkLength);
+                result.Add(chunk);
+                currentPos += chunkLength;
+            }
+    
+            return result;
+        }
+        
+        public void ToggleFullscreen()
+        {
+            _isFullscreen = !_isFullscreen;
+    
+            if (_isFullscreen)
+            {
+                // Store original dimensions
+                if (Parent is ComponentBase parent)
+                {
+                    // In fullscreen mode, we'll use parent's dimensions during render
+                    AddOutputLine("Entering fullscreen mode (Alt-F to exit)");
+                }
+            }
+            else
+            {
+                AddOutputLine("Exiting fullscreen mode");
+            }
+    
+            // Clear wrapped lines to force re-wrapping with new dimensions
+            lock (_outputLock)
+            {
+                _wrappedLines.Clear();
+                _horizontalScroll = 0;
             }
         }
 
@@ -264,14 +463,55 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
             switch (inputEvent.Key)
             {
+                case ConsoleKey.F when inputEvent.Modifiers.HasFlag(KeyModifiers.Alt):
+                    ToggleFullscreen();
+                    return true;
+
+                case ConsoleKey.W when inputEvent.Modifiers.HasFlag(KeyModifiers.Control):
+                    _wordWrap = !_wordWrap;
+                    _wrappedLines.Clear(); // Force re-wrapping
+                    AddOutputLine($"Word wrap: {(_wordWrap ? "ON" : "OFF")}");
+                    return true;
+
+                case ConsoleKey.A when inputEvent.Modifiers.HasFlag(KeyModifiers.Alt) && !_wordWrap:
+                    if (_horizontalScroll > 0)
+                    {
+                        _horizontalScroll--;
+                        AddOutputLine($"Horizontal scroll: {_horizontalScroll}");
+                    }
+
+                    return true;
+
+                case ConsoleKey.D when inputEvent.Modifiers.HasFlag(KeyModifiers.Alt) && !_wordWrap:
+                    lock (_outputLock)
+                    {
+                        if (_wrappedLines.Count > 0 && _scrollOffset < _wrappedLines.Count)
+                        {
+                            var currentLine = _wrappedLines[Math.Min(_scrollOffset, _wrappedLines.Count - 1)];
+                            if (_horizontalScroll < currentLine.Count - 1)
+                            {
+                                _horizontalScroll++;
+                                AddOutputLine($"Horizontal scroll: {_horizontalScroll}");
+                            }
+                        }
+                    }
+
+                    return true;
+
+                case ConsoleKey.Home when inputEvent.Modifiers.HasFlag(KeyModifiers.Control):
+                    _horizontalScroll = 0;
+                    return true;
+
                 case ConsoleKey.Enter:
                     if (_currentInput.Length > 0)
                     {
                         string input = _currentInput.ToString();
                         _currentInput.Clear();
                         _cursorPosition = 0;
+                        _horizontalScroll = 0; // Reset horizontal scroll on new command
                         SendInputToProcess(input);
                     }
+
                     return true;
 
                 case ConsoleKey.Backspace:
@@ -280,6 +520,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                         _currentInput.Remove(_cursorPosition - 1, 1);
                         _cursorPosition--;
                     }
+
                     return true;
 
                 case ConsoleKey.Delete:
@@ -287,6 +528,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         _currentInput.Remove(_cursorPosition, 1);
                     }
+
                     return true;
 
                 case ConsoleKey.LeftArrow:
@@ -294,6 +536,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         _cursorPosition--;
                     }
+
                     return true;
 
                 case ConsoleKey.RightArrow:
@@ -301,6 +544,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         _cursorPosition++;
                     }
+
                     return true;
 
                 case ConsoleKey.Home:
@@ -320,6 +564,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                             _scrollOffset--;
                         }
                     }
+
                     return true;
 
                 case ConsoleKey.DownArrow:
@@ -331,6 +576,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                             _scrollOffset++;
                         }
                     }
+
                     return true;
 
                 case ConsoleKey.PageUp:
@@ -338,6 +584,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         _scrollOffset = Math.Max(0, _scrollOffset - (Height - 2));
                     }
+
                     return true;
 
                 case ConsoleKey.PageDown:
@@ -346,17 +593,19 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                         int maxScroll = Math.Max(0, _outputLines.Count - (Height - 2));
                         _scrollOffset = Math.Min(maxScroll, _scrollOffset + (Height - 2));
                     }
+
                     return true;
 
                 default:
                     // Handle printable characters
-                    if (!char.IsControl(inputEvent.Character) && 
+                    if (!char.IsControl(inputEvent.Character) &&
                         inputEvent.Character >= 32)
                     {
                         _currentInput.Insert(_cursorPosition, inputEvent.Character);
                         _cursorPosition++;
                         return true;
                     }
+
                     break;
             }
 
