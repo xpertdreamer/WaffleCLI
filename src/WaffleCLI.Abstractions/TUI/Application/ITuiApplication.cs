@@ -13,5 +13,6 @@ namespace WaffleCLI.Abstractions.TUI.Application
         void Run();
         void Stop();
         void Refresh();
+        void Shutdown();
     }
 }

@@ -9,299 +9,337 @@ using WaffleCLI.Core.TUI.Configuration;
 namespace WaffleCLI.Core.TUI.Components
 {
     /// <summary>
-    /// Factory for creating UI components with fluent API
+    /// Factory for creating UI components with enhanced fluent API
     /// </summary>
     public static class ComponentFactory
     {
         /// <summary>
-        /// Creates a new button
+        /// Creates a new button with fluent configuration
         /// </summary>
-        public static IButton CreateButton(string id, string text, Action onClick = null)
+        public static ButtonBuilder CreateButton(string id, string text)
         {
-            var button = new Button(id)
-            {
-                Text = text,
-                OnClick = onClick
-            };
-            
-            return button;
+            return new ButtonBuilder(id, text);
         }
 
         /// <summary>
-        /// Creates a new label
+        /// Creates a new label with fluent configuration
         /// </summary>
-        public static ILabel CreateLabel(string id, string text, TextAlignment alignment = TextAlignment.Left)
+        public static LabelBuilder CreateLabel(string id, string text)
         {
-            var label = new ImprovedLabel(id)
-            {
-                Text = text,
-                TextAlignment = alignment
-            };
-            
-            return label;
+            return new LabelBuilder(id, text);
         }
 
         /// <summary>
-        /// Creates a new text box
+        /// Creates a new text box with fluent configuration
         /// </summary>
-        public static ITextBox CreateTextBox(string id, string placeholder = "", int maxLength = 256)
+        public static TextBoxBuilder CreateTextBox(string id)
         {
-            var textBox = new TextBox(id)
-            {
-                Placeholder = placeholder,
-                MaxLength = maxLength
-            };
-            
-            return textBox;
+            return new TextBoxBuilder(id);
         }
 
         /// <summary>
-        /// Creates a new list box
+        /// Creates a new list box with fluent configuration
         /// </summary>
-        public static IListBox CreateListBox(string id, IEnumerable<object> items = null)
+        public static ListBoxBuilder CreateListBox(string id)
         {
-            var listBox = new ListBox(id);
+            return new ListBoxBuilder(id);
+        }
+
+        /// <summary>
+        /// Creates a new panel with fluent configuration
+        /// </summary>
+        public static PanelBuilder CreatePanel(string id)
+        {
+            return new PanelBuilder(id);
+        }
+
+        /// <summary>
+        /// Creates a new grid layout with fluent configuration
+        /// </summary>
+        public static GridLayoutBuilder CreateGridLayout(string id)
+        {
+            return new GridLayoutBuilder(id);
+        }
+
+        /// <summary>
+        /// Creates a new console panel with fluent configuration
+        /// </summary>
+        public static ConsolePanelBuilder CreateConsolePanel(string id)
+        {
+            return new ConsolePanelBuilder(id);
+        }
+
+        /// <summary>
+        /// Creates a new stack layout with fluent configuration
+        /// </summary>
+        public static StackLayoutBuilder CreateStackLayout(string id)
+        {
+            return new StackLayoutBuilder(id);
+        }
+
+        // Builder classes for fluent API
+        public class ButtonBuilder
+        {
+            private readonly Button _button;
             
-            if (items != null)
+            public ButtonBuilder(string id, string text)
             {
-                listBox.Items.Clear();
+                _button = new Button(id) { Text = text };
+            }
+            
+            public ButtonBuilder WithSize(int width, int height)
+            {
+                _button.Width = width;
+                _button.Height = height;
+                return this;
+            }
+            
+            public ButtonBuilder WithColors(ColorScheme colors)
+            {
+                _button.NormalColors = colors;
+                return this;
+            }
+            
+            public ButtonBuilder WithClickHandler(Action handler)
+            {
+                _button.OnClick = handler;
+                return this;
+            }
+            
+            public IButton Build() => _button;
+        }
+
+        public class LabelBuilder
+        {
+            private readonly ImprovedLabel _label;
+            
+            public LabelBuilder(string id, string text)
+            {
+                _label = new ImprovedLabel(id) { Text = text };
+            }
+            
+            public LabelBuilder WithAlignment(TextAlignment alignment)
+            {
+                _label.TextAlignment = alignment;
+                return this;
+            }
+            
+            public LabelBuilder WithColors(ColorScheme colors)
+            {
+                _label.Colors = colors;
+                return this;
+            }
+            
+            public ILabel Build() => _label;
+        }
+
+        public class TextBoxBuilder
+        {
+            private readonly TextBox _textBox;
+            
+            public TextBoxBuilder(string id)
+            {
+                _textBox = new TextBox(id);
+            }
+            
+            public TextBoxBuilder WithPlaceholder(string placeholder)
+            {
+                _textBox.Placeholder = placeholder;
+                return this;
+            }
+            
+            public TextBoxBuilder WithMaxLength(int maxLength)
+            {
+                _textBox.MaxLength = maxLength;
+                return this;
+            }
+            
+            public TextBoxBuilder WithColors(ColorScheme colors)
+            {
+                _textBox.NormalColors = colors;
+                return this;
+            }
+            
+            public ITextBox Build() => _textBox;
+        }
+
+        public class ListBoxBuilder
+        {
+            private readonly ListBox _listBox;
+            
+            public ListBoxBuilder(string id)
+            {
+                _listBox = new ListBox(id);
+            }
+            
+            public ListBoxBuilder WithItems(IEnumerable<object> items)
+            {
+                _listBox.Items.Clear();
                 foreach (var item in items)
                 {
-                    listBox.Items.Add(item);
+                    _listBox.Items.Add(item);
                 }
+                return this;
             }
             
-            return listBox;
+            public ListBoxBuilder WithSelectionHandler(Action<int> handler)
+            {
+                _listBox.OnSelectionChanged = handler;
+                return this;
+            }
+            
+            public ListBoxBuilder WithSize(int width, int height)
+            {
+                _listBox.Width = width;
+                _listBox.Height = height;
+                return this;
+            }
+            
+            public IListBox Build() => _listBox;
         }
 
-        /// <summary>
-        /// Creates a new panel
-        /// </summary>
-        public static IContainer CreatePanel(string id, ColorScheme? backgroundColors = null, BorderStyle border = BorderStyle.None)
+        public class PanelBuilder
         {
-            var panel = new Panel(id);
+            private readonly Panel _panel;
             
-            if (backgroundColors.HasValue)
+            public PanelBuilder(string id)
             {
-                panel.BackgroundColors = backgroundColors.Value;
+                _panel = new Panel(id);
             }
             
-            panel.Border = border;
+            public PanelBuilder WithSize(int width, int height)
+            {
+                _panel.Width = width;
+                _panel.Height = height;
+                return this;
+            }
             
-            return panel;
+            public PanelBuilder WithColors(ColorScheme colors)
+            {
+                _panel.BackgroundColors = colors;
+                return this;
+            }
+            
+            public PanelBuilder WithBorder(BorderStyle border)
+            {
+                _panel.Border = border;
+                return this;
+            }
+            
+            public IContainer Build() => _panel;
         }
 
-        /// <summary>
-        /// Creates a new simple grid layout
-        /// </summary>
-        public static SimpleGridLayout CreateGrid(string id, int columns = 1, int rows = 1)
+        public class GridLayoutBuilder
         {
-            var grid = new SimpleGridLayout(id)
-            {
-                Columns = columns,
-                Rows = rows
-            };
+            private readonly GridLayout _grid;
             
-            return grid;
-        }
-
-        /// <summary>
-        /// Creates a new stack layout
-        /// </summary>
-        public static StackLayout CreateStack(string id, Orientation orientation = Orientation.Vertical, int spacing = 0)
-        {
-            var stack = new StackLayout(id)
+            public GridLayoutBuilder(string id)
             {
-                Orientation = orientation,
-                Spacing = spacing
-            };
-            
-            return stack;
-        }
-
-        /// <summary>
-        /// Creates a new console panel
-        /// </summary>
-        public static ConsolePanel CreateConsolePanel(string id, string prompt = "> ", bool showPrompt = true)
-        {
-            var console = new ConsolePanel(id)
-            {
-                Prompt = prompt,
-                ShowPrompt = showPrompt
-            };
-            
-            return console;
-        }
-
-        /// <summary>
-        /// Configures component properties using fluent API
-        /// </summary>
-        public static T WithPosition<T>(this T component, int x, int y) where T : IComponent
-        {
-            component.X = x;
-            component.Y = y;
-            return component;
-        }
-
-        /// <summary>
-        /// Configures component size using fluent API
-        /// </summary>
-        public static T WithSize<T>(this T component, int width, int height) where T : IComponent
-        {
-            component.Width = width;
-            component.Height = height;
-            return component;
-        }
-
-        /// <summary>
-        /// Configures component colors using fluent API
-        /// </summary>
-        public static T WithColors<T>(this T component, ColorScheme colors) where T : IComponent
-        {
-            if (component is Button button)
-            {
-                button.NormalColors = colors;
-            }
-            else if (component is TextBox textBox)
-            {
-                textBox.NormalColors = colors;
-            }
-            else if (component is ListBox listBox)
-            {
-                listBox.NormalColors = colors;
-            }
-            else if (component is Panel panel)
-            {
-                panel.BackgroundColors = colors;
-            }
-            else if (component is ImprovedLabel label)
-            {
-                label.Colors = colors;
-            }
-            else if (component is ContainerBase container && container is SimpleGridLayout grid)
-            {
-                grid.BackgroundColors = colors;
-            }
-            else if (component is ContainerBase container2 && container2 is StackLayout stack)
-            {
-                stack.BackgroundColors = colors;
+                _grid = new GridLayout(id);
             }
             
-            return component;
+            public GridLayoutBuilder WithSize(int width, int height)
+            {
+                _grid.Width = width;
+                _grid.Height = height;
+                return this;
+            }
+            
+            public GridLayoutBuilder WithColumns(params GridDefinition[] columns)
+            {
+                foreach (var column in columns)
+                {
+                    _grid.AddColumn(column);
+                }
+                return this;
+            }
+            
+            public GridLayoutBuilder WithRows(params GridDefinition[] rows)
+            {
+                foreach (var row in rows)
+                {
+                    _grid.AddRow(row);
+                }
+                return this;
+            }
+            
+            public GridLayoutBuilder WithPadding(int padding)
+            {
+                _grid.Padding = padding;
+                return this;
+            }
+            
+            public GridLayoutBuilder WithSpacing(int horizontal, int vertical)
+            {
+                _grid.HorizontalSpacing = horizontal;
+                _grid.VerticalSpacing = vertical;
+                return this;
+            }
+            
+            public GridLayout Build() => _grid;
+        }
+
+        public class ConsolePanelBuilder
+        {
+            private readonly ConsolePanel _console;
+            
+            public ConsolePanelBuilder(string id)
+            {
+                _console = new ConsolePanel(id);
+            }
+            
+            public ConsolePanelBuilder WithSize(int width, int height)
+            {
+                _console.Width = width;
+                _console.Height = height;
+                return this;
+            }
+            
+            public ConsolePanelBuilder WithPrompt(string prompt)
+            {
+                _console.Prompt = prompt;
+                return this;
+            }
+            
+            public ConsolePanelBuilder WithColors(ColorScheme colors)
+            {
+                _console.NormalColors = colors;
+                return this;
+            }
+            
+            public ConsolePanel Build() => _console;
+        }
+
+        public class StackLayoutBuilder
+        {
+            private readonly StackLayout _stack;
+            
+            public StackLayoutBuilder(string id)
+            {
+                _stack = new StackLayout(id);
+            }
+            
+            public StackLayoutBuilder WithOrientation(Orientation orientation)
+            {
+                _stack.Orientation = orientation;
+                return this;
+            }
+            
+            public StackLayoutBuilder WithSpacing(int spacing)
+            {
+                _stack.Spacing = spacing;
+                return this;
+            }
+            
+            public StackLayoutBuilder WithSize(int width, int height)
+            {
+                _stack.Width = width;
+                _stack.Height = height;
+                return this;
+            }
+            
+            public StackLayout Build() => _stack;
         }
         
-        /// <summary>
-        /// Creates a test grid for debugging layout issues
-        /// </summary>
-        public static SimpleGridLayout CreateTestGrid(string id, int childrenCount = 4)
-        {
-            var grid = CreateGrid(id, 2, 2)
-                .WithSize(80, 24)
-                .WithColors(new ColorScheme(ConsoleColor.White, ConsoleColor.Black))
-                .WithSpacing(1, 0)
-                .WithPadding(1);
-        
-            // Add test children with different colors
-            var colors = new[]
-            {
-                new ColorScheme(ConsoleColor.Black, ConsoleColor.Red),
-                new ColorScheme(ConsoleColor.Black, ConsoleColor.Green),
-                new ColorScheme(ConsoleColor.Black, ConsoleColor.Blue),
-                new ColorScheme(ConsoleColor.Black, ConsoleColor.Yellow)
-            };
-        
-            for (int i = 0; i < Math.Min(childrenCount, 4); i++)
-            {
-                int row = i / 2;
-                int col = i % 2;
-            
-                var label = CreateLabel($"test{i}", $"Cell {i+1}\n({col},{row})")
-                    .WithColors(colors[i % colors.Length]);
-            
-                grid.AddToGrid(label, col, row);
-            }
-        
-            return grid;
-        }
-    
-        /// <summary>
-        /// Configures grid spacing using fluent API
-        /// </summary>
-        public static SimpleGridLayout WithSpacing(this SimpleGridLayout grid, 
-            int horizontal, int vertical)
-        {
-            grid.HorizontalSpacing = horizontal;
-            grid.VerticalSpacing = vertical;
-            return grid;
-        }
-    
-        /// <summary>
-        /// Configures grid padding using fluent API
-        /// </summary>
-        public static SimpleGridLayout WithPadding(this SimpleGridLayout grid, int padding)
-        {
-            grid.Padding = padding;
-            return grid;
-        }
-
-        /// <summary>
-        /// Adds a child to a container using fluent API
-        /// </summary>
-        public static TContainer AddChild<TContainer>(this TContainer container, IComponent child) 
-            where TContainer : IContainer
-        {
-            container.AddChild(child);
-            return container;
-        }
-
-        /// <summary>
-        /// Adds a child to a simple grid at specific position using fluent API
-        /// </summary>
-        public static SimpleGridLayout AddToGrid(this SimpleGridLayout grid, IComponent child, 
-            int column, int row, int columnSpan = 1, int rowSpan = 1)
-        {
-            grid.AddChild(child, column, row, columnSpan, rowSpan);
-            return grid;
-        }
-        
-        /// <summary>
-        /// Creates a selection handler for list box
-        /// </summary>
-        public static IListBox WithSelectionHandler(this IListBox listBox, Action<int> handler)
-        {
-            if (listBox is ListBox concreteListBox)
-            {
-                concreteListBox.OnSelectionChanged = handler;
-            }
-            return listBox;
-        }
-    
-        /// <summary>
-        /// Creates a modern binary launcher
-        /// </summary>
-        public static BinaryLauncherNew CreateBinaryLauncher(string id, 
-            BinariesManager binariesManager, ConsolePanel consolePanel)
-        {
-            return new BinaryLauncherNew(id, binariesManager, consolePanel);
-        }
-    
-        /// <summary>
-        /// Creates a modern demo application
-        /// </summary>
-        public static BinaryDemoNewApp CreateBinaryDemo(BinariesManager binariesManager, 
-            SettingsManager settingsManager)
-        {
-            return new BinaryDemoNewApp(binariesManager, settingsManager);
-        }
-    
-        /// <summary>
-        /// Configures grid rows and columns
-        /// </summary>
-        public static SimpleGridLayout WithGrid(this SimpleGridLayout grid, int columns, int rows)
-        {
-            grid.Columns = columns;
-            grid.Rows = rows;
-            return grid;
-        }
     }
 }

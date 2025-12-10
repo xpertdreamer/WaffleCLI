@@ -38,9 +38,11 @@ namespace WaffleCLI.Core.TUI.Application
         /// </summary>
         public bool IsRunning => _isRunning;
 
-        /// <summary>
-        /// Initializes a new instance of TuiApplication
-        /// </summary>
+        private int _consecutiveIdleFrames = 0;
+        private const int MAX_IDLE_FRAMES_BEFORE_SLOWDOWN = 10;
+        private int _adaptiveTargetFrameTimeMs;
+
+        // Modified constructor to initialize adaptive timing
         public TuiApplication(IServiceProvider serviceProvider, IComponent rootComponent, int targetFps = 60)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
@@ -50,25 +52,66 @@ namespace WaffleCLI.Core.TUI.Application
             _keyBindingManager = serviceProvider.GetRequiredService<KeyBindingManager>();
             _configuration = serviceProvider.GetService<ITuiConfiguration>() ?? new TuiConfiguration();
             RootComponent = rootComponent ?? throw new ArgumentNullException(nameof(rootComponent));
-            
+
             // Get current console dimensions
             _lastWidth = Math.Max(40, Console.WindowWidth);
             _lastHeight = Math.Max(20, Console.WindowHeight);
-            
+
             // Get window dimensions from settings if available (but don't resize console)
             var settingsManager = serviceProvider.GetService<SettingsManager>();
             if (settingsManager != null)
             {
                 // Store settings but don't apply them to console
                 var settings = settingsManager.Settings;
-                Infrastructure.Logging.TuiLogger.LogInfo($"Settings dimensions: {settings.WindowWidth}x{settings.WindowHeight}");
+                Infrastructure.Logging.TuiLogger.LogInfo(
+                    $"Settings dimensions: {settings.WindowWidth}x{settings.WindowHeight}");
             }
-            
+
             _frameTimer = new System.Diagnostics.Stopwatch();
             _targetFrameTimeMs = 1000 / Math.Max(1, targetFps);
-            
+            _adaptiveTargetFrameTimeMs = _targetFrameTimeMs;
+
             RegisterFocusableComponents(rootComponent);
             _focusManager.FocusChanged += OnFocusChanged;
+        }
+
+        // Modified main loop to include adaptive frame rate
+        private bool ShouldRenderThisFrame()
+        {
+            // Always render if there's input waiting
+            if (Console.KeyAvailable)
+            {
+                _consecutiveIdleFrames = 0;
+                return true;
+            }
+
+            // Force render periodically
+            if (_framesSinceLastRender >= FORCE_RENDER_INTERVAL)
+            {
+                _consecutiveIdleFrames = 0;
+                return true;
+            }
+
+            // Check for console resize
+            if (CheckConsoleResize())
+            {
+                _consecutiveIdleFrames = 0;
+                return true;
+            }
+
+            // Adaptive frame rate: reduce FPS when idle
+            _consecutiveIdleFrames++;
+            if (_consecutiveIdleFrames > MAX_IDLE_FRAMES_BEFORE_SLOWDOWN)
+            {
+                // When idle for a while, reduce frame rate to save CPU
+                _adaptiveTargetFrameTimeMs = Math.Min(_targetFrameTimeMs * 4, 100); // Max 10 FPS when idle
+            }
+            else
+            {
+                _adaptiveTargetFrameTimeMs = _targetFrameTimeMs;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -77,23 +120,23 @@ namespace WaffleCLI.Core.TUI.Application
         public void Run()
         {
             if (_isRunning) return;
-            
+    
             try
             {
                 _isRunning = true;
                 Initialize();
-                
+        
                 while (_isRunning)
                 {
                     _frameTimer.Restart();
-                    
+            
                     ProcessInput();
                     Update();
-                    
+            
                     bool shouldRender = _framesSinceLastRender >= FORCE_RENDER_INTERVAL || 
-                                       Console.KeyAvailable || 
-                                       CheckConsoleResize();
-                    
+                                        Console.KeyAvailable || 
+                                        CheckConsoleResize();
+            
                     if (shouldRender)
                     {
                         Render();
@@ -103,20 +146,33 @@ namespace WaffleCLI.Core.TUI.Application
                     {
                         _framesSinceLastRender++;
                     }
-                    
+            
                     int elapsed = (int)_frameTimer.ElapsedMilliseconds;
                     int sleepTime = _targetFrameTimeMs - elapsed;
-                    
+            
                     if (sleepTime > 0)
                     {
-                        if (sleepTime < 15)
+                        // Use proper sleep with adaptive timing
+                        if (sleepTime < 2)
                         {
-                            PreciseSleep(sleepTime);
+                            // Very short sleep - use Thread.Yield for minimal delay
+                            Thread.Yield();
+                        }
+                        else if (sleepTime < 15)
+                        {
+                            // Short sleep - use Thread.Sleep with minimal overhead
+                            Thread.Sleep(1);
                         }
                         else
                         {
-                            Thread.Sleep(1);
+                            // Longer sleep - use Thread.Sleep with calculated time
+                            Thread.Sleep(Math.Max(1, sleepTime - 1));
                         }
+                    }
+                    else
+                    {
+                        // Frame took too long - yield to prevent CPU hogging
+                        Thread.Yield();
                     }
                 }
             }
@@ -128,14 +184,6 @@ namespace WaffleCLI.Core.TUI.Application
             {
                 Cleanup();
             }
-        }
-
-        /// <summary>
-        /// Stops the application
-        /// </summary>
-        public void Stop()
-        {
-            _isRunning = false;
         }
 
         /// <summary>
@@ -274,22 +322,6 @@ namespace WaffleCLI.Core.TUI.Application
             }
         }
 
-        private void Cleanup()
-        {
-            try
-            {
-                _focusManager.FocusChanged -= OnFocusChanged;
-                _inputHandler.Stop();
-                Console.CursorVisible = true;
-                Console.ResetColor();
-                Console.Clear();
-            }
-            catch (Exception ex)
-            {
-                // Ignore cleanup errors
-            }
-        }
-
         private void RegisterFocusableComponents(IComponent component)
         {
             if (component is IFocusable focusable)
@@ -304,10 +336,56 @@ namespace WaffleCLI.Core.TUI.Application
         }
 
         /// <summary>
+        /// Stops the application
+        /// </summary>
+        public void Stop()
+        {
+            _isRunning = false;
+        }
+
+        /// <summary>
+        /// Cleanly shuts down the application
+        /// </summary>
+        public void Shutdown()
+        {
+            Stop();
+    
+            // Wait a bit for the main loop to exit
+            for (int i = 0; i < 10 && _isRunning; i++)
+            {
+                Thread.Sleep(10);
+            }
+    
+            // Shutdown logging system
+            Infrastructure.Logging.TuiLogger.Shutdown();
+        }
+
+        private void Cleanup()
+        {
+            try
+            {
+                _focusManager.FocusChanged -= OnFocusChanged;
+                _inputHandler.Stop();
+                Console.CursorVisible = true;
+                Console.ResetColor();
+                Console.Clear();
+        
+                // Shutdown logging
+                Infrastructure.Logging.TuiLogger.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                // Ignore cleanup errors, but log them
+                System.Diagnostics.Debug.WriteLine($"Cleanup error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Disposes the application
         /// </summary>
         public void Dispose()
         {
+            Shutdown();
             _focusManager.FocusChanged -= OnFocusChanged;
             _renderEngine?.Dispose();
             RootComponent?.Dispose();

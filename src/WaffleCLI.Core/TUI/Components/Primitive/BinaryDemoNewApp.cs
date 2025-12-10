@@ -72,52 +72,55 @@ public class BinaryDemoNewApp : SimpleGridLayout
 
     private void InitializeComponents()
     {
-        // Create console panel first (launcher needs it)
-        _consolePanel = ComponentFactory.CreateConsolePanel("console", "> ", true)
-            .WithColors(new ColorScheme(ConsoleColor.White, ConsoleColor.Black));
+        // Create console panel first (launcher needs it) using new fluent API
+        _consolePanel = ComponentFactory.CreateConsolePanel("console")
+            .WithSize(70, 20)
+            .WithPrompt("> ")
+            .WithColors(new ColorScheme(ConsoleColor.White, ConsoleColor.Black))
+            .Build();
 
         // Create binary launcher with console panel
         _binaryLauncher = new BinaryLauncherNew("binaryLauncherNew", _binariesManager, _consolePanel);
 
-        // Create other UI components
+        // Create other UI components using new fluent API
         _headerLabel = ComponentFactory.CreateLabel("header", "🚀 WAFFLECLI MODERN TUI DEMO 🚀")
-            .WithColors(new ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue));
+            .WithAlignment(TextAlignment.Center)
+            .WithColors(new ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue))
+            .Build();
 
         _instructionsLabel = ComponentFactory.CreateLabel("instructions",
                 "Tab:Navigate • Enter:Launch • Ctrl+F:Search • Ctrl+R:Refresh • Esc:Exit")
-            .WithColors(new ColorScheme(ConsoleColor.Cyan, ConsoleColor.DarkBlue));
+            .WithAlignment(TextAlignment.Center)
+            .WithColors(new ColorScheme(ConsoleColor.Cyan, ConsoleColor.DarkBlue))
+            .Build();
 
-        _importButton = ComponentFactory.CreateButton("import", "📁 Import", ImportBinaries)
+        _importButton = ComponentFactory.CreateButton("import", "📁 Import")
             .WithSize(12, 2)
-            .WithColors(new ColorScheme(ConsoleColor.Black, ConsoleColor.DarkCyan));
+            .WithColors(new ColorScheme(ConsoleColor.Black, ConsoleColor.DarkCyan))
+            .WithClickHandler(ImportBinaries)
+            .Build();
 
-        _validateButton = ComponentFactory.CreateButton("validate", "✅ Validate", ValidateBinaries)
+        _validateButton = ComponentFactory.CreateButton("validate", "✅ Validate")
             .WithSize(12, 2)
-            .WithColors(new ColorScheme(ConsoleColor.Black, ConsoleColor.DarkYellow));
+            .WithColors(new ColorScheme(ConsoleColor.Black, ConsoleColor.DarkYellow))
+            .WithClickHandler(ValidateBinaries)
+            .Build();
 
         _footerLabel = ComponentFactory.CreateLabel("footer", GetFooterText())
-            .WithColors(new ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue));
+            .WithAlignment(TextAlignment.Right)
+            .WithColors(new ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue))
+            .Build();
     }
 
     private void LayoutComponents()
     {
-        // Row 0: Header (spans all 12 columns)
         AddChild(_headerLabel, 0, 0, 12, 1);
-
-        // Row 1-4: Main content area (4 rows tall)
-        // Launcher takes 8 columns, console takes 4 columns
         AddChild(_binaryLauncher, 0, 1, 8, 4);
-        AddChild(_consolePanel, 8, 1, 4, 4);
-
-        // Row 5: Action buttons
         AddChild(_importButton, 0, 5, 2, 1);
         AddChild(_validateButton, 2, 5, 2, 1);
-
-        // Row 5: Instructions (center)
         AddChild(_instructionsLabel, 4, 5, 4, 1);
-
-        // Row 5: Footer (right side)
         AddChild(_footerLabel, 8, 5, 4, 1);
+        AddChild(_consolePanel, 8, 1, 4, 4);
     }
 
     private string GetFooterText()

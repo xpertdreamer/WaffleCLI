@@ -25,7 +25,7 @@ namespace WaffleCLI.Core.TUI.Components.Layout
             // Draw background
             if (!BackgroundColors.Equals(ColorScheme.Default))
             {
-                renderEngine.FillRectangle(X, Y, Width, Height, ' ', BackgroundColors);
+                renderEngine.FillRectangle(AbsoluteX, AbsoluteY, Width, Height, ' ', BackgroundColors);
             }
 
             base.Render(renderEngine);
@@ -33,6 +33,8 @@ namespace WaffleCLI.Core.TUI.Components.Layout
 
         public override void DoLayout()
         {
+            if (Children.Count == 0) return;
+
             if (Orientation == Orientation.Vertical)
             {
                 DoVerticalLayout();
@@ -45,23 +47,33 @@ namespace WaffleCLI.Core.TUI.Components.Layout
 
         private void DoVerticalLayout()
         {
-            int currentY = Y;
+            int currentY = 0;
+            int availableHeight = Height;
+            int totalSpacing = Math.Max(0, (Children.Count - 1) * Spacing);
+            int childHeight = (availableHeight - totalSpacing) / Children.Count;
+            
             foreach (var child in Children.Where(c => c.IsVisible))
             {
-                child.X = X;
+                child.X = 0;
                 child.Y = currentY;
                 child.Width = Width;
+                child.Height = Math.Max(1, childHeight);
                 currentY += child.Height + Spacing;
             }
         }
 
         private void DoHorizontalLayout()
         {
-            int currentX = X;
+            int currentX = 0;
+            int availableWidth = Width;
+            int totalSpacing = Math.Max(0, (Children.Count - 1) * Spacing);
+            int childWidth = (availableWidth - totalSpacing) / Children.Count;
+            
             foreach (var child in Children.Where(c => c.IsVisible))
             {
                 child.X = currentX;
-                child.Y = Y;
+                child.Y = 0;
+                child.Width = Math.Max(1, childWidth);
                 child.Height = Height;
                 currentX += child.Width + Spacing;
             }

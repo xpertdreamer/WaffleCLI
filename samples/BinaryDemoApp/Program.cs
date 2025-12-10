@@ -31,21 +31,18 @@ try
     
     Console.WriteLine("🔨 Building modern TUI application...");
     
+    Console.WriteLine("🔨 Building modern TUI application...");
+
     var app = new TuiApplicationBuilder()
+        .WithFrameRate(30) // Smooth framerate
+        .WithTheme("default")
+        .EnableDoubleBuffering(true)
+        .EnableInputLogging(false)
         .ConfigureServices(services =>
         {
             TuiLogger.LogInfo("Configuring modern demo services");
             services.AddSingleton(settingsManager);
             services.AddSingleton(binariesManager);
-            
-            // Modern configuration
-            services.AddSingleton<ITuiConfiguration>(new TuiConfiguration
-            {
-                DefaultTheme = settings.Theme,
-                FrameRate = 30, // Smooth framerate
-                EnableDoubleBuffering = true,
-                EnableInputLogging = false
-            });
         })
         .UseRootComponent<BinaryDemoNewApp>() // Use the new modern app
         .Build();
@@ -76,6 +73,7 @@ try
     
     // Run the modern application
     app.Run();
+    app.Shutdown();
     
     Console.WriteLine("👋 Modern demo finished.");
     Console.WriteLine("📋 Log: tui-modern.log");

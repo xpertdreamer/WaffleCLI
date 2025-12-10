@@ -65,29 +65,42 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         
         private void InitializeComponents()
         {
-            // Create components using ComponentFactory
+            // Create components using new ComponentFactory fluent API
             _titleLabel = ComponentFactory.CreateLabel("title", "🚀 Binary Launcher")
-                .WithColors(new ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue));
+                .WithAlignment(TextAlignment.Center)
+                .WithColors(new ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue))
+                .Build();
             
-            _searchBox = ComponentFactory.CreateTextBox("search", "Search binaries...")
-                .WithColors(new ColorScheme(ConsoleColor.Black, ConsoleColor.White));
+            _searchBox = ComponentFactory.CreateTextBox("search")
+                .WithPlaceholder("Search binaries...")
+                .WithMaxLength(100)
+                .WithColors(new ColorScheme(ConsoleColor.Black, ConsoleColor.White))
+                .Build();
             
-            _refreshButton = ComponentFactory.CreateButton("refresh", "⟳", RefreshBinaries)
+            _refreshButton = ComponentFactory.CreateButton("refresh", "⟳")
                 .WithSize(3, 1)
-                .WithColors(new ColorScheme(ConsoleColor.Black, ConsoleColor.Cyan));
+                .WithColors(new ColorScheme(ConsoleColor.Black, ConsoleColor.Cyan))
+                .WithClickHandler(RefreshBinaries)
+                .Build();
             
             _binariesList = ComponentFactory.CreateListBox("binaries")
-                .WithSelectionHandler(OnBinarySelected);
+                .WithSize(70, 15)
+                .WithSelectionHandler(OnBinarySelected)
+                .Build();
             
             _detailsLabel = ComponentFactory.CreateLabel("details", "Select a binary to view details")
-                .WithColors(new ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue));
+                .WithColors(new ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue))
+                .Build();
             
-            _launchButton = ComponentFactory.CreateButton("launch", "🚀 LAUNCH", LaunchSelectedBinary)
+            _launchButton = ComponentFactory.CreateButton("launch", "🚀 LAUNCH")
                 .WithSize(12, 2)
-                .WithColors(new ColorScheme(ConsoleColor.Black, ConsoleColor.Green));
+                .WithColors(new ColorScheme(ConsoleColor.Black, ConsoleColor.Green))
+                .WithClickHandler(LaunchSelectedBinary)
+                .Build();
             
             _statusLabel = ComponentFactory.CreateLabel("status", "Ready")
-                .WithColors(new ColorScheme(ConsoleColor.Gray, ConsoleColor.DarkBlue));
+                .WithColors(new ColorScheme(ConsoleColor.Gray, ConsoleColor.DarkBlue))
+                .Build();
         }
         
         private void LayoutComponents()

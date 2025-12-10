@@ -174,33 +174,35 @@ namespace WaffleCLI.Core.TUI.Components.Layout
                 return;
             }
 
-            // Calculate cell dimensions with safety checks
-            int totalHorizontalSpacing = Math.Max(0, (_columns - 1) * _horizontalSpacing);
-            int totalVerticalSpacing = Math.Max(0, (_rows - 1) * _verticalSpacing);
-
-            int availableWidth = Math.Max(1, Width - (_padding * 2) - totalHorizontalSpacing);
-            int availableHeight = Math.Max(1, Height - (_padding * 2) - totalVerticalSpacing);
+            // Calculate available space after padding
+            int availableWidth = Math.Max(0, Width - (_padding * 2));
+            int availableHeight = Math.Max(0, Height - (_padding * 2));
 
             if (availableWidth <= 0 || availableHeight <= 0)
             {
                 Infrastructure.Logging.TuiLogger.LogWarning(
-                    $"SimpleGridLayout {Id}: No available space after padding/spacing");
+                    $"SimpleGridLayout {Id}: No available space after padding");
                 return;
             }
 
-            int cellWidth = availableWidth / _columns;
-            int cellHeight = availableHeight / _rows;
+            // Calculate total spacing
+            int totalHorizontalSpacing = Math.Max(0, (_columns - 1) * _horizontalSpacing);
+            int totalVerticalSpacing = Math.Max(0, (_rows - 1) * _verticalSpacing);
 
-            // Distribute remaining space
-            int remainingWidth = Math.Max(0, availableWidth - (cellWidth * _columns));
-            int remainingHeight = Math.Max(0, availableHeight - (cellHeight * _rows));
+            // Calculate cell dimensions
+            int cellWidth = (availableWidth - totalHorizontalSpacing) / _columns;
+            int cellHeight = (availableHeight - totalVerticalSpacing) / _rows;
 
-            // Position each child with bounds checking
+            // Adjust for integer division remainder
+            int widthRemainder = availableWidth - (cellWidth * _columns + totalHorizontalSpacing);
+            int heightRemainder = availableHeight - (cellHeight * _rows + totalVerticalSpacing);
+
+            // Position each child
             foreach (var child in Children)
             {
                 if (!_childPositions.TryGetValue(child, out var position))
                 {
-                    // Default: child fills entire grid (with padding)
+                    // Default: child fills entire available space
                     child.X = _padding;
                     child.Y = _padding;
                     child.Width = Math.Max(1, availableWidth);
@@ -208,59 +210,50 @@ namespace WaffleCLI.Core.TUI.Components.Layout
                     continue;
                 }
 
-                // Clamp position to valid ranges
+                // Validate position
                 int col = Math.Clamp(position.Column, 0, _columns - 1);
                 int row = Math.Clamp(position.Row, 0, _rows - 1);
                 int colSpan = Math.Clamp(position.ColumnSpan, 1, _columns - col);
                 int rowSpan = Math.Clamp(position.RowSpan, 1, _rows - row);
 
-                // Calculate starting position
-                int cellX = _padding + (col * (cellWidth + _horizontalSpacing)) +
-                            Math.Min(col, remainingWidth);
-                int cellY = _padding + (row * (cellHeight + _verticalSpacing)) +
-                            Math.Min(row, remainingHeight);
+                // Calculate position
+                int cellX = _padding;
+                int cellY = _padding;
 
-                // Calculate dimensions for spanned cells
+                // Add previous columns
+                for (int c = 0; c < col; c++)
+                {
+                    cellX += cellWidth + (c < widthRemainder ? 1 : 0) + _horizontalSpacing;
+                }
+
+                // Add previous rows
+                for (int r = 0; r < row; r++)
+                {
+                    cellY += cellHeight + (r < heightRemainder ? 1 : 0) + _verticalSpacing;
+                }
+
+                // Calculate spanned dimensions
                 int spannedWidth = 0;
                 for (int c = 0; c < colSpan; c++)
                 {
                     int currentCol = col + c;
-                    int currentCellWidth = cellWidth + (currentCol < remainingWidth ? 1 : 0);
-                    spannedWidth += currentCellWidth;
-
-                    if (c > 0 && _horizontalSpacing > 0)
-                    {
-                        spannedWidth += _horizontalSpacing;
-                    }
+                    spannedWidth += cellWidth + (currentCol < widthRemainder ? 1 : 0);
+                    if (c > 0) spannedWidth += _horizontalSpacing;
                 }
 
                 int spannedHeight = 0;
                 for (int r = 0; r < rowSpan; r++)
                 {
                     int currentRow = row + r;
-                    int currentCellHeight = cellHeight + (currentRow < remainingHeight ? 1 : 0);
-                    spannedHeight += currentCellHeight;
-
-                    if (r > 0 && _verticalSpacing > 0)
-                    {
-                        spannedHeight += _verticalSpacing;
-                    }
+                    spannedHeight += cellHeight + (currentRow < heightRemainder ? 1 : 0);
+                    if (r > 0) spannedHeight += _verticalSpacing;
                 }
 
-                // Ensure child stays within grid bounds
-                int finalX = Math.Max(_padding, Math.Min(cellX, Width - _padding - 1));
-                int finalY = Math.Max(_padding, Math.Min(cellY, Height - _padding - 1));
-                int finalWidth = Math.Max(1, Math.Min(spannedWidth, Width - finalX));
-                int finalHeight = Math.Max(1, Math.Min(spannedHeight, Height - finalY));
-
-                child.X = finalX;
-                child.Y = finalY;
-                child.Width = finalWidth;
-                child.Height = finalHeight;
-
-                // Debug logging
-                Infrastructure.Logging.TuiLogger.LogDebug(
-                    $"SimpleGridLayout {Id}: Child {child.Id} at ({finalX},{finalY}) size {finalWidth}x{finalHeight}");
+                // Set child dimensions with bounds checking
+                child.X = Math.Max(_padding, Math.Min(cellX, Width - _padding - 1));
+                child.Y = Math.Max(_padding, Math.Min(cellY, Height - _padding - 1));
+                child.Width = Math.Max(1, Math.Min(spannedWidth, Width - child.X));
+                child.Height = Math.Max(1, Math.Min(spannedHeight, Height - child.Y));
             }
         }
 

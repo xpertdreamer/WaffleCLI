@@ -55,19 +55,19 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         }
         
         public string Prompt { get; set; } = "> ";
-        public int MaxHistoryLines { get; set; } = 1000;
+        private int MaxHistoryLines { get; set; } = 1000;
         public bool ShowPrompt { get; set; } = true;
 
         public ConsolePanel(string id) : base(id)
         {
-            Width = 70;
+            Width = 100;
             Height = 20;
     
             _outputLines.Add("Console Panel Ready");
             _outputLines.Add("Use 'start <command>' to launch a process");
             _outputLines.Add("Type 'exit' to close process, 'clear' to clear console");
-            _outputLines.Add("Press F11 to toggle fullscreen mode");
-            _outputLines.Add("Press Ctrl+Left/Right to scroll horizontally when word wrap is disabled");
+            _outputLines.Add("Press Alt+F to toggle fullscreen mode");
+            _outputLines.Add("Press Alt+Left/Right to scroll horizontally when word wrap is disabled");
         }
 
         /// <summary>
@@ -189,9 +189,9 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     AddOutputLine("  help               - Show this help");
                     AddOutputLine("");
                     AddOutputLine("Hotkeys:");
-                    AddOutputLine("  F11                - Toggle fullscreen");
+                    AddOutputLine("  Alt+F              - Toggle fullscreen");
                     AddOutputLine("  Ctrl+W             - Toggle word wrap");
-                    AddOutputLine("  Ctrl+Left/Right    - Scroll horizontally (no wrap)");
+                    AddOutputLine("  Alt+Left/Right     - Scroll horizontally (no wrap)");
                     AddOutputLine("  Ctrl+Home          - Reset horizontal scroll");
                     break;
                 case "start":
@@ -259,30 +259,26 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             if (!IsVisible) return;
 
+            // If in fullscreen mode, render as overlay on top of everything
+            if (_isFullscreen)
+            {
+                RenderFullscreenOverlay(renderEngine);
+                return;
+            }
+
             int absoluteX = AbsoluteX;
             int absoluteY = AbsoluteY;
-            int panelWidth = Width;
-            int panelHeight = Height;
-
-            // Adjust dimensions if in fullscreen mode
-            if (_isFullscreen && Parent is ComponentBase parent)
-            {
-                absoluteX = parent.AbsoluteX;
-                absoluteY = parent.AbsoluteY;
-                panelWidth = Math.Max(10, parent.Width);
-                panelHeight = Math.Max(10, parent.Height);
-            }
 
             var colors = HasFocus ? FocusColors : NormalColors;
             var borderStyle = HasFocus ? BorderStyle.Double : BorderStyle.Single;
 
-            renderEngine.DrawBox(absoluteX, absoluteY, panelWidth, panelHeight, borderStyle, colors);
+            renderEngine.DrawBox(absoluteX, absoluteY, Width, Height, borderStyle, colors);
 
-            int visibleLines = Math.Max(0, panelHeight - 2);
+            int visibleLines = Math.Max(0, Height - 2);
             lock (_outputLock)
             {
                 // Update wrapped lines if needed
-                UpdateWrappedLines(panelWidth - 2);
+                UpdateWrappedLines(Width - 2);
 
                 for (int i = 0; i < visibleLines; i++)
                 {
@@ -297,19 +293,19 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                             int segmentIndex = Math.Min(_horizontalScroll, wrappedLine.Count - 1);
                             string segment = wrappedLine[segmentIndex];
 
-                            // Add ellipsis if there are more segments
-                            if (wrappedLine.Count > 1 && segmentIndex < wrappedLine.Count - 1)
+                            // Add ellipsis at the END if there are more segments and we're not at the beginning
+                            if (wrappedLine.Count > 1 && segmentIndex > 0)
                             {
                                 if (segment.Length > 0 && segment.Length >= 3)
                                 {
-                                    segment = "..." + segment.Substring(Math.Max(0, segment.Length - (panelWidth - 5)));
+                                    segment = segment.Substring(0, Math.Max(0, segment.Length - 3)) + "...";
                                 }
                             }
 
                             // Ensure segment fits in available width
-                            if (segment.Length > panelWidth - 2)
+                            if (segment.Length > Width - 2)
                             {
-                                segment = segment.Substring(0, panelWidth - 2);
+                                segment = segment.Substring(0, Width - 2);
                             }
 
                             renderEngine.DrawString(absoluteX + 1, lineY, segment, colors);
@@ -320,20 +316,124 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
             if (HasFocus)
             {
-                DrawInputLine(renderEngine, absoluteX, absoluteY, panelWidth, panelHeight);
+                DrawInputLine(renderEngine, absoluteX, absoluteY, Width, Height);
+            }
+        }
+
+        private void RenderFullscreenOverlay(IRenderEngine renderEngine)
+        {
+            // Get parent dimensions or console dimensions
+            int screenWidth = Console.WindowWidth;
+            int screenHeight = Console.WindowHeight;
+
+            if (Parent is ComponentBase parent)
+            {
+                screenWidth = parent.Width;
+                screenHeight = parent.Height;
             }
 
-            // Draw fullscreen indicator
-            if (_isFullscreen)
+            // Fill entire screen with background
+            renderEngine.FillRectangle(0, 0, screenWidth, screenHeight, ' ',
+                new ColorScheme(ConsoleColor.White, ConsoleColor.Black));
+
+            // Draw border around the entire screen
+            renderEngine.DrawBox(0, 0, screenWidth, screenHeight, BorderStyle.Double,
+                new ColorScheme(ConsoleColor.Cyan, ConsoleColor.Black));
+
+            // Draw title
+            string title = " CONSOLE PANEL (FULLSCREEN - F11 to exit) ";
+            if (title.Length <= screenWidth - 4)
             {
-                string indicator = " [FULLSCREEN] ";
-                if (indicator.Length <= panelWidth - 2)
+                int titleX = (screenWidth - title.Length) / 2;
+                renderEngine.DrawString(titleX, 0, title,
+                    new ColorScheme(ConsoleColor.Yellow, ConsoleColor.Black));
+            }
+
+            // Calculate available space for content
+            int contentWidth = screenWidth - 2;
+            int contentHeight = screenHeight - 4; // Top border, title, bottom border, input line
+            int contentY = 2;
+
+            // Update wrapped lines for fullscreen width
+            UpdateWrappedLines(contentWidth);
+
+            // Render content
+            lock (_outputLock)
+            {
+                for (int i = 0; i < contentHeight; i++)
                 {
-                    renderEngine.DrawString(
-                        absoluteX + panelWidth - indicator.Length - 1,
-                        absoluteY,
-                        indicator,
-                        new ColorScheme(ConsoleColor.Yellow, colors.Background));
+                    int lineIndex = _scrollOffset + i;
+                    if (lineIndex >= 0 && lineIndex < _wrappedLines.Count)
+                    {
+                        int lineY = contentY + i;
+                        var wrappedLine = _wrappedLines[lineIndex];
+
+                        if (wrappedLine.Count > 0)
+                        {
+                            int segmentIndex = Math.Min(_horizontalScroll, wrappedLine.Count - 1);
+                            string segment = wrappedLine[segmentIndex];
+
+                            // Add ellipsis at the END if there are more segments and we're not at the beginning
+                            if (wrappedLine.Count > 1 && segmentIndex > 0)
+                            {
+                                if (segment.Length > 0 && segment.Length >= 3)
+                                {
+                                    segment = segment.Substring(0, Math.Max(0, segment.Length - 3)) + "...";
+                                }
+                            }
+
+                            // Ensure segment fits in available width
+                            if (segment.Length > contentWidth)
+                            {
+                                segment = segment.Substring(0, contentWidth);
+                            }
+
+                            renderEngine.DrawString(1, lineY, segment,
+                                new ColorScheme(ConsoleColor.White, ConsoleColor.Black));
+                        }
+                    }
+                }
+            }
+
+            // Draw input line at the bottom
+            DrawFullscreenInputLine(renderEngine, screenWidth, screenHeight);
+        }
+
+        private void DrawFullscreenInputLine(IRenderEngine renderEngine, int screenWidth, int screenHeight)
+        {
+            int inputY = screenHeight - 2;
+            string inputDisplay = ShowPrompt ? Prompt : "";
+            inputDisplay += _currentInput.ToString();
+
+            int maxDisplayWidth = screenWidth - 4;
+            if (inputDisplay.Length > maxDisplayWidth)
+            {
+                // Show the BEGINNING of input when typing (not the end)
+                inputDisplay = inputDisplay.Substring(0, maxDisplayWidth);
+
+                // Add ellipsis at the end to indicate truncation
+                if (inputDisplay.Length >= 3)
+                {
+                    inputDisplay = inputDisplay.Substring(0, inputDisplay.Length - 3) + "...";
+                }
+            }
+
+            // Draw input background
+            renderEngine.FillRectangle(2, inputY, screenWidth - 4, 1, ' ',
+                new ColorScheme(ConsoleColor.Black, ConsoleColor.Gray));
+
+            // Draw input text
+            renderEngine.DrawString(2, inputY, inputDisplay,
+                new ColorScheme(ConsoleColor.Black, ConsoleColor.Gray));
+
+            // Draw cursor
+            if (_cursorVisible && HasFocus)
+            {
+                int cursorX = 2 + (ShowPrompt ? Prompt.Length : 0) + _cursorPosition;
+                if (cursorX < screenWidth - 2)
+                {
+                    renderEngine.DrawChar(cursorX, inputY, '_',
+                        new ColorScheme(ConsoleColor.Gray, ConsoleColor.Black));
                 }
             }
         }
@@ -414,7 +514,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                 return result;
             }
     
-            // Handle ANSI escape codes or special characters
+            // Always start from the beginning of the line
             int currentPos = 0;
             while (currentPos < line.Length)
             {
@@ -639,14 +739,17 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
         private void OnProcessOutputReceived(object sender, ProcessOutputEventArgs e)
         {
+            // Don't log process output as debug info to reduce logging overhead
+            // Just add it to the console output
             AddOutputLine(e.Output, e.IsError);
         }
 
         private void OnProcessExited(object sender, ProcessExitedEventArgs e)
         {
-            _processRunning = false;
+            // Log at info level instead of debug
+            Infrastructure.Logging.TuiLogger.LogInfo($"Process exited with code: {e.ExitCode}");
             AddOutputLine($"Process exited with code: {e.ExitCode}");
-            
+    
             // Clean up
             if (_processRunner != null)
             {
