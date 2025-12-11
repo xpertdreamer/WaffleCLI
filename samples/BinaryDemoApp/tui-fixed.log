@@ -1,0 +1,689 @@
+[000001] 2025-12-03 23:51:00.257 - Log file cleared - new session started
+[000002] 2025-12-03 23:51:00.291 - ℹ️ INFO: === WaffleCLI TUI Framework (Fixed Version) ===
+[000003] 2025-12-03 23:51:00.384 - ℹ️ INFO: Loaded 2 binaries from binaries.json
+[000004] 2025-12-03 23:51:00.386 - ℹ️ INFO: Default services configured
+[000005] 2025-12-03 23:51:00.387 - ℹ️ INFO: Configuring services
+[000006] 2025-12-03 23:51:00.387 - ℹ️ INFO: Custom services configuration applied
+[000007] 2025-12-03 23:51:00.390 - ℹ️ INFO: Registered root component: FixedBinaryDemoApp
+[000008] 2025-12-03 23:51:00.412 - ℹ️ INFO: FixedBinaryDemoApp constructor started
+[000009] 2025-12-03 23:51:00.416 - ℹ️ INFO: Creating UI components
+[000010] 2025-12-03 23:51:00.417 - 🔍 DEBUG: Label header text changed
+[000011] 2025-12-03 23:51:00.418 - ℹ️ INFO: FixedBinaryLauncher fixedBinaryLauncher constructor started
+[000012] 2025-12-03 23:51:00.419 - 🔍 DEBUG: Label titleLabel text changed
+[000013] 2025-12-03 23:51:00.420 - 🔍 DEBUG: Label categoryLabel text changed
+[000014] 2025-12-03 23:51:00.421 - 🔍 DEBUG: Label detailsLabel text changed
+[000015] 2025-12-03 23:51:00.425 - ℹ️ INFO: Loaded 2 binaries from binaries.json
+[000016] 2025-12-03 23:51:00.428 - 🔍 DEBUG: Label categoryLabel text changed
+[000017] 2025-12-03 23:51:00.429 - 🔍 DEBUG: Label titleLabel text changed
+[000018] 2025-12-03 23:51:00.429 - ℹ️ INFO: Refreshed binaries: 2 total
+[000019] 2025-12-03 23:51:00.429 - ℹ️ INFO: FixedBinaryLauncher fixedBinaryLauncher initialized
+[000020] 2025-12-03 23:51:00.430 - 🔍 DEBUG: Label statusLabel text changed
+[000021] 2025-12-03 23:51:00.431 - 🔍 DEBUG: Label instructions text changed
+[000022] 2025-12-03 23:51:00.431 - ℹ️ INFO: FixedBinaryDemoApp initialized: 100x30
+[000023] 2025-12-03 23:51:00.432 - ℹ️ INFO: TuiApplication built successfully
+[000024] 2025-12-03 23:51:00.436 - ℹ️ INFO: Settings dimensions: 120x35
+[000025] 2025-12-03 23:51:00.437 - 🔍 DEBUG: Component searchBox focus changed to: True
+[000026] 2025-12-03 23:51:00.437 - 🔍 DEBUG: Component searchBox requested visual update
+[000027] 2025-12-03 23:51:00.438 - 🔍 DEBUG: Component searchBox received focus
+[000028] 2025-12-03 23:51:00.438 - 🔍 DEBUG: TextBox searchBox received focus
+[000029] 2025-12-03 23:51:02.784 - ℹ️ INFO: Application initialized with size: 120x30
+[000030] 2025-12-03 23:51:02.786 - 🔍 DEBUG: Label statusLabel text changed
+[000031] 2025-12-03 23:51:04.437 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000032] 2025-12-03 23:51:04.438 - 🔍 DEBUG: Routing input to focused component: searchBox
+[000033] 2025-12-03 23:51:04.439 - 🔍 DEBUG: Focused component did not handle input: searchBox
+[000034] 2025-12-03 23:51:04.440 - 🔍 DEBUG: Component searchBox focus changed to: False
+[000035] 2025-12-03 23:51:04.440 - 🔍 DEBUG: Component searchBox requested visual update
+[000036] 2025-12-03 23:51:04.440 - 🔍 DEBUG: Component searchBox lost focus
+[000037] 2025-12-03 23:51:04.440 - 🔍 DEBUG: TextBox searchBox lost focus
+[000038] 2025-12-03 23:51:04.441 - 🔍 DEBUG: Component refreshButton focus changed to: True
+[000039] 2025-12-03 23:51:04.441 - 🔍 DEBUG: Component refreshButton requested visual update
+[000040] 2025-12-03 23:51:04.441 - 🔍 DEBUG: Component refreshButton received focus
+[000041] 2025-12-03 23:51:04.441 - 🔍 DEBUG: Component refreshButton requested visual update
+[000042] 2025-12-03 23:51:04.442 - ℹ️ INFO: Button refreshButton received focus
+[000043] 2025-12-03 23:51:04.442 - 🔍 DEBUG: Focus moved forward: True
+[000044] 2025-12-03 23:51:04.442 - 🔍 DEBUG: Navigation handled: Tab
+[000045] 2025-12-03 23:51:04.856 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000046] 2025-12-03 23:51:04.857 - 🔍 DEBUG: Routing input to focused component: refreshButton
+[000047] 2025-12-03 23:51:04.857 - 🔍 DEBUG: Button refreshButton received input: Tab
+[000048] 2025-12-03 23:51:04.857 - 🔍 DEBUG: Focused component did not handle input: refreshButton
+[000049] 2025-12-03 23:51:04.858 - 🔍 DEBUG: Component refreshButton focus changed to: False
+[000050] 2025-12-03 23:51:04.858 - 🔍 DEBUG: Component refreshButton requested visual update
+[000051] 2025-12-03 23:51:04.858 - 🔍 DEBUG: Component refreshButton lost focus
+[000052] 2025-12-03 23:51:04.858 - 🔍 DEBUG: Component refreshButton requested visual update
+[000053] 2025-12-03 23:51:04.859 - ℹ️ INFO: Button refreshButton lost focus
+[000054] 2025-12-03 23:51:04.859 - 🔍 DEBUG: Component binariesList focus changed to: True
+[000055] 2025-12-03 23:51:04.859 - 🔍 DEBUG: Component binariesList requested visual update
+[000056] 2025-12-03 23:51:04.860 - 🔍 DEBUG: Component binariesList received focus
+[000057] 2025-12-03 23:51:04.860 - 🔍 DEBUG: ListBox binariesList received focus
+[000058] 2025-12-03 23:51:04.860 - 🔍 DEBUG: Focus moved forward: True
+[000059] 2025-12-03 23:51:04.861 - 🔍 DEBUG: Navigation handled: Tab
+[000060] 2025-12-03 23:51:05.691 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000061] 2025-12-03 23:51:05.693 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000062] 2025-12-03 23:51:05.694 - 🔍 DEBUG: Label detailsLabel text changed
+[000063] 2025-12-03 23:51:05.694 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000064] 2025-12-03 23:51:05.694 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 0
+[000065] 2025-12-03 23:51:05.694 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000066] 2025-12-03 23:51:05.979 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000067] 2025-12-03 23:51:05.980 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000068] 2025-12-03 23:51:05.980 - 🔍 DEBUG: Label detailsLabel text changed
+[000069] 2025-12-03 23:51:05.980 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000070] 2025-12-03 23:51:05.980 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000071] 2025-12-03 23:51:05.981 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000072] 2025-12-03 23:51:06.749 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000073] 2025-12-03 23:51:06.750 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000074] 2025-12-03 23:51:07.169 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000075] 2025-12-03 23:51:07.169 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000076] 2025-12-03 23:51:07.170 - 🔍 DEBUG: Label detailsLabel text changed
+[000077] 2025-12-03 23:51:07.170 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000078] 2025-12-03 23:51:07.171 - 🔍 DEBUG: ListBox binariesList: Move up, selected index: 0
+[000079] 2025-12-03 23:51:07.171 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000080] 2025-12-03 23:51:07.625 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000081] 2025-12-03 23:51:07.626 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000082] 2025-12-03 23:51:07.627 - 🔍 DEBUG: Label detailsLabel text changed
+[000083] 2025-12-03 23:51:07.627 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000084] 2025-12-03 23:51:07.627 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000085] 2025-12-03 23:51:07.628 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000086] 2025-12-03 23:51:07.797 - 🔍 DEBUG: Label statusLabel text changed
+[000087] 2025-12-03 23:51:07.924 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000088] 2025-12-03 23:51:07.925 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000089] 2025-12-03 23:51:07.925 - 🔍 DEBUG: Label detailsLabel text changed
+[000090] 2025-12-03 23:51:07.926 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000091] 2025-12-03 23:51:07.926 - 🔍 DEBUG: ListBox binariesList: Move up, selected index: 0
+[000092] 2025-12-03 23:51:07.926 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000093] 2025-12-03 23:51:08.252 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000094] 2025-12-03 23:51:08.254 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000095] 2025-12-03 23:51:08.255 - 🔍 DEBUG: Label detailsLabel text changed
+[000096] 2025-12-03 23:51:08.255 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000097] 2025-12-03 23:51:08.255 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000098] 2025-12-03 23:51:08.255 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000099] 2025-12-03 23:51:08.561 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000100] 2025-12-03 23:51:08.561 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000101] 2025-12-03 23:51:08.562 - 🔍 DEBUG: Label detailsLabel text changed
+[000102] 2025-12-03 23:51:08.562 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000103] 2025-12-03 23:51:08.562 - 🔍 DEBUG: ListBox binariesList: Move up, selected index: 0
+[000104] 2025-12-03 23:51:08.562 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000105] 2025-12-03 23:51:08.886 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000106] 2025-12-03 23:51:08.887 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000107] 2025-12-03 23:51:08.887 - 🔍 DEBUG: Label detailsLabel text changed
+[000108] 2025-12-03 23:51:08.887 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000109] 2025-12-03 23:51:08.887 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000110] 2025-12-03 23:51:08.887 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000111] 2025-12-03 23:51:09.234 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000112] 2025-12-03 23:51:09.235 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000113] 2025-12-03 23:51:09.236 - 🔍 DEBUG: Label detailsLabel text changed
+[000114] 2025-12-03 23:51:09.236 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000115] 2025-12-03 23:51:09.237 - 🔍 DEBUG: ListBox binariesList: Move up, selected index: 0
+[000116] 2025-12-03 23:51:09.237 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000117] 2025-12-03 23:51:09.543 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000118] 2025-12-03 23:51:09.545 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000119] 2025-12-03 23:51:09.545 - 🔍 DEBUG: Label detailsLabel text changed
+[000120] 2025-12-03 23:51:09.546 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000121] 2025-12-03 23:51:09.547 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000122] 2025-12-03 23:51:09.547 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000123] 2025-12-03 23:51:10.103 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000124] 2025-12-03 23:51:10.104 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000125] 2025-12-03 23:51:10.409 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000126] 2025-12-03 23:51:10.409 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000127] 2025-12-03 23:51:10.409 - 🔍 DEBUG: Label detailsLabel text changed
+[000128] 2025-12-03 23:51:10.410 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000129] 2025-12-03 23:51:10.410 - 🔍 DEBUG: ListBox binariesList: Move up, selected index: 0
+[000130] 2025-12-03 23:51:10.411 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000131] 2025-12-03 23:51:10.794 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000132] 2025-12-03 23:51:10.795 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000133] 2025-12-03 23:51:10.795 - 🔍 DEBUG: Label detailsLabel text changed
+[000134] 2025-12-03 23:51:10.795 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000135] 2025-12-03 23:51:10.795 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000136] 2025-12-03 23:51:10.795 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000137] 2025-12-03 23:51:11.061 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000138] 2025-12-03 23:51:11.061 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000139] 2025-12-03 23:51:11.061 - 🔍 DEBUG: Label detailsLabel text changed
+[000140] 2025-12-03 23:51:11.062 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000141] 2025-12-03 23:51:11.062 - 🔍 DEBUG: ListBox binariesList: Move up, selected index: 0
+[000142] 2025-12-03 23:51:11.062 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000143] 2025-12-03 23:51:11.405 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000144] 2025-12-03 23:51:11.405 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000145] 2025-12-03 23:51:11.406 - 🔍 DEBUG: Label detailsLabel text changed
+[000146] 2025-12-03 23:51:11.407 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000147] 2025-12-03 23:51:11.407 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000148] 2025-12-03 23:51:11.407 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000149] 2025-12-03 23:51:12.040 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000150] 2025-12-03 23:51:12.040 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000151] 2025-12-03 23:51:12.817 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000152] 2025-12-03 23:51:12.818 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000153] 2025-12-03 23:51:12.818 - 🔍 DEBUG: Label statusLabel text changed
+[000154] 2025-12-03 23:51:13.162 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000155] 2025-12-03 23:51:13.162 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000156] 2025-12-03 23:51:13.163 - 🔍 DEBUG: Label detailsLabel text changed
+[000157] 2025-12-03 23:51:13.163 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000158] 2025-12-03 23:51:13.163 - 🔍 DEBUG: ListBox binariesList: Move up, selected index: 0
+[000159] 2025-12-03 23:51:13.163 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000160] 2025-12-03 23:51:13.551 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000161] 2025-12-03 23:51:13.551 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000162] 2025-12-03 23:51:13.552 - 🔍 DEBUG: Label detailsLabel text changed
+[000163] 2025-12-03 23:51:13.552 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000164] 2025-12-03 23:51:13.552 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000165] 2025-12-03 23:51:13.553 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000166] 2025-12-03 23:51:13.879 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000167] 2025-12-03 23:51:13.880 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000168] 2025-12-03 23:51:13.880 - 🔍 DEBUG: Label detailsLabel text changed
+[000169] 2025-12-03 23:51:13.880 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000170] 2025-12-03 23:51:13.880 - 🔍 DEBUG: ListBox binariesList: Move up, selected index: 0
+[000171] 2025-12-03 23:51:13.881 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000172] 2025-12-03 23:51:14.177 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000173] 2025-12-03 23:51:14.178 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000174] 2025-12-03 23:51:14.178 - 🔍 DEBUG: Label detailsLabel text changed
+[000175] 2025-12-03 23:51:14.178 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000176] 2025-12-03 23:51:14.178 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000177] 2025-12-03 23:51:14.179 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000178] 2025-12-03 23:51:14.720 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000179] 2025-12-03 23:51:14.720 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000180] 2025-12-03 23:51:14.720 - 🔍 DEBUG: Label detailsLabel text changed
+[000181] 2025-12-03 23:51:14.720 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000182] 2025-12-03 23:51:14.720 - 🔍 DEBUG: ListBox binariesList: Move up, selected index: 0
+[000183] 2025-12-03 23:51:14.721 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000184] 2025-12-03 23:51:15.328 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000185] 2025-12-03 23:51:15.329 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000186] 2025-12-03 23:51:15.330 - 🔍 DEBUG: Label detailsLabel text changed
+[000187] 2025-12-03 23:51:15.330 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000188] 2025-12-03 23:51:15.331 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000189] 2025-12-03 23:51:15.331 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000190] 2025-12-03 23:51:16.075 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000191] 2025-12-03 23:51:16.075 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000192] 2025-12-03 23:51:16.426 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000193] 2025-12-03 23:51:16.427 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 0
+[000194] 2025-12-03 23:51:16.427 - 🔍 DEBUG: Label detailsLabel text changed
+[000195] 2025-12-03 23:51:16.427 - 🔍 DEBUG: DetailsLabel updated for: C++ Calculator
+[000196] 2025-12-03 23:51:16.427 - 🔍 DEBUG: ListBox binariesList: Move up, selected index: 0
+[000197] 2025-12-03 23:51:16.427 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000198] 2025-12-03 23:51:17.692 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000199] 2025-12-03 23:51:17.693 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000200] 2025-12-03 23:51:17.693 - 🔍 DEBUG: Focused component did not handle input: binariesList
+[000201] 2025-12-03 23:51:17.693 - 🔍 DEBUG: Component binariesList focus changed to: False
+[000202] 2025-12-03 23:51:17.694 - 🔍 DEBUG: Component binariesList requested visual update
+[000203] 2025-12-03 23:51:17.694 - 🔍 DEBUG: Component binariesList lost focus
+[000204] 2025-12-03 23:51:17.695 - 🔍 DEBUG: ListBox binariesList lost focus
+[000205] 2025-12-03 23:51:17.695 - 🔍 DEBUG: Component launchButton focus changed to: True
+[000206] 2025-12-03 23:51:17.695 - 🔍 DEBUG: Component launchButton requested visual update
+[000207] 2025-12-03 23:51:17.695 - 🔍 DEBUG: Component launchButton received focus
+[000208] 2025-12-03 23:51:17.695 - 🔍 DEBUG: Component launchButton requested visual update
+[000209] 2025-12-03 23:51:17.696 - ℹ️ INFO: Button launchButton received focus
+[000210] 2025-12-03 23:51:17.696 - 🔍 DEBUG: Focus moved forward: True
+[000211] 2025-12-03 23:51:17.696 - 🔍 DEBUG: Navigation handled: Tab
+[000212] 2025-12-03 23:51:17.829 - 🔍 DEBUG: Label statusLabel text changed
+[000213] 2025-12-03 23:51:18.095 - 🔍 DEBUG: Important input: Enter (Modifiers: None)
+[000214] 2025-12-03 23:51:18.096 - 🔍 DEBUG: Routing input to focused component: launchButton
+[000215] 2025-12-03 23:51:18.096 - 🔍 DEBUG: Button launchButton received input: Enter
+[000216] 2025-12-03 23:51:18.096 - ℹ️ INFO: Button launchButton confirmed via HandleConfirm
+[000217] 2025-12-03 23:51:18.097 - 🔍 DEBUG: Component launchButton requested visual update
+[000218] 2025-12-03 23:51:18.097 - ℹ️ INFO: Button launchButton invoking OnClick action
+[000219] 2025-12-03 23:51:18.101 - 🔍 DEBUG: Component launchButton requested visual update
+[000220] 2025-12-03 23:51:18.102 - 🔍 DEBUG: Button launchButton handled common navigation
+[000221] 2025-12-03 23:51:18.102 - 🔍 DEBUG: Input handled by focused component: launchButton
+[000222] 2025-12-03 23:51:22.328 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000223] 2025-12-03 23:51:22.329 - 🔍 DEBUG: Routing input to focused component: launchButton
+[000224] 2025-12-03 23:51:22.329 - 🔍 DEBUG: Button launchButton received input: Tab
+[000225] 2025-12-03 23:51:22.330 - 🔍 DEBUG: Focused component did not handle input: launchButton
+[000226] 2025-12-03 23:51:22.330 - 🔍 DEBUG: Component launchButton focus changed to: False
+[000227] 2025-12-03 23:51:22.331 - 🔍 DEBUG: Component launchButton requested visual update
+[000228] 2025-12-03 23:51:22.331 - 🔍 DEBUG: Component launchButton lost focus
+[000229] 2025-12-03 23:51:22.331 - 🔍 DEBUG: Component launchButton requested visual update
+[000230] 2025-12-03 23:51:22.332 - ℹ️ INFO: Button launchButton lost focus
+[000231] 2025-12-03 23:51:22.332 - 🔍 DEBUG: Component consolePanel focus changed to: True
+[000232] 2025-12-03 23:51:22.333 - 🔍 DEBUG: Component consolePanel requested visual update
+[000233] 2025-12-03 23:51:22.333 - 🔍 DEBUG: Component consolePanel received focus
+[000234] 2025-12-03 23:51:22.334 - ℹ️ INFO: ConsolePanel consolePanel received focus
+[000235] 2025-12-03 23:51:22.334 - 🔍 DEBUG: Focus moved forward: True
+[000236] 2025-12-03 23:51:22.334 - 🔍 DEBUG: Navigation handled: Tab
+[000237] 2025-12-03 23:51:22.864 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000238] 2025-12-03 23:51:22.864 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000239] 2025-12-03 23:51:22.866 - 🔍 DEBUG: Focused component did not handle input: consolePanel
+[000240] 2025-12-03 23:51:22.867 - 🔍 DEBUG: Component consolePanel focus changed to: False
+[000241] 2025-12-03 23:51:22.867 - 🔍 DEBUG: Component consolePanel requested visual update
+[000242] 2025-12-03 23:51:22.867 - 🔍 DEBUG: Component consolePanel lost focus
+[000243] 2025-12-03 23:51:22.868 - ℹ️ INFO: ConsolePanel consolePanel lost focus
+[000244] 2025-12-03 23:51:22.869 - 🔍 DEBUG: Component importButton focus changed to: True
+[000245] 2025-12-03 23:51:22.869 - 🔍 DEBUG: Component importButton requested visual update
+[000246] 2025-12-03 23:51:22.870 - 🔍 DEBUG: Component importButton received focus
+[000247] 2025-12-03 23:51:22.871 - 🔍 DEBUG: Component importButton requested visual update
+[000248] 2025-12-03 23:51:22.871 - ℹ️ INFO: Button importButton received focus
+[000249] 2025-12-03 23:51:22.871 - 🔍 DEBUG: Focus moved forward: True
+[000250] 2025-12-03 23:51:22.872 - 🔍 DEBUG: Navigation handled: Tab
+[000251] 2025-12-03 23:51:22.872 - 🔍 DEBUG: Label statusLabel text changed
+[000252] 2025-12-03 23:51:23.345 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000253] 2025-12-03 23:51:23.346 - 🔍 DEBUG: Routing input to focused component: importButton
+[000254] 2025-12-03 23:51:23.346 - 🔍 DEBUG: Button importButton received input: Tab
+[000255] 2025-12-03 23:51:23.346 - 🔍 DEBUG: Focused component did not handle input: importButton
+[000256] 2025-12-03 23:51:23.347 - 🔍 DEBUG: Component importButton focus changed to: False
+[000257] 2025-12-03 23:51:23.347 - 🔍 DEBUG: Component importButton requested visual update
+[000258] 2025-12-03 23:51:23.347 - 🔍 DEBUG: Component importButton lost focus
+[000259] 2025-12-03 23:51:23.348 - 🔍 DEBUG: Component importButton requested visual update
+[000260] 2025-12-03 23:51:23.348 - ℹ️ INFO: Button importButton lost focus
+[000261] 2025-12-03 23:51:23.349 - 🔍 DEBUG: Component validateButton focus changed to: True
+[000262] 2025-12-03 23:51:23.349 - 🔍 DEBUG: Component validateButton requested visual update
+[000263] 2025-12-03 23:51:23.349 - 🔍 DEBUG: Component validateButton received focus
+[000264] 2025-12-03 23:51:23.349 - 🔍 DEBUG: Component validateButton requested visual update
+[000265] 2025-12-03 23:51:23.350 - ℹ️ INFO: Button validateButton received focus
+[000266] 2025-12-03 23:51:23.350 - 🔍 DEBUG: Focus moved forward: True
+[000267] 2025-12-03 23:51:23.350 - 🔍 DEBUG: Navigation handled: Tab
+[000268] 2025-12-03 23:51:23.800 - 🔍 DEBUG: Important input: Enter (Modifiers: None)
+[000269] 2025-12-03 23:51:23.801 - 🔍 DEBUG: Routing input to focused component: validateButton
+[000270] 2025-12-03 23:51:23.801 - 🔍 DEBUG: Button validateButton received input: Enter
+[000271] 2025-12-03 23:51:23.801 - ℹ️ INFO: Button validateButton confirmed via HandleConfirm
+[000272] 2025-12-03 23:51:23.801 - 🔍 DEBUG: Component validateButton requested visual update
+[000273] 2025-12-03 23:51:23.801 - ℹ️ INFO: Button validateButton invoking OnClick action
+[000274] 2025-12-03 23:51:23.803 - 🔍 DEBUG: Label statusLabel text changed
+[000275] 2025-12-03 23:51:23.804 - 🔍 DEBUG: Component validateButton requested visual update
+[000276] 2025-12-03 23:51:23.804 - 🔍 DEBUG: Button validateButton handled common navigation
+[000277] 2025-12-03 23:51:23.804 - 🔍 DEBUG: Input handled by focused component: validateButton
+[000278] 2025-12-03 23:51:25.545 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000279] 2025-12-03 23:51:25.545 - 🔍 DEBUG: Routing input to focused component: validateButton
+[000280] 2025-12-03 23:51:25.545 - 🔍 DEBUG: Button validateButton received input: Tab
+[000281] 2025-12-03 23:51:25.546 - 🔍 DEBUG: Focused component did not handle input: validateButton
+[000282] 2025-12-03 23:51:25.546 - 🔍 DEBUG: Component validateButton focus changed to: False
+[000283] 2025-12-03 23:51:25.546 - 🔍 DEBUG: Component validateButton requested visual update
+[000284] 2025-12-03 23:51:25.546 - 🔍 DEBUG: Component validateButton lost focus
+[000285] 2025-12-03 23:51:25.546 - 🔍 DEBUG: Component validateButton requested visual update
+[000286] 2025-12-03 23:51:25.546 - ℹ️ INFO: Button validateButton lost focus
+[000287] 2025-12-03 23:51:25.547 - 🔍 DEBUG: Component searchBox focus changed to: True
+[000288] 2025-12-03 23:51:25.547 - 🔍 DEBUG: Component searchBox requested visual update
+[000289] 2025-12-03 23:51:25.547 - 🔍 DEBUG: Component searchBox received focus
+[000290] 2025-12-03 23:51:25.547 - 🔍 DEBUG: TextBox searchBox received focus
+[000291] 2025-12-03 23:51:25.548 - 🔍 DEBUG: Focus moved forward: True
+[000292] 2025-12-03 23:51:25.548 - 🔍 DEBUG: Navigation handled: Tab
+[000293] 2025-12-03 23:51:26.012 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000294] 2025-12-03 23:51:26.013 - 🔍 DEBUG: Routing input to focused component: searchBox
+[000295] 2025-12-03 23:51:26.013 - 🔍 DEBUG: Focused component did not handle input: searchBox
+[000296] 2025-12-03 23:51:26.013 - 🔍 DEBUG: Component searchBox focus changed to: False
+[000297] 2025-12-03 23:51:26.013 - 🔍 DEBUG: Component searchBox requested visual update
+[000298] 2025-12-03 23:51:26.014 - 🔍 DEBUG: Component searchBox lost focus
+[000299] 2025-12-03 23:51:26.014 - 🔍 DEBUG: TextBox searchBox lost focus
+[000300] 2025-12-03 23:51:26.015 - 🔍 DEBUG: Component refreshButton focus changed to: True
+[000301] 2025-12-03 23:51:26.015 - 🔍 DEBUG: Component refreshButton requested visual update
+[000302] 2025-12-03 23:51:26.015 - 🔍 DEBUG: Component refreshButton received focus
+[000303] 2025-12-03 23:51:26.016 - 🔍 DEBUG: Component refreshButton requested visual update
+[000304] 2025-12-03 23:51:26.016 - ℹ️ INFO: Button refreshButton received focus
+[000305] 2025-12-03 23:51:26.017 - 🔍 DEBUG: Focus moved forward: True
+[000306] 2025-12-03 23:51:26.017 - 🔍 DEBUG: Navigation handled: Tab
+[000307] 2025-12-03 23:51:26.277 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000308] 2025-12-03 23:51:26.277 - 🔍 DEBUG: Routing input to focused component: refreshButton
+[000309] 2025-12-03 23:51:26.278 - 🔍 DEBUG: Button refreshButton received input: Tab
+[000310] 2025-12-03 23:51:26.278 - 🔍 DEBUG: Focused component did not handle input: refreshButton
+[000311] 2025-12-03 23:51:26.278 - 🔍 DEBUG: Component refreshButton focus changed to: False
+[000312] 2025-12-03 23:51:26.278 - 🔍 DEBUG: Component refreshButton requested visual update
+[000313] 2025-12-03 23:51:26.278 - 🔍 DEBUG: Component refreshButton lost focus
+[000314] 2025-12-03 23:51:26.278 - 🔍 DEBUG: Component refreshButton requested visual update
+[000315] 2025-12-03 23:51:26.279 - ℹ️ INFO: Button refreshButton lost focus
+[000316] 2025-12-03 23:51:26.279 - 🔍 DEBUG: Component binariesList focus changed to: True
+[000317] 2025-12-03 23:51:26.280 - 🔍 DEBUG: Component binariesList requested visual update
+[000318] 2025-12-03 23:51:26.280 - 🔍 DEBUG: Component binariesList received focus
+[000319] 2025-12-03 23:51:26.281 - 🔍 DEBUG: ListBox binariesList received focus
+[000320] 2025-12-03 23:51:26.281 - 🔍 DEBUG: Focus moved forward: True
+[000321] 2025-12-03 23:51:26.281 - 🔍 DEBUG: Navigation handled: Tab
+[000322] 2025-12-03 23:51:26.641 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000323] 2025-12-03 23:51:26.641 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000324] 2025-12-03 23:51:26.642 - 🔍 DEBUG: Focused component did not handle input: binariesList
+[000325] 2025-12-03 23:51:26.642 - 🔍 DEBUG: Component binariesList focus changed to: False
+[000326] 2025-12-03 23:51:26.642 - 🔍 DEBUG: Component binariesList requested visual update
+[000327] 2025-12-03 23:51:26.642 - 🔍 DEBUG: Component binariesList lost focus
+[000328] 2025-12-03 23:51:26.642 - 🔍 DEBUG: ListBox binariesList lost focus
+[000329] 2025-12-03 23:51:26.642 - 🔍 DEBUG: Component launchButton focus changed to: True
+[000330] 2025-12-03 23:51:26.643 - 🔍 DEBUG: Component launchButton requested visual update
+[000331] 2025-12-03 23:51:26.643 - 🔍 DEBUG: Component launchButton received focus
+[000332] 2025-12-03 23:51:26.643 - 🔍 DEBUG: Component launchButton requested visual update
+[000333] 2025-12-03 23:51:26.643 - ℹ️ INFO: Button launchButton received focus
+[000334] 2025-12-03 23:51:26.644 - 🔍 DEBUG: Focus moved forward: True
+[000335] 2025-12-03 23:51:26.644 - 🔍 DEBUG: Navigation handled: Tab
+[000336] 2025-12-03 23:51:27.005 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000337] 2025-12-03 23:51:27.005 - 🔍 DEBUG: Routing input to focused component: launchButton
+[000338] 2025-12-03 23:51:27.005 - 🔍 DEBUG: Button launchButton received input: Tab
+[000339] 2025-12-03 23:51:27.006 - 🔍 DEBUG: Focused component did not handle input: launchButton
+[000340] 2025-12-03 23:51:27.006 - 🔍 DEBUG: Component launchButton focus changed to: False
+[000341] 2025-12-03 23:51:27.006 - 🔍 DEBUG: Component launchButton requested visual update
+[000342] 2025-12-03 23:51:27.007 - 🔍 DEBUG: Component launchButton lost focus
+[000343] 2025-12-03 23:51:27.007 - 🔍 DEBUG: Component launchButton requested visual update
+[000344] 2025-12-03 23:51:27.007 - ℹ️ INFO: Button launchButton lost focus
+[000345] 2025-12-03 23:51:27.007 - 🔍 DEBUG: Component consolePanel focus changed to: True
+[000346] 2025-12-03 23:51:27.008 - 🔍 DEBUG: Component consolePanel requested visual update
+[000347] 2025-12-03 23:51:27.008 - 🔍 DEBUG: Component consolePanel received focus
+[000348] 2025-12-03 23:51:27.008 - ℹ️ INFO: ConsolePanel consolePanel received focus
+[000349] 2025-12-03 23:51:27.008 - 🔍 DEBUG: Focus moved forward: True
+[000350] 2025-12-03 23:51:27.008 - 🔍 DEBUG: Navigation handled: Tab
+[000351] 2025-12-03 23:51:27.453 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000352] 2025-12-03 23:51:27.453 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000353] 2025-12-03 23:51:27.454 - 🔍 DEBUG: Focused component did not handle input: consolePanel
+[000354] 2025-12-03 23:51:27.454 - 🔍 DEBUG: Component consolePanel focus changed to: False
+[000355] 2025-12-03 23:51:27.454 - 🔍 DEBUG: Component consolePanel requested visual update
+[000356] 2025-12-03 23:51:27.454 - 🔍 DEBUG: Component consolePanel lost focus
+[000357] 2025-12-03 23:51:27.454 - ℹ️ INFO: ConsolePanel consolePanel lost focus
+[000358] 2025-12-03 23:51:27.455 - 🔍 DEBUG: Component importButton focus changed to: True
+[000359] 2025-12-03 23:51:27.455 - 🔍 DEBUG: Component importButton requested visual update
+[000360] 2025-12-03 23:51:27.455 - 🔍 DEBUG: Component importButton received focus
+[000361] 2025-12-03 23:51:27.456 - 🔍 DEBUG: Component importButton requested visual update
+[000362] 2025-12-03 23:51:27.456 - ℹ️ INFO: Button importButton received focus
+[000363] 2025-12-03 23:51:27.456 - 🔍 DEBUG: Focus moved forward: True
+[000364] 2025-12-03 23:51:27.456 - 🔍 DEBUG: Navigation handled: Tab
+[000365] 2025-12-03 23:51:28.042 - 🔍 DEBUG: Important input: Enter (Modifiers: None)
+[000366] 2025-12-03 23:51:28.042 - 🔍 DEBUG: Routing input to focused component: importButton
+[000367] 2025-12-03 23:51:28.043 - 🔍 DEBUG: Button importButton received input: Enter
+[000368] 2025-12-03 23:51:28.043 - ℹ️ INFO: Button importButton confirmed via HandleConfirm
+[000369] 2025-12-03 23:51:28.044 - 🔍 DEBUG: Component importButton requested visual update
+[000370] 2025-12-03 23:51:28.044 - ℹ️ INFO: Button importButton invoking OnClick action
+[000371] 2025-12-03 23:51:28.050 - ℹ️ INFO: Added binary: hello_world
+[000372] 2025-12-03 23:51:28.060 - ℹ️ INFO: Saved 3 binaries to binaries.json
+[000373] 2025-12-03 23:51:28.062 - ℹ️ INFO: Loaded 3 binaries from binaries.json
+[000374] 2025-12-03 23:51:28.062 - 🔍 DEBUG: Label detailsLabel text changed
+[000375] 2025-12-03 23:51:28.062 - 🔍 DEBUG: DetailsLabel updated: Select a binary to view details
+[000376] 2025-12-03 23:51:28.063 - 🔍 DEBUG: Label categoryLabel text changed
+[000377] 2025-12-03 23:51:28.063 - 🔍 DEBUG: Label titleLabel text changed
+[000378] 2025-12-03 23:51:28.063 - ℹ️ INFO: Refreshed binaries: 3 total
+[000379] 2025-12-03 23:51:28.063 - ℹ️ INFO: Added binary: simple_calc
+[000380] 2025-12-03 23:51:28.064 - ℹ️ INFO: Saved 4 binaries to binaries.json
+[000381] 2025-12-03 23:51:28.065 - ℹ️ INFO: Loaded 4 binaries from binaries.json
+[000382] 2025-12-03 23:51:28.065 - 🔍 DEBUG: Label categoryLabel text changed
+[000383] 2025-12-03 23:51:28.065 - 🔍 DEBUG: Label titleLabel text changed
+[000384] 2025-12-03 23:51:28.065 - ℹ️ INFO: Refreshed binaries: 4 total
+[000385] 2025-12-03 23:51:28.066 - ℹ️ INFO: Added binary: hello_world
+[000386] 2025-12-03 23:51:28.067 - ℹ️ INFO: Saved 5 binaries to binaries.json
+[000387] 2025-12-03 23:51:28.067 - ℹ️ INFO: Loaded 5 binaries from binaries.json
+[000388] 2025-12-03 23:51:28.068 - 🔍 DEBUG: Label categoryLabel text changed
+[000389] 2025-12-03 23:51:28.068 - 🔍 DEBUG: Label titleLabel text changed
+[000390] 2025-12-03 23:51:28.068 - ℹ️ INFO: Refreshed binaries: 5 total
+[000391] 2025-12-03 23:51:28.068 - ℹ️ INFO: Added binary: simple_calc
+[000392] 2025-12-03 23:51:28.069 - ℹ️ INFO: Saved 6 binaries to binaries.json
+[000393] 2025-12-03 23:51:28.070 - ℹ️ INFO: Loaded 6 binaries from binaries.json
+[000394] 2025-12-03 23:51:28.070 - 🔍 DEBUG: Label categoryLabel text changed
+[000395] 2025-12-03 23:51:28.070 - 🔍 DEBUG: Label titleLabel text changed
+[000396] 2025-12-03 23:51:28.070 - ℹ️ INFO: Refreshed binaries: 6 total
+[000397] 2025-12-03 23:51:28.071 - ℹ️ INFO: Added binary: BinaryDemoApp
+[000398] 2025-12-03 23:51:28.071 - ℹ️ INFO: Saved 7 binaries to binaries.json
+[000399] 2025-12-03 23:51:28.072 - ℹ️ INFO: Loaded 7 binaries from binaries.json
+[000400] 2025-12-03 23:51:28.072 - 🔍 DEBUG: Label categoryLabel text changed
+[000401] 2025-12-03 23:51:28.072 - 🔍 DEBUG: Label titleLabel text changed
+[000402] 2025-12-03 23:51:28.072 - ℹ️ INFO: Refreshed binaries: 7 total
+[000403] 2025-12-03 23:51:28.072 - ℹ️ INFO: Added binary: simple_calc
+[000404] 2025-12-03 23:51:28.073 - ℹ️ INFO: Saved 8 binaries to binaries.json
+[000405] 2025-12-03 23:51:28.074 - ℹ️ INFO: Loaded 8 binaries from binaries.json
+[000406] 2025-12-03 23:51:28.074 - 🔍 DEBUG: Label categoryLabel text changed
+[000407] 2025-12-03 23:51:28.074 - 🔍 DEBUG: Label titleLabel text changed
+[000408] 2025-12-03 23:51:28.074 - ℹ️ INFO: Refreshed binaries: 8 total
+[000409] 2025-12-03 23:51:28.074 - ℹ️ INFO: Added binary: apphost
+[000410] 2025-12-03 23:51:28.075 - ℹ️ INFO: Saved 9 binaries to binaries.json
+[000411] 2025-12-03 23:51:28.076 - ℹ️ INFO: Loaded 9 binaries from binaries.json
+[000412] 2025-12-03 23:51:28.077 - 🔍 DEBUG: Label categoryLabel text changed
+[000413] 2025-12-03 23:51:28.077 - 🔍 DEBUG: Label titleLabel text changed
+[000414] 2025-12-03 23:51:28.077 - ℹ️ INFO: Refreshed binaries: 9 total
+[000415] 2025-12-03 23:51:28.077 - ℹ️ INFO: Imported 7 binaries from C:\Users\IWOFLEUR\Desktop\WaffleCLI\samples\BinaryDemoApp
+[000416] 2025-12-03 23:51:28.078 - 🔍 DEBUG: Label statusLabel text changed
+[000417] 2025-12-03 23:51:28.078 - 🔍 DEBUG: Component importButton requested visual update
+[000418] 2025-12-03 23:51:28.079 - 🔍 DEBUG: Button importButton handled common navigation
+[000419] 2025-12-03 23:51:28.079 - 🔍 DEBUG: Input handled by focused component: importButton
+[000420] 2025-12-03 23:51:29.776 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000421] 2025-12-03 23:51:29.776 - 🔍 DEBUG: Routing input to focused component: importButton
+[000422] 2025-12-03 23:51:29.776 - 🔍 DEBUG: Button importButton received input: Tab
+[000423] 2025-12-03 23:51:29.776 - 🔍 DEBUG: Focused component did not handle input: importButton
+[000424] 2025-12-03 23:51:29.777 - 🔍 DEBUG: Component importButton focus changed to: False
+[000425] 2025-12-03 23:51:29.777 - 🔍 DEBUG: Component importButton requested visual update
+[000426] 2025-12-03 23:51:29.778 - 🔍 DEBUG: Component importButton lost focus
+[000427] 2025-12-03 23:51:29.778 - 🔍 DEBUG: Component importButton requested visual update
+[000428] 2025-12-03 23:51:29.778 - ℹ️ INFO: Button importButton lost focus
+[000429] 2025-12-03 23:51:29.779 - 🔍 DEBUG: Component validateButton focus changed to: True
+[000430] 2025-12-03 23:51:29.779 - 🔍 DEBUG: Component validateButton requested visual update
+[000431] 2025-12-03 23:51:29.779 - 🔍 DEBUG: Component validateButton received focus
+[000432] 2025-12-03 23:51:29.779 - 🔍 DEBUG: Component validateButton requested visual update
+[000433] 2025-12-03 23:51:29.779 - ℹ️ INFO: Button validateButton received focus
+[000434] 2025-12-03 23:51:29.780 - 🔍 DEBUG: Focus moved forward: True
+[000435] 2025-12-03 23:51:29.780 - 🔍 DEBUG: Navigation handled: Tab
+[000436] 2025-12-03 23:51:30.333 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000437] 2025-12-03 23:51:30.333 - 🔍 DEBUG: Routing input to focused component: validateButton
+[000438] 2025-12-03 23:51:30.333 - 🔍 DEBUG: Button validateButton received input: Tab
+[000439] 2025-12-03 23:51:30.334 - 🔍 DEBUG: Focused component did not handle input: validateButton
+[000440] 2025-12-03 23:51:30.334 - 🔍 DEBUG: Component validateButton focus changed to: False
+[000441] 2025-12-03 23:51:30.335 - 🔍 DEBUG: Component validateButton requested visual update
+[000442] 2025-12-03 23:51:30.335 - 🔍 DEBUG: Component validateButton lost focus
+[000443] 2025-12-03 23:51:30.335 - 🔍 DEBUG: Component validateButton requested visual update
+[000444] 2025-12-03 23:51:30.336 - ℹ️ INFO: Button validateButton lost focus
+[000445] 2025-12-03 23:51:30.336 - 🔍 DEBUG: Component searchBox focus changed to: True
+[000446] 2025-12-03 23:51:30.337 - 🔍 DEBUG: Component searchBox requested visual update
+[000447] 2025-12-03 23:51:30.337 - 🔍 DEBUG: Component searchBox received focus
+[000448] 2025-12-03 23:51:30.337 - 🔍 DEBUG: TextBox searchBox received focus
+[000449] 2025-12-03 23:51:30.337 - 🔍 DEBUG: Focus moved forward: True
+[000450] 2025-12-03 23:51:30.337 - 🔍 DEBUG: Navigation handled: Tab
+[000451] 2025-12-03 23:51:30.788 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000452] 2025-12-03 23:51:30.788 - 🔍 DEBUG: Routing input to focused component: searchBox
+[000453] 2025-12-03 23:51:30.788 - 🔍 DEBUG: Focused component did not handle input: searchBox
+[000454] 2025-12-03 23:51:30.788 - 🔍 DEBUG: Component searchBox focus changed to: False
+[000455] 2025-12-03 23:51:30.788 - 🔍 DEBUG: Component searchBox requested visual update
+[000456] 2025-12-03 23:51:30.789 - 🔍 DEBUG: Component searchBox lost focus
+[000457] 2025-12-03 23:51:30.789 - 🔍 DEBUG: TextBox searchBox lost focus
+[000458] 2025-12-03 23:51:30.789 - 🔍 DEBUG: Component refreshButton focus changed to: True
+[000459] 2025-12-03 23:51:30.789 - 🔍 DEBUG: Component refreshButton requested visual update
+[000460] 2025-12-03 23:51:30.789 - 🔍 DEBUG: Component refreshButton received focus
+[000461] 2025-12-03 23:51:30.789 - 🔍 DEBUG: Component refreshButton requested visual update
+[000462] 2025-12-03 23:51:30.790 - ℹ️ INFO: Button refreshButton received focus
+[000463] 2025-12-03 23:51:30.790 - 🔍 DEBUG: Focus moved forward: True
+[000464] 2025-12-03 23:51:30.790 - 🔍 DEBUG: Navigation handled: Tab
+[000465] 2025-12-03 23:51:31.254 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000466] 2025-12-03 23:51:31.255 - 🔍 DEBUG: Routing input to focused component: refreshButton
+[000467] 2025-12-03 23:51:31.255 - 🔍 DEBUG: Button refreshButton received input: Tab
+[000468] 2025-12-03 23:51:31.255 - 🔍 DEBUG: Focused component did not handle input: refreshButton
+[000469] 2025-12-03 23:51:31.255 - 🔍 DEBUG: Component refreshButton focus changed to: False
+[000470] 2025-12-03 23:51:31.256 - 🔍 DEBUG: Component refreshButton requested visual update
+[000471] 2025-12-03 23:51:31.256 - 🔍 DEBUG: Component refreshButton lost focus
+[000472] 2025-12-03 23:51:31.256 - 🔍 DEBUG: Component refreshButton requested visual update
+[000473] 2025-12-03 23:51:31.257 - ℹ️ INFO: Button refreshButton lost focus
+[000474] 2025-12-03 23:51:31.257 - 🔍 DEBUG: Component binariesList focus changed to: True
+[000475] 2025-12-03 23:51:31.257 - 🔍 DEBUG: Component binariesList requested visual update
+[000476] 2025-12-03 23:51:31.257 - 🔍 DEBUG: Component binariesList received focus
+[000477] 2025-12-03 23:51:31.258 - 🔍 DEBUG: ListBox binariesList received focus
+[000478] 2025-12-03 23:51:31.258 - 🔍 DEBUG: Focus moved forward: True
+[000479] 2025-12-03 23:51:31.258 - 🔍 DEBUG: Navigation handled: Tab
+[000480] 2025-12-03 23:51:31.714 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000481] 2025-12-03 23:51:31.715 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 1
+[000482] 2025-12-03 23:51:31.715 - 🔍 DEBUG: Label detailsLabel text changed
+[000483] 2025-12-03 23:51:31.715 - 🔍 DEBUG: DetailsLabel updated for: Hello World!
+[000484] 2025-12-03 23:51:31.715 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 1
+[000485] 2025-12-03 23:51:31.716 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000486] 2025-12-03 23:51:31.914 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000487] 2025-12-03 23:51:31.915 - 🔍 DEBUG: ListBox binariesList: Selection changed to index 2
+[000488] 2025-12-03 23:51:31.915 - 🔍 DEBUG: Label detailsLabel text changed
+[000489] 2025-12-03 23:51:31.915 - 🔍 DEBUG: DetailsLabel updated for: hello_world
+[000490] 2025-12-03 23:51:31.915 - 🔍 DEBUG: ListBox binariesList: Move down, selected index: 2
+[000491] 2025-12-03 23:51:31.915 - 🔍 DEBUG: Input handled by focused component: binariesList
+[000492] 2025-12-03 23:51:33.103 - 🔍 DEBUG: Label statusLabel text changed
+[000493] 2025-12-03 23:51:33.384 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000494] 2025-12-03 23:51:33.384 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000495] 2025-12-03 23:51:33.385 - 🔍 DEBUG: Focused component did not handle input: binariesList
+[000496] 2025-12-03 23:51:33.385 - 🔍 DEBUG: Component binariesList focus changed to: False
+[000497] 2025-12-03 23:51:33.385 - 🔍 DEBUG: Component binariesList requested visual update
+[000498] 2025-12-03 23:51:33.385 - 🔍 DEBUG: Component binariesList lost focus
+[000499] 2025-12-03 23:51:33.385 - 🔍 DEBUG: ListBox binariesList lost focus
+[000500] 2025-12-03 23:51:33.386 - 🔍 DEBUG: Component launchButton focus changed to: True
+[000501] 2025-12-03 23:51:33.386 - 🔍 DEBUG: Component launchButton requested visual update
+[000502] 2025-12-03 23:51:33.387 - 🔍 DEBUG: Component launchButton received focus
+[000503] 2025-12-03 23:51:33.387 - 🔍 DEBUG: Component launchButton requested visual update
+[000504] 2025-12-03 23:51:33.387 - ℹ️ INFO: Button launchButton received focus
+[000505] 2025-12-03 23:51:33.387 - 🔍 DEBUG: Focus moved forward: True
+[000506] 2025-12-03 23:51:33.388 - 🔍 DEBUG: Navigation handled: Tab
+[000507] 2025-12-03 23:51:33.949 - 🔍 DEBUG: Important input: Enter (Modifiers: None)
+[000508] 2025-12-03 23:51:33.950 - 🔍 DEBUG: Routing input to focused component: launchButton
+[000509] 2025-12-03 23:51:33.950 - 🔍 DEBUG: Button launchButton received input: Enter
+[000510] 2025-12-03 23:51:33.950 - ℹ️ INFO: Button launchButton confirmed via HandleConfirm
+[000511] 2025-12-03 23:51:33.951 - 🔍 DEBUG: Component launchButton requested visual update
+[000512] 2025-12-03 23:51:33.951 - ℹ️ INFO: Button launchButton invoking OnClick action
+[000513] 2025-12-03 23:51:33.955 - ℹ️ INFO: Starting process: C:\Users\IWOFLEUR\Desktop\WaffleCLI\samples\BinaryDemoApp\bin\hello_world.exe
+[000514] 2025-12-03 23:51:33.964 - ℹ️ INFO: Process started with PID: 13604
+[000515] 2025-12-03 23:51:33.965 - ℹ️ INFO: Launched: hello_world
+[000516] 2025-12-03 23:51:33.965 - 🔍 DEBUG: Component launchButton requested visual update
+[000517] 2025-12-03 23:51:33.966 - 🔍 DEBUG: Button launchButton handled common navigation
+[000518] 2025-12-03 23:51:33.966 - 🔍 DEBUG: Input handled by focused component: launchButton
+[000519] 2025-12-03 23:51:33.986 - ℹ️ INFO: Process 13604 output: ===================================
+[000520] 2025-12-03 23:51:33.987 - ℹ️ INFO: Process 13604 output:       C++ Hello World v1.0         
+[000521] 2025-12-03 23:51:33.987 - ℹ️ INFO: Process 13604 output: ===================================
+[000522] 2025-12-03 23:51:35.919 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000523] 2025-12-03 23:51:35.919 - 🔍 DEBUG: Routing input to focused component: launchButton
+[000524] 2025-12-03 23:51:35.920 - 🔍 DEBUG: Button launchButton received input: Tab
+[000525] 2025-12-03 23:51:35.920 - 🔍 DEBUG: Focused component did not handle input: launchButton
+[000526] 2025-12-03 23:51:35.920 - 🔍 DEBUG: Component launchButton focus changed to: False
+[000527] 2025-12-03 23:51:35.920 - 🔍 DEBUG: Component launchButton requested visual update
+[000528] 2025-12-03 23:51:35.921 - 🔍 DEBUG: Component launchButton lost focus
+[000529] 2025-12-03 23:51:35.921 - 🔍 DEBUG: Component launchButton requested visual update
+[000530] 2025-12-03 23:51:35.922 - ℹ️ INFO: Button launchButton lost focus
+[000531] 2025-12-03 23:51:35.922 - 🔍 DEBUG: Component consolePanel focus changed to: True
+[000532] 2025-12-03 23:51:35.922 - 🔍 DEBUG: Component consolePanel requested visual update
+[000533] 2025-12-03 23:51:35.922 - 🔍 DEBUG: Component consolePanel received focus
+[000534] 2025-12-03 23:51:35.922 - ℹ️ INFO: ConsolePanel consolePanel received focus
+[000535] 2025-12-03 23:51:35.923 - 🔍 DEBUG: Focus moved forward: True
+[000536] 2025-12-03 23:51:35.923 - 🔍 DEBUG: Navigation handled: Tab
+[000537] 2025-12-03 23:51:36.099 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000538] 2025-12-03 23:51:36.100 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000539] 2025-12-03 23:51:36.100 - 🔍 DEBUG: Focused component did not handle input: consolePanel
+[000540] 2025-12-03 23:51:36.100 - 🔍 DEBUG: Component consolePanel focus changed to: False
+[000541] 2025-12-03 23:51:36.101 - 🔍 DEBUG: Component consolePanel requested visual update
+[000542] 2025-12-03 23:51:36.101 - 🔍 DEBUG: Component consolePanel lost focus
+[000543] 2025-12-03 23:51:36.101 - ℹ️ INFO: ConsolePanel consolePanel lost focus
+[000544] 2025-12-03 23:51:36.101 - 🔍 DEBUG: Component importButton focus changed to: True
+[000545] 2025-12-03 23:51:36.102 - 🔍 DEBUG: Component importButton requested visual update
+[000546] 2025-12-03 23:51:36.102 - 🔍 DEBUG: Component importButton received focus
+[000547] 2025-12-03 23:51:36.102 - 🔍 DEBUG: Component importButton requested visual update
+[000548] 2025-12-03 23:51:36.102 - ℹ️ INFO: Button importButton received focus
+[000549] 2025-12-03 23:51:36.103 - 🔍 DEBUG: Focus moved forward: True
+[000550] 2025-12-03 23:51:36.103 - 🔍 DEBUG: Navigation handled: Tab
+[000551] 2025-12-03 23:51:36.575 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000552] 2025-12-03 23:51:36.575 - 🔍 DEBUG: Routing input to focused component: importButton
+[000553] 2025-12-03 23:51:36.575 - 🔍 DEBUG: Button importButton received input: Tab
+[000554] 2025-12-03 23:51:36.576 - 🔍 DEBUG: Focused component did not handle input: importButton
+[000555] 2025-12-03 23:51:36.576 - 🔍 DEBUG: Component importButton focus changed to: False
+[000556] 2025-12-03 23:51:36.576 - 🔍 DEBUG: Component importButton requested visual update
+[000557] 2025-12-03 23:51:36.576 - 🔍 DEBUG: Component importButton lost focus
+[000558] 2025-12-03 23:51:36.577 - 🔍 DEBUG: Component importButton requested visual update
+[000559] 2025-12-03 23:51:36.577 - ℹ️ INFO: Button importButton lost focus
+[000560] 2025-12-03 23:51:36.577 - 🔍 DEBUG: Component validateButton focus changed to: True
+[000561] 2025-12-03 23:51:36.577 - 🔍 DEBUG: Component validateButton requested visual update
+[000562] 2025-12-03 23:51:36.577 - 🔍 DEBUG: Component validateButton received focus
+[000563] 2025-12-03 23:51:36.578 - 🔍 DEBUG: Component validateButton requested visual update
+[000564] 2025-12-03 23:51:36.578 - ℹ️ INFO: Button validateButton received focus
+[000565] 2025-12-03 23:51:36.578 - 🔍 DEBUG: Focus moved forward: True
+[000566] 2025-12-03 23:51:36.579 - 🔍 DEBUG: Navigation handled: Tab
+[000567] 2025-12-03 23:51:37.139 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000568] 2025-12-03 23:51:37.139 - 🔍 DEBUG: Routing input to focused component: validateButton
+[000569] 2025-12-03 23:51:37.139 - 🔍 DEBUG: Button validateButton received input: Tab
+[000570] 2025-12-03 23:51:37.140 - 🔍 DEBUG: Focused component did not handle input: validateButton
+[000571] 2025-12-03 23:51:37.140 - 🔍 DEBUG: Component validateButton focus changed to: False
+[000572] 2025-12-03 23:51:37.140 - 🔍 DEBUG: Component validateButton requested visual update
+[000573] 2025-12-03 23:51:37.141 - 🔍 DEBUG: Component validateButton lost focus
+[000574] 2025-12-03 23:51:37.141 - 🔍 DEBUG: Component validateButton requested visual update
+[000575] 2025-12-03 23:51:37.141 - ℹ️ INFO: Button validateButton lost focus
+[000576] 2025-12-03 23:51:37.142 - 🔍 DEBUG: Component searchBox focus changed to: True
+[000577] 2025-12-03 23:51:37.142 - 🔍 DEBUG: Component searchBox requested visual update
+[000578] 2025-12-03 23:51:37.142 - 🔍 DEBUG: Component searchBox received focus
+[000579] 2025-12-03 23:51:37.142 - 🔍 DEBUG: TextBox searchBox received focus
+[000580] 2025-12-03 23:51:37.143 - 🔍 DEBUG: Focus moved forward: True
+[000581] 2025-12-03 23:51:37.143 - 🔍 DEBUG: Navigation handled: Tab
+[000582] 2025-12-03 23:51:37.573 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000583] 2025-12-03 23:51:37.574 - 🔍 DEBUG: Routing input to focused component: searchBox
+[000584] 2025-12-03 23:51:37.575 - 🔍 DEBUG: Focused component did not handle input: searchBox
+[000585] 2025-12-03 23:51:37.576 - 🔍 DEBUG: Component searchBox focus changed to: False
+[000586] 2025-12-03 23:51:37.576 - 🔍 DEBUG: Component searchBox requested visual update
+[000587] 2025-12-03 23:51:37.576 - 🔍 DEBUG: Component searchBox lost focus
+[000588] 2025-12-03 23:51:37.577 - 🔍 DEBUG: TextBox searchBox lost focus
+[000589] 2025-12-03 23:51:37.577 - 🔍 DEBUG: Component refreshButton focus changed to: True
+[000590] 2025-12-03 23:51:37.578 - 🔍 DEBUG: Component refreshButton requested visual update
+[000591] 2025-12-03 23:51:37.578 - 🔍 DEBUG: Component refreshButton received focus
+[000592] 2025-12-03 23:51:37.579 - 🔍 DEBUG: Component refreshButton requested visual update
+[000593] 2025-12-03 23:51:37.579 - ℹ️ INFO: Button refreshButton received focus
+[000594] 2025-12-03 23:51:37.580 - 🔍 DEBUG: Focus moved forward: True
+[000595] 2025-12-03 23:51:37.580 - 🔍 DEBUG: Navigation handled: Tab
+[000596] 2025-12-03 23:51:38.010 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000597] 2025-12-03 23:51:38.010 - 🔍 DEBUG: Routing input to focused component: refreshButton
+[000598] 2025-12-03 23:51:38.010 - 🔍 DEBUG: Button refreshButton received input: Tab
+[000599] 2025-12-03 23:51:38.010 - 🔍 DEBUG: Focused component did not handle input: refreshButton
+[000600] 2025-12-03 23:51:38.010 - 🔍 DEBUG: Component refreshButton focus changed to: False
+[000601] 2025-12-03 23:51:38.010 - 🔍 DEBUG: Component refreshButton requested visual update
+[000602] 2025-12-03 23:51:38.011 - 🔍 DEBUG: Component refreshButton lost focus
+[000603] 2025-12-03 23:51:38.011 - 🔍 DEBUG: Component refreshButton requested visual update
+[000604] 2025-12-03 23:51:38.011 - ℹ️ INFO: Button refreshButton lost focus
+[000605] 2025-12-03 23:51:38.011 - 🔍 DEBUG: Component binariesList focus changed to: True
+[000606] 2025-12-03 23:51:38.012 - 🔍 DEBUG: Component binariesList requested visual update
+[000607] 2025-12-03 23:51:38.012 - 🔍 DEBUG: Component binariesList received focus
+[000608] 2025-12-03 23:51:38.012 - 🔍 DEBUG: ListBox binariesList received focus
+[000609] 2025-12-03 23:51:38.012 - 🔍 DEBUG: Focus moved forward: True
+[000610] 2025-12-03 23:51:38.012 - 🔍 DEBUG: Navigation handled: Tab
+[000611] 2025-12-03 23:51:38.112 - 🔍 DEBUG: Label statusLabel text changed
+[000612] 2025-12-03 23:51:38.368 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000613] 2025-12-03 23:51:38.368 - 🔍 DEBUG: Routing input to focused component: binariesList
+[000614] 2025-12-03 23:51:38.368 - 🔍 DEBUG: Focused component did not handle input: binariesList
+[000615] 2025-12-03 23:51:38.368 - 🔍 DEBUG: Component binariesList focus changed to: False
+[000616] 2025-12-03 23:51:38.369 - 🔍 DEBUG: Component binariesList requested visual update
+[000617] 2025-12-03 23:51:38.369 - 🔍 DEBUG: Component binariesList lost focus
+[000618] 2025-12-03 23:51:38.369 - 🔍 DEBUG: ListBox binariesList lost focus
+[000619] 2025-12-03 23:51:38.369 - 🔍 DEBUG: Component launchButton focus changed to: True
+[000620] 2025-12-03 23:51:38.369 - 🔍 DEBUG: Component launchButton requested visual update
+[000621] 2025-12-03 23:51:38.370 - 🔍 DEBUG: Component launchButton received focus
+[000622] 2025-12-03 23:51:38.370 - 🔍 DEBUG: Component launchButton requested visual update
+[000623] 2025-12-03 23:51:38.370 - ℹ️ INFO: Button launchButton received focus
+[000624] 2025-12-03 23:51:38.371 - 🔍 DEBUG: Focus moved forward: True
+[000625] 2025-12-03 23:51:38.371 - 🔍 DEBUG: Navigation handled: Tab
+[000626] 2025-12-03 23:51:38.745 - 🔍 DEBUG: Important input: Tab (Modifiers: None)
+[000627] 2025-12-03 23:51:38.746 - 🔍 DEBUG: Routing input to focused component: launchButton
+[000628] 2025-12-03 23:51:38.746 - 🔍 DEBUG: Button launchButton received input: Tab
+[000629] 2025-12-03 23:51:38.746 - 🔍 DEBUG: Focused component did not handle input: launchButton
+[000630] 2025-12-03 23:51:38.746 - 🔍 DEBUG: Component launchButton focus changed to: False
+[000631] 2025-12-03 23:51:38.746 - 🔍 DEBUG: Component launchButton requested visual update
+[000632] 2025-12-03 23:51:38.747 - 🔍 DEBUG: Component launchButton lost focus
+[000633] 2025-12-03 23:51:38.747 - 🔍 DEBUG: Component launchButton requested visual update
+[000634] 2025-12-03 23:51:38.747 - ℹ️ INFO: Button launchButton lost focus
+[000635] 2025-12-03 23:51:38.748 - 🔍 DEBUG: Component consolePanel focus changed to: True
+[000636] 2025-12-03 23:51:38.748 - 🔍 DEBUG: Component consolePanel requested visual update
+[000637] 2025-12-03 23:51:38.748 - 🔍 DEBUG: Component consolePanel received focus
+[000638] 2025-12-03 23:51:38.748 - ℹ️ INFO: ConsolePanel consolePanel received focus
+[000639] 2025-12-03 23:51:38.748 - 🔍 DEBUG: Focus moved forward: True
+[000640] 2025-12-03 23:51:38.749 - 🔍 DEBUG: Navigation handled: Tab
+[000641] 2025-12-03 23:51:39.687 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000642] 2025-12-03 23:51:39.688 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000643] 2025-12-03 23:51:39.760 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000644] 2025-12-03 23:51:39.761 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000645] 2025-12-03 23:51:40.238 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000646] 2025-12-03 23:51:40.239 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000647] 2025-12-03 23:51:40.545 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000648] 2025-12-03 23:51:40.546 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000649] 2025-12-03 23:51:40.926 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000650] 2025-12-03 23:51:40.926 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000651] 2025-12-03 23:51:41.761 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000652] 2025-12-03 23:51:41.762 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000653] 2025-12-03 23:51:42.040 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000654] 2025-12-03 23:51:42.040 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000655] 2025-12-03 23:51:43.019 - 🔍 DEBUG: Important input: Enter (Modifiers: None)
+[000656] 2025-12-03 23:51:43.020 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000657] 2025-12-03 23:51:43.020 - 🔍 DEBUG: Component consolePanel handled confirm action
+[000658] 2025-12-03 23:51:43.021 - 🔍 DEBUG: Component consolePanel requested visual update
+[000659] 2025-12-03 23:51:43.025 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000660] 2025-12-03 23:51:43.025 - 🔍 DEBUG: Sent line to process 13604: hello
+[000661] 2025-12-03 23:51:43.027 - ℹ️ INFO: Process 13604 output: Enter your name: Hello, hello!
+[000662] 2025-12-03 23:51:43.027 - ℹ️ INFO: Process 13604 output: This is a C++ program running inside WaffleCLI TUI.
+[000663] 2025-12-03 23:51:43.027 - ℹ️ INFO: Process 13604 output: Press Enter to exit...
+[000664] 2025-12-03 23:51:43.128 - 🔍 DEBUG: Label statusLabel text changed
+[000665] 2025-12-03 23:51:44.433 - 🔍 DEBUG: Important input: Enter (Modifiers: None)
+[000666] 2025-12-03 23:51:44.434 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000667] 2025-12-03 23:51:44.434 - 🔍 DEBUG: Component consolePanel handled confirm action
+[000668] 2025-12-03 23:51:44.434 - 🔍 DEBUG: Component consolePanel requested visual update
+[000669] 2025-12-03 23:51:44.434 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000670] 2025-12-03 23:51:45.324 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000671] 2025-12-03 23:51:45.324 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000672] 2025-12-03 23:51:45.531 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000673] 2025-12-03 23:51:45.531 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000674] 2025-12-03 23:51:45.811 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000675] 2025-12-03 23:51:45.812 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000676] 2025-12-03 23:51:45.882 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000677] 2025-12-03 23:51:45.882 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000678] 2025-12-03 23:51:46.068 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000679] 2025-12-03 23:51:46.068 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000680] 2025-12-03 23:51:46.261 - 🔍 DEBUG: Important input: Enter (Modifiers: None)
+[000681] 2025-12-03 23:51:46.262 - 🔍 DEBUG: Routing input to focused component: consolePanel
+[000682] 2025-12-03 23:51:46.262 - 🔍 DEBUG: Component consolePanel handled confirm action
+[000683] 2025-12-03 23:51:46.262 - 🔍 DEBUG: Component consolePanel requested visual update
+[000684] 2025-12-03 23:51:46.263 - 🔍 DEBUG: Input handled by focused component: consolePanel
+[000685] 2025-12-03 23:51:46.263 - 🔍 DEBUG: Sent line to process 13604: Enter
+[000686] 2025-12-03 23:51:46.268 - ℹ️ INFO: Process 13604 exited with code: 0
+[000687] 2025-12-03 23:51:48.130 - 🔍 DEBUG: Label statusLabel text changed
+[000688] 2025-12-03 23:51:51.338 - 🔍 DEBUG: Important input: Escape (Modifiers: None)
+[000689] 2025-12-03 23:51:51.339 - 🔍 DEBUG: Global hotkey handled: Escape
