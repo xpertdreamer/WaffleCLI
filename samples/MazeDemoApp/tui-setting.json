@@ -1,0 +1,33 @@
+{
+  "theme": "default",
+  "frameRate": 30,
+  "enableDoubleBuffering": true,
+  "enableInputLogging": false,
+  "windowWidth": 120,
+  "windowHeight": 35,
+  "components": {
+    "button": {
+      "defaultWidth": 15,
+      "defaultHeight": 3,
+      "normalColors": "primary",
+      "focusColors": "focus"
+    },
+    "textBox": {
+      "defaultWidth": 30,
+      "defaultHeight": 1,
+      "maxLength": 256
+    },
+    "listBox": {
+      "defaultWidth": 40,
+      "defaultHeight": 8
+    }
+  },
+  "colors": {
+    "primary": "White:DarkBlue",
+    "secondary": "Gray:Black",
+    "focus": "Black:White",
+    "success": "Green:Black",
+    "warning": "Yellow:Black",
+    "error": "Red:Black"
+  }
+}

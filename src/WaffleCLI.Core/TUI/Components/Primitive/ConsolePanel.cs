@@ -31,6 +31,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         public ColorScheme InputColors { get; set; } = new ColorScheme(ConsoleColor.Green, ConsoleColor.Black);
         
         public bool IsFullscreen => _isFullscreen;
+        public bool InputLine { get; set; } = true; 
 
         public bool WordWrap
         {
@@ -175,7 +176,28 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         AddOutputLine($"Current horizontal scroll: {_horizontalScroll}");
                     }
+                    break;
 
+                case "start":
+                    if (parts.Length > 1)
+                    {
+                        var fileArgs = parts[1].Split(' ', 2);
+                        var fileName = fileArgs[0];
+                        var arguments = fileArgs.Length > 1 ? fileArgs[1] : "";
+                        StartProcess(fileName, arguments);
+                    }
+                    else
+                    {
+                        AddOutputLine("Usage: start <executable> [arguments]", isError: true);
+                    }
+                    break;
+
+                case "clear":
+                    ClearOutput();
+                    break;
+
+                case "exit":
+                    StopProcess();
                     break;
 
                 case "help":
@@ -193,28 +215,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     AddOutputLine("  Ctrl+W             - Toggle word wrap");
                     AddOutputLine("  Alt+Left/Right     - Scroll horizontally (no wrap)");
                     AddOutputLine("  Ctrl+Home          - Reset horizontal scroll");
-                    break;
-                case "start":
-                    if (parts.Length > 1)
-                    {
-                        var fileArgs = parts[1].Split(' ', 2);
-                        var fileName = fileArgs[0];
-                        var arguments = fileArgs.Length > 1 ? fileArgs[1] : "";
-                        StartProcess(fileName, arguments);
-                    }
-                    else
-                    {
-                        AddOutputLine("Usage: start <executable> [arguments]", isError: true);
-                    }
-
-                    break;
-
-                case "clear":
-                    ClearOutput();
-                    break;
-
-                case "exit":
-                    StopProcess();
                     break;
 
                 default:
@@ -251,7 +251,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                 }
                 
                 // Auto-scroll to bottom
-                _scrollOffset = Math.Max(0, _outputLines.Count - (Height - 2));
+                _scrollOffset = Math.Max(0, _outputLines.Count - (Height - (InputLine ? 2 : 1)));
             }
         }
 
@@ -273,8 +273,8 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             var borderStyle = HasFocus ? BorderStyle.Double : BorderStyle.Single;
 
             renderEngine.DrawBox(absoluteX, absoluteY, Width, Height, borderStyle, colors);
-
-            int visibleLines = Math.Max(0, Height - 2);
+            
+            int visibleLines = Math.Max(0, Height - (InputLine ? 2 : 1));
             lock (_outputLock)
             {
                 // Update wrapped lines if needed
@@ -313,8 +313,8 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     }
                 }
             }
-
-            if (HasFocus)
+            
+            if (HasFocus && InputLine)
             {
                 DrawInputLine(renderEngine, absoluteX, absoluteY, Width, Height);
             }
@@ -341,17 +341,16 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                 new ColorScheme(ConsoleColor.Cyan, ConsoleColor.Black));
 
             // Draw title
-            string title = " CONSOLE PANEL (FULLSCREEN - F11 to exit) ";
+            string title = " CONSOLE PANEL (FULLSCREEN - Alt+F to exit) ";
             if (title.Length <= screenWidth - 4)
             {
                 int titleX = (screenWidth - title.Length) / 2;
                 renderEngine.DrawString(titleX, 0, title,
                     new ColorScheme(ConsoleColor.Yellow, ConsoleColor.Black));
             }
-
-            // Calculate available space for content
+            
             int contentWidth = screenWidth - 2;
-            int contentHeight = screenHeight - 4; // Top border, title, bottom border, input line
+            int contentHeight = screenHeight - (InputLine ? 4 : 3); // Top border, title, bottom border, optional input line
             int contentY = 2;
 
             // Update wrapped lines for fullscreen width
@@ -394,9 +393,11 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     }
                 }
             }
-
-            // Draw input line at the bottom
-            DrawFullscreenInputLine(renderEngine, screenWidth, screenHeight);
+            
+            if (InputLine)
+            {
+                DrawFullscreenInputLine(renderEngine, screenWidth, screenHeight);
+            }
         }
 
         private void DrawFullscreenInputLine(IRenderEngine renderEngine, int screenWidth, int screenHeight)
@@ -537,7 +538,7 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                 if (Parent is ComponentBase parent)
                 {
                     // In fullscreen mode, we'll use parent's dimensions during render
-                    AddOutputLine("Entering fullscreen mode (Alt-F to exit)");
+                    AddOutputLine("Entering fullscreen mode (Alt+F to exit)");
                 }
             }
             else
@@ -560,7 +561,51 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
             // Handle common navigation (Tab, Escape)
             if (HandleCommonNavigation(inputEvent))
                 return true;
+            
+            if (!InputLine)
+            {
+                switch (inputEvent.Key)
+                {
+                    case ConsoleKey.F when inputEvent.Modifiers.HasFlag(KeyModifiers.Alt):
+                        ToggleFullscreen();
+                        return true;
 
+                    case ConsoleKey.UpArrow:
+                        lock (_outputLock)
+                        {
+                            if (_scrollOffset > 0) _scrollOffset--;
+                        }
+                        return true;
+
+                    case ConsoleKey.DownArrow:
+                        lock (_outputLock)
+                        {
+                            if (_scrollOffset < Math.Max(0, _outputLines.Count - (Height - 1)))
+                            {
+                                _scrollOffset++;
+                            }
+                        }
+                        return true;
+
+                    case ConsoleKey.PageUp:
+                        lock (_outputLock)
+                        {
+                            _scrollOffset = Math.Max(0, _scrollOffset - (Height - 1));
+                        }
+                        return true;
+
+                    case ConsoleKey.PageDown:
+                        lock (_outputLock)
+                        {
+                            int maxScroll = Math.Max(0, _outputLines.Count - (Height - 1));
+                            _scrollOffset = Math.Min(maxScroll, _scrollOffset + (Height - 1));
+                        }
+                        return true;
+                }
+                return false; // Не обрабатываем остальные клавиши, если InputLine = false
+            }
+
+            // Обработка клавиш когда InputLine = true
             switch (inputEvent.Key)
             {
                 case ConsoleKey.F when inputEvent.Modifiers.HasFlag(KeyModifiers.Alt):
@@ -579,7 +624,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                         _horizontalScroll--;
                         AddOutputLine($"Horizontal scroll: {_horizontalScroll}");
                     }
-
                     return true;
 
                 case ConsoleKey.D when inputEvent.Modifiers.HasFlag(KeyModifiers.Alt) && !_wordWrap:
@@ -595,7 +639,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                             }
                         }
                     }
-
                     return true;
 
                 case ConsoleKey.Home when inputEvent.Modifiers.HasFlag(KeyModifiers.Control):
@@ -611,7 +654,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                         _horizontalScroll = 0; // Reset horizontal scroll on new command
                         SendInputToProcess(input);
                     }
-
                     return true;
 
                 case ConsoleKey.Backspace:
@@ -620,7 +662,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                         _currentInput.Remove(_cursorPosition - 1, 1);
                         _cursorPosition--;
                     }
-
                     return true;
 
                 case ConsoleKey.Delete:
@@ -628,7 +669,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         _currentInput.Remove(_cursorPosition, 1);
                     }
-
                     return true;
 
                 case ConsoleKey.LeftArrow:
@@ -636,7 +676,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         _cursorPosition--;
                     }
-
                     return true;
 
                 case ConsoleKey.RightArrow:
@@ -644,7 +683,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         _cursorPosition++;
                     }
-
                     return true;
 
                 case ConsoleKey.Home:
@@ -656,7 +694,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     return true;
 
                 case ConsoleKey.UpArrow:
-                    // Scroll output up
                     lock (_outputLock)
                     {
                         if (_scrollOffset > 0)
@@ -664,11 +701,9 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                             _scrollOffset--;
                         }
                     }
-
                     return true;
 
                 case ConsoleKey.DownArrow:
-                    // Scroll output down
                     lock (_outputLock)
                     {
                         if (_scrollOffset < Math.Max(0, _outputLines.Count - (Height - 2)))
@@ -676,7 +711,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                             _scrollOffset++;
                         }
                     }
-
                     return true;
 
                 case ConsoleKey.PageUp:
@@ -684,7 +718,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                     {
                         _scrollOffset = Math.Max(0, _scrollOffset - (Height - 2));
                     }
-
                     return true;
 
                 case ConsoleKey.PageDown:
@@ -693,7 +726,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                         int maxScroll = Math.Max(0, _outputLines.Count - (Height - 2));
                         _scrollOffset = Math.Min(maxScroll, _scrollOffset + (Height - 2));
                     }
-
                     return true;
 
                 default:
@@ -705,7 +737,6 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
                         _cursorPosition++;
                         return true;
                     }
-
                     break;
             }
 
@@ -716,18 +747,23 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
         {
             base.Update();
             
-            // Blink cursor
-            if ((DateTime.Now - _lastBlink).TotalMilliseconds > 500)
+            if (InputLine && HasFocus)
             {
-                _cursorVisible = !_cursorVisible;
-                _lastBlink = DateTime.Now;
+                if ((DateTime.Now - _lastBlink).TotalMilliseconds > 500)
+                {
+                    _cursorVisible = !_cursorVisible;
+                    _lastBlink = DateTime.Now;
+                }
             }
         }
 
         public override void OnFocus()
         {
             base.OnFocus();
-            _cursorVisible = true;
+            if (InputLine)
+            {
+                _cursorVisible = true;
+            }
             TuiLogger.LogInfo($"ConsolePanel {Id} received focus");
         }
 
@@ -739,15 +775,12 @@ namespace WaffleCLI.Core.TUI.Components.Primitive
 
         private void OnProcessOutputReceived(object sender, ProcessOutputEventArgs e)
         {
-            // Don't log process output as debug info to reduce logging overhead
-            // Just add it to the console output
             AddOutputLine(e.Output, e.IsError);
         }
 
         private void OnProcessExited(object sender, ProcessExitedEventArgs e)
         {
-            // Log at info level instead of debug
-            Infrastructure.Logging.TuiLogger.LogInfo($"Process exited with code: {e.ExitCode}");
+            _processRunning = false;
             AddOutputLine($"Process exited with code: {e.ExitCode}");
     
             // Clean up
