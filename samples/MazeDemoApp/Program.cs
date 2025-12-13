@@ -1,4 +1,5 @@
-﻿using WaffleCLI.Core.TUI.Application;
+﻿using WaffleCLI.Abstractions.TUI.Components;
+using WaffleCLI.Core.TUI.Application;
 using WaffleCLI.Core.TUI.Components.Primitive;
 using WaffleCLI.Core.TUI.Infrastructure.Logging;
 using WaffleCLI.Abstractions.TUI.Components.Interfaces;
@@ -28,7 +29,7 @@ namespace MazeDemoApp
                 {
                     Console.WriteLine($"❌ ERROR: {mazeExe} not found!");
                     Console.WriteLine("Please compile the persistent version with:");
-                    Console.WriteLine("  cl /EHsc /Fe:maze_persistent.exe main_persistent.cpp maze.cpp astar.cpp");
+                    Console.WriteLine("  cl /EHsc /Fe:maze_persistent.exe main_persistent.cpp maze.cpp astar.cpp racemode.cpp");
                     Console.WriteLine("\nPress any key to exit...");
                     Console.ReadKey();
                     return;
@@ -110,32 +111,39 @@ namespace MazeDemoApp
     }
 
     /// <summary>
-    /// Maze Demo Application with persistent state support
-    /// Executes actions only when Enter is pressed on selected item
-    /// Includes control legend at the bottom
-    /// Console panel without input line (display only)
+    /// Maze Demo Application with persistent state support and Race Mode
     /// </summary>
     public class MazeDemoApp : WaffleCLI.Core.TUI.Components.Layout.SimpleGridLayout
     {
         private ConsolePanel _consolePanel;
         private MazeActionListBox _actionList;
+        private MazeActionListBox _raceActionList;
         private ILabel _statusLabel;
         private ILabel _titleLabel;
         private ILabel _controlLegend;
         private IButton _clearConsoleButton;
+        private ILabel _raceStatusLabel;
+        private IButton _raceUpButton;
+        private IButton _raceDownButton;
+        private IButton _raceLeftButton;
+        private IButton _raceRightButton;
+        private IButton _raceStartButton;
+        private IButton _raceResetButton;
+        
         private string _currentMazeFile = "maze_temp.txt";
         private bool _mazeLoaded = false;
+        private bool _raceActive = false;
         private string _mazeExe = "maze_persistent.exe";
         private string _lastCommand = "";
         private IProcessRunner _currentProcess = null;
 
         public MazeDemoApp() : base("mazeDemoApp")
         {
-            // Configure grid: 12 columns, 8 rows (7 for content, 1 for legend)
+            // Configure grid: 12 columns, 12 rows
             Columns = 12;
-            Rows = 8;
+            Rows = 12;
             Width = 120;
-            Height = 35;
+            Height = 45;
             BackgroundColors = new ColorScheme(ConsoleColor.Black, ConsoleColor.DarkBlue);
             Padding = 1;
             HorizontalSpacing = 1;
@@ -143,6 +151,9 @@ namespace MazeDemoApp
 
             InitializeComponents();
             LayoutComponents();
+            
+            // Start monitoring race status
+            CheckRaceStatus();
         }
 
         private void InitializeComponents()
@@ -154,7 +165,7 @@ namespace MazeDemoApp
                 .WithColors(new ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue))
                 .Build();
 
-            // Create custom action list box
+            // Create main action list box
             _actionList = new MazeActionListBox("actions")
             {
                 Items = new System.Collections.ArrayList(new[] 
@@ -173,18 +184,38 @@ namespace MazeDemoApp
                 SelectedColors = new ColorScheme(ConsoleColor.Black, ConsoleColor.Cyan),
                 SelectedFocusColors = new ColorScheme(ConsoleColor.Black, ConsoleColor.White)
             };
+            _actionList.SetExecuteHandler(ExecuteMainAction);
 
-            // Set execute handler
-            _actionList.SetExecuteHandler(ExecuteAction);
+            // Create race action list box
+            _raceActionList = new MazeActionListBox("raceActions")
+            {
+                Items = new System.Collections.ArrayList(new[] 
+                {
+                    "🏁 Start Race Mode",
+                    "🔄 Reset Race",
+                    "📊 Show Race State",
+                    "↑ Move Up",
+                    "↓ Move Down",
+                    "← Move Left",
+                    "→ Move Right",
+                    "📈 Show Race Results"
+                }),
+                Width = 25,
+                Height = 9,
+                NormalColors = new ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue),
+                SelectedColors = new ColorScheme(ConsoleColor.Black, ConsoleColor.Green),
+                SelectedFocusColors = new ColorScheme(ConsoleColor.Black, ConsoleColor.White)
+            };
+            _raceActionList.SetExecuteHandler(ExecuteRaceAction);
 
-            // Create console panel directly (not through factory) to access InputLine property
+            // Create console panel
             _consolePanel = new ConsolePanel("console")
             {
                 Width = 70,
-                Height = 18,
+                Height = 25,
                 Prompt = "> ",
                 NormalColors = new ColorScheme(ConsoleColor.White, ConsoleColor.Black),
-                InputLine = false // Disable input line - console is display only
+                InputLine = false
             };
 
             // Create clear console button
@@ -200,9 +231,15 @@ namespace MazeDemoApp
                 .WithColors(new ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue))
                 .Build();
 
+            // Create race status label
+            _raceStatusLabel = WaffleCLI.Core.TUI.Components.ComponentFactory.CreateLabel("raceStatus", 
+                    "Race: Not Active")
+                .WithColors(new ColorScheme(ConsoleColor.Red, ConsoleColor.DarkBlue))
+                .Build();
+
             // Create control legend label at the bottom
             _controlLegend = WaffleCLI.Core.TUI.Components.ComponentFactory.CreateLabel("legend",
-                    "CONTROLS: ↑↓ Navigate List • Enter Execute • Tab Next • Shift+Tab Previous • Esc Exit")
+                    "CONTROLS: ↑↓ Navigate Lists • Enter Execute • Tab Next • Shift+Tab Previous • Esc Exit")
                 .WithAlignment(TextAlignment.Center)
                 .WithColors(new ColorScheme(ConsoleColor.Cyan, ConsoleColor.DarkBlue))
                 .Build();
@@ -214,13 +251,14 @@ namespace MazeDemoApp
             {
                 _consolePanel.AddOutputLine($"❌ ERROR: {_mazeExe} not found!", true);
                 _consolePanel.AddOutputLine("Please compile persistent version:", true);
-                _consolePanel.AddOutputLine("  cl /EHsc /Fe:maze_persistent.exe main_persistent.cpp maze.cpp astar.cpp", true);
+                _consolePanel.AddOutputLine("  cl /EHsc /Fe:maze_persistent.exe main_persistent.cpp maze.cpp astar.cpp racemode.cpp", true);
                 _statusLabel.Text = "Status: Error - maze_persistent.exe not found";
             }
             else
             {
                 _consolePanel.AddOutputLine($"📁 Maze executable: {_mazeExe}");
                 _consolePanel.AddOutputLine("💾 State is preserved between operations");
+                _consolePanel.AddOutputLine("🎮 Race Mode available when maze is loaded");
                 _consolePanel.AddOutputLine("👉 Select an action and press Enter to execute");
                 
                 // Check if maze already exists from previous run
@@ -230,24 +268,26 @@ namespace MazeDemoApp
 
         private void LayoutComponents()
         {
-            // Add components in correct Z-order (console last to avoid overlap)
-            
             // Row 0: Title (spans all 12 columns)
-            AddChild(_titleLabel as WaffleCLI.Abstractions.TUI.Components.IComponent, 0, 0, 12, 1);
+            AddChild(_titleLabel as IComponent, 0, 0, 12, 1);
             
-            // Row 1-4: Action list (left) and Console (right)
-            AddChild(_actionList as WaffleCLI.Abstractions.TUI.Components.IComponent, 0, 1, 4, 4);
+            // Row 1-4: Action list (left) and Race actions (center)
+            AddChild(_actionList as IComponent, 0, 1, 4, 4);
             
-            // Row 5: Buttons and status
-            AddChild(_clearConsoleButton as WaffleCLI.Abstractions.TUI.Components.IComponent, 0, 5, 2, 1);
-            AddChild(_statusLabel as WaffleCLI.Abstractions.TUI.Components.IComponent, 2, 5, 10, 1);
+            // Row 5: Status labels
+            AddChild(_statusLabel as IComponent, 0, 5, 6, 1);
+            AddChild(_raceStatusLabel as IComponent, 6, 5, 6, 1);
             
-            // Row 6: Control legend (spans all 12 columns)
-            AddChild(_controlLegend as WaffleCLI.Abstractions.TUI.Components.IComponent, 0, 6, 12, 1);
+            // Row 6: Buttons
+            AddChild(_clearConsoleButton as IComponent, 0, 6, 2, 1);
             
-            // Add console panel last to ensure it's on top for input handling
-            // Position: column 4, row 1, spans 8 columns, 4 rows height
-            AddChild(_consolePanel, 4, 1, 8, 4);
+            // Row 11: Control legend (spans all 12 columns)
+            AddChild(_controlLegend as IComponent, 0, 11, 12, 1);
+            
+            // Add console panel last to ensure it's on top
+            AddChild(_consolePanel, 7, 1, 5, 5);
+            
+            AddChild(_raceActionList as IComponent, 4, 1, 3, 4);
         }
 
         /// <summary>
@@ -260,15 +300,77 @@ namespace MazeDemoApp
                 _mazeLoaded = true;
                 _consolePanel.AddOutputLine($"ℹ️ Found existing maze state: {_currentMazeFile}");
                 TuiLogger.LogInfo("Existing maze file detected");
+                UpdateRaceButtonsState();
             }
             else
             {
                 _mazeLoaded = false;
                 TuiLogger.LogInfo("No existing maze file found");
+                UpdateRaceButtonsState();
             }
         }
 
-        private void ExecuteAction(int actionIndex)
+        /// <summary>
+        /// Check race status file and update UI
+        /// </summary>
+        private void CheckRaceStatus()
+        {
+            bool raceFileExists = File.Exists("race_active.tmp");
+            _raceActive = raceFileExists;
+            
+            if (_raceActive)
+            {
+                _raceStatusLabel.Text = "Race: ACTIVE";
+                // _raceStatusLabel.Colors = new ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue);
+            }
+            else
+            {
+                _raceStatusLabel.Text = "Race: Not Active";
+                // _raceStatusLabel.Colors = new ColorScheme(ConsoleColor.Red, ConsoleColor.DarkBlue);
+            }
+            
+            UpdateRaceButtonsState();
+        }
+
+        /// <summary>
+        /// Update race buttons enabled state based on conditions
+        /// </summary>
+        private void UpdateRaceButtonsState()
+        {
+            bool canStartRace = _mazeLoaded && !_raceActive;
+            bool canMove = _mazeLoaded && _raceActive;
+            
+            // Update list items colors
+            for (int i = 0; i < _raceActionList.Items.Count; i++)
+            {
+                bool isEnabled = true;
+                
+                switch (i)
+                {
+                    case 0: // Start Race Mode
+                        isEnabled = canStartRace;
+                        break;
+                    case 1: // Reset Race
+                    case 2: // Show Race State
+                        isEnabled = _raceActive;
+                        break;
+                    case 3: // Move Up
+                    case 4: // Move Down
+                    case 5: // Move Left
+                    case 6: // Move Right
+                        isEnabled = canMove;
+                        break;
+                    case 7: // Show Race Results
+                        isEnabled = File.Exists("race_results.txt");
+                        break;
+                }
+                
+                // We can't directly change item colors, but we can update the list
+                // For now, we'll just update status messages
+            }
+        }
+
+        private void ExecuteMainAction(int actionIndex)
         {
             if (!File.Exists(_mazeExe))
             {
@@ -393,40 +495,221 @@ namespace MazeDemoApp
             }
         }
 
+        private void ExecuteRaceAction(int actionIndex)
+        {
+            if (!File.Exists(_mazeExe))
+            {
+                _consolePanel.AddOutputLine($"❌ Maze executable '{_mazeExe}' not found", true);
+                _statusLabel.Text = "Status: Error - maze.exe not found";
+                return;
+            }
+
+            // Check if maze is loaded for race commands
+            if (!_mazeLoaded && actionIndex != 7) // Except for showing results
+            {
+                _consolePanel.AddOutputLine("❌ No maze loaded for race mode!", true);
+                _consolePanel.AddOutputLine("ℹ️ Please generate or load a maze first", true);
+                return;
+            }
+
+            // Stop any running process first
+            _consolePanel.StopProcess();
+            Thread.Sleep(50);
+
+            try
+            {
+                _consolePanel.ClearOutput();
+                string command = "";
+                string actionName = "";
+
+                switch (actionIndex)
+                {
+                    case 0: // Start Race Mode
+                        if (_raceActive)
+                        {
+                            _consolePanel.AddOutputLine("⚠️ Race already active!", true);
+                            return;
+                        }
+                        command = "race_start";
+                        actionName = "Start Race";
+                        break;
+
+                    case 1: // Reset Race
+                        if (!_raceActive)
+                        {
+                            _consolePanel.AddOutputLine("⚠️ No active race to reset!", true);
+                            return;
+                        }
+                        command = "race_reset";
+                        actionName = "Reset Race";
+                        break;
+
+                    case 2: // Show Race State
+                        command = "race_state";
+                        actionName = "Show Race State";
+                        break;
+
+                    case 3: // Move Up
+                        if (!_raceActive)
+                        {
+                            _consolePanel.AddOutputLine("⚠️ Start race first!", true);
+                            return;
+                        }
+                        command = "race_up";
+                        actionName = "Move Up";
+                        break;
+
+                    case 4: // Move Down
+                        if (!_raceActive)
+                        {
+                            _consolePanel.AddOutputLine("⚠️ Start race first!", true);
+                            return;
+                        }
+                        command = "race_down";
+                        actionName = "Move Down";
+                        break;
+
+                    case 5: // Move Left
+                        if (!_raceActive)
+                        {
+                            _consolePanel.AddOutputLine("⚠️ Start race first!", true);
+                            return;
+                        }
+                        command = "race_left";
+                        actionName = "Move Left";
+                        break;
+
+                    case 6: // Move Right
+                        if (!_raceActive)
+                        {
+                            _consolePanel.AddOutputLine("⚠️ Start race first!", true);
+                            return;
+                        }
+                        command = "race_right";
+                        actionName = "Move Right";
+                        break;
+
+                    case 7: // Show Race Results
+                        if (!File.Exists("race_results.txt"))
+                        {
+                            _consolePanel.AddOutputLine("ℹ️ No race results file found", true);
+                            _consolePanel.AddOutputLine("Complete a race first to see results", true);
+                            return;
+                        }
+                        ShowRaceResults();
+                        return;
+
+                    default:
+                        return;
+                }
+
+                // Store the command being executed
+                _lastCommand = command;
+                
+                // Execute the command
+                _consolePanel.AddOutputLine($"🎮 Executing Race Command: {command}");
+                _statusLabel.Text = $"Status: {actionName}...";
+
+                // Start process and monitor it
+                _consolePanel.StartProcess(_mazeExe, command);
+                
+                TuiLogger.LogInfo($"Started race command: {command}");
+            }
+            catch (Exception ex)
+            {
+                _consolePanel.AddOutputLine($"❌ Error: {ex.Message}", true);
+                _statusLabel.Text = "Status: Error occurred";
+                _lastCommand = "";
+                TuiLogger.LogError("Failed to execute race command", ex);
+            }
+        }
+
+        private void ShowRaceResults()
+        {
+            try
+            {
+                string results = File.ReadAllText("race_results.txt");
+                _consolePanel.AddOutputLine("📊 RACE RESULTS:");
+                _consolePanel.AddOutputLine("════════════════════════════════════");
+                
+                string[] lines = results.Split('\n');
+                foreach (string line in lines)
+                {
+                    if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        _consolePanel.AddOutputLine(line);
+                    }
+                }
+                
+                _consolePanel.AddOutputLine("════════════════════════════════════");
+            }
+            catch (Exception ex)
+            {
+                _consolePanel.AddOutputLine($"❌ Error reading race results: {ex.Message}", true);
+            }
+        }
+
         public override void Update()
         {
             base.Update();
             
-            // Check if process completed by monitoring the maze file
-            // This is a workaround since we can't directly hook into ConsolePanel's process events
+            // Check if process completed and update race status
             if (!string.IsNullOrEmpty(_lastCommand))
             {
-                // For commands that should create/modify the maze file, check if process is done
-                bool shouldUpdateMazeStatus = _lastCommand is "gen" or "load" or "full";
-                
-                if (shouldUpdateMazeStatus)
+                // Check race status for race commands
+                if (_lastCommand.StartsWith("race_"))
                 {
-                    // Simple heuristic: if maze file was recently modified, process likely completed
-                    if (File.Exists(_currentMazeFile))
+                    // Delay a bit then check race status
+                    Thread.Sleep(100);
+                    CheckRaceStatus();
+                    
+                    // If it was a movement command, check if race finished
+                    if (_lastCommand.EndsWith("_up") || _lastCommand.EndsWith("_down") || 
+                        _lastCommand.EndsWith("_left") || _lastCommand.EndsWith("_right"))
                     {
-                        var fileInfo = new FileInfo(_currentMazeFile);
-                        if ((DateTime.Now - fileInfo.LastWriteTime).TotalSeconds < 2)
+                        // Check if race finished by looking for results file
+                        if (File.Exists("race_results.txt"))
                         {
-                            if (!_mazeLoaded)
+                            _statusLabel.Text = "Status: Race Completed!";
+                            _raceActive = false;
+                            UpdateRaceButtonsState();
+                            
+                            // Show results automatically
+                            Thread.Sleep(500);
+                            ShowRaceResults();
+                        }
+                    }
+                    
+                    _lastCommand = "";
+                }
+                else
+                {
+                    // For maze commands that should create/modify the maze file
+                    bool shouldUpdateMazeStatus = _lastCommand is "gen" or "load" or "full";
+                    
+                    if (shouldUpdateMazeStatus)
+                    {
+                        if (File.Exists(_currentMazeFile))
+                        {
+                            var fileInfo = new FileInfo(_currentMazeFile);
+                            if ((DateTime.Now - fileInfo.LastWriteTime).TotalSeconds < 2)
                             {
-                                _mazeLoaded = true;
-                                _consolePanel.AddOutputLine("✅ Maze loaded successfully");
-                                _statusLabel.Text = "Status: Ready";
-                                _lastCommand = "";
-                                TuiLogger.LogInfo("Maze file updated, marked as loaded");
+                                if (!_mazeLoaded)
+                                {
+                                    _mazeLoaded = true;
+                                    _consolePanel.AddOutputLine("✅ Maze loaded successfully");
+                                    _statusLabel.Text = "Status: Ready";
+                                    _lastCommand = "";
+                                    TuiLogger.LogInfo("Maze file updated, marked as loaded");
+                                    UpdateRaceButtonsState();
+                                }
                             }
                         }
                     }
-                }
-                else if (_lastCommand == "current")
-                {
-                    // For status check, wait a bit then update
-                    CheckMazeFileStatusDelayed();
+                    else if (_lastCommand == "current")
+                    {
+                        CheckMazeFileStatusDelayed();
+                    }
                 }
             }
         }
@@ -460,6 +743,7 @@ namespace MazeDemoApp
             
             _statusLabel.Text = "Status: Ready";
             _lastCommand = "";
+            UpdateRaceButtonsState();
         }
 
         private string ShowInputDialog(string title, string prompt, string defaultValue = "")
@@ -507,19 +791,34 @@ namespace MazeDemoApp
             // Draw background
             renderEngine.FillRectangle(absX, absY, Width, Height, ' ', BackgroundColors);
             
-            // Draw border
+            // Draw main border
             renderEngine.DrawBox(absX, absY, Width, Height, 
                 BorderStyle.Double,
                 new ColorScheme(ConsoleColor.White, ConsoleColor.DarkBlue));
 
-            // Draw separator between list and console
-            int separatorX = absX + (Width * 4 / 12);
+            // Draw separator between action list and race list
+            int separator1X = absX + (Width * 4 / 12);
             var separatorColor = new ColorScheme(ConsoleColor.DarkCyan, ConsoleColor.DarkBlue);
-
-            for (int y = absY + 1; y < absY + Height - 2; y++) // Stop before legend
+            
+            for (int y = absY + 1; y < absY + Height - 2; y++)
             {
-                renderEngine.DrawChar(separatorX, y, '│', separatorColor);
+                renderEngine.DrawChar(separator1X, y, '│', separatorColor);
             }
+
+            // Draw separator between race list and console
+            int separator2X = absX + (Width * 7 / 12);
+            for (int y = absY + 1; y < absY + Height - 2; y++)
+            {
+                renderEngine.DrawChar(separator2X, y, '│', separatorColor);
+            }
+
+            // Draw section headers
+            renderEngine.DrawString(separator1X + 2, absY + 1, "🎮 MAZE ACTIONS", 
+                new ColorScheme(ConsoleColor.Cyan, ConsoleColor.DarkBlue));
+            renderEngine.DrawString(separator2X + 2, absY + 1, "🏁 RACE MODE", 
+                new ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue));
+            renderEngine.DrawString(separator2X + (Width - separator2X) / 2, absY + 1, "📟 CONSOLE", 
+                new ColorScheme(ConsoleColor.Yellow, ConsoleColor.DarkBlue));
 
             // Draw separator line above control legend
             int legendSeparatorY = absY + Height - 2;
@@ -532,6 +831,13 @@ namespace MazeDemoApp
             // Draw corners for legend separator
             renderEngine.DrawChar(absX, legendSeparatorY, '├', legendSeparatorColor);
             renderEngine.DrawChar(absX + Width - 1, legendSeparatorY, '┤', legendSeparatorColor);
+
+            // Draw race status indicator
+            if (_raceActive)
+            {
+                renderEngine.DrawString(absX + Width - 15, absY + 1, "🏁 ACTIVE", 
+                    new ColorScheme(ConsoleColor.Green, ConsoleColor.DarkBlue));
+            }
 
             // Render children
             base.Render(renderEngine);
